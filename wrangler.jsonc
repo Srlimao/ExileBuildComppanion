@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "exile-build-companion",
+  "name": "exilebuildcomppanion",
   "main": "apps/edge-worker/src/worker_http_and_ws_router.ts",
   "compatibility_date": "2025-03-10",
   "assets": {
@@ -23,10 +23,9 @@
       "new_sqlite_classes": ["SessionRoomDurableObject"]
     }
   ],
+  "workers_dev": true,
+  "routes": [{ "pattern": "exile.dunhas.com", "custom_domain": true }],
   "observability": {
     "enabled": true
   }
-  // Attach custom domain "exile.dunhas.com" via Cloudflare Workers -> Settings -> Domains & Routes,
-  // or uncomment after DNS setup:
-  // "routes": [{ "pattern": "exile.dunhas.com", "custom_domain": true }]
 }

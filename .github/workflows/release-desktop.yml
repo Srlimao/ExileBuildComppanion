@@ -25,7 +25,7 @@ jobs:
           workspaces: "apps/desktop/src-tauri -> target"
       - run: pnpm install --frozen-lockfile
       - run: node scripts/generate_tauri_icons.mjs
-      - run: pnpm --filter @exile-hud/desktop build
+      - run: pnpm --filter @exile-hud/core build && pnpm --filter @exile-hud/desktop build
       - run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
       - uses: tauri-apps/tauri-action@v0
         env:
