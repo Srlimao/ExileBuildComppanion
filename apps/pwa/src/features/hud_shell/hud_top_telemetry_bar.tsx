@@ -1,5 +1,5 @@
 import type { DeviceFormFactor, HudContextMode, HudSessionSnapshot } from "@exile-hud/core";
-import { Download, LayoutGrid, Lock, RefreshCw, ShieldAlert, Unlock, Wifi, WifiOff } from "lucide-react";
+import { Download, LayoutGrid, Lock, Pin, RefreshCw, ShieldAlert, Unlock, Wifi, WifiOff } from "lucide-react";
 import { LATEST_PORTABLE_EXE_URL } from "../desktop_download/github_latest_release_client.js";
 import type { ConnectionPhase } from "../pairing_and_connection/edge_websocket_room_client.js";
 
@@ -86,19 +86,29 @@ export function HudTopTelemetryBar({
                 <button
                   key={m}
                   type="button"
-                  title={isPinned ? `${m} pinned (click to return to auto)` : `View ${m}`}
+                  title={isPinned ? `${m} pinned — auto-switch paused (click to unpin)` : `View ${m}`}
                   onClick={() => onSelectPreviewMode(previewModeOverride === m ? null : m)}
                   className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold tracking-wide transition-colors cursor-pointer ${
-                    selected
-                      ? "bg-indigo-600 text-white"
-                      : "text-neutral-400 hover:text-neutral-200"
+                    isPinned
+                      ? "bg-indigo-600 text-white ring-1 ring-red-400/70"
+                      : selected
+                        ? "bg-indigo-600 text-white"
+                        : "text-neutral-400 hover:text-neutral-200"
                   }`}
                 >
                   {treePulse && (
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
                   )}
                   <span>{m}</span>
-                  {isPinned && <span className="text-[9px] text-indigo-200">PIN</span>}
+                  {isPinned && (
+                    <span
+                      data-testid={`mode-pin-${m.toLowerCase()}`}
+                      className="inline-flex items-center justify-center rounded-full bg-red-950/90 border border-red-400/80 p-0.5 shadow-sm"
+                      aria-label="Pinned mode"
+                    >
+                      <Pin className="h-3 w-3 text-red-400 fill-red-500 rotate-45" />
+                    </span>
+                  )}
                 </button>
               );
             })}

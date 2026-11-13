@@ -110,7 +110,7 @@ export function PassiveTreeCommandView({
     [],
   );
 
-  const viewport = usePanZoomViewport(initialBounds);
+  const viewport = usePanZoomViewport(initialBounds, setSelectedNodeId);
   const lastFittedSpecKey = useRef<string>("");
 
   useEffect(() => {
@@ -173,9 +173,7 @@ export function PassiveTreeCommandView({
           onToggleAllocatedNodes={(ids, alloc) => onToggleAllocatedNodes(ids, alloc)}
           onZoomIn={() => viewport.zoomBy(0.75)}
           onZoomOut={() => viewport.zoomBy(1.33)}
-          onPointerDown={viewport.onPointerDown}
-          onPointerMove={viewport.onPointerMove}
-          consumeDragMoved={viewport.consumeDragMoved}
+          pointerHandlers={viewport.pointerHandlers}
         />
 
         <PassiveTreeSidebarDrawer

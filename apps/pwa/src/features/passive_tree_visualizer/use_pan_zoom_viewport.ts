@@ -1,46 +1,47 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { TreeWorldBounds } from "./passive_tree_geometry_builder.js";
+import {
+  clampViewWidth,
+  computeCursorZoomCamera,
+  computePinchedCamera,
+  computeSinglePanCamera,
+  createGestureState,
+  reanchorGestureState,
+  resetGestureState,
+  type ViewportCamera,
+} from "./pinch_zoom_math.js";
 
-export interface ViewportCamera {
-  centerX: number;
-  centerY: number;
-  width: number;
-}
+export type { ViewportCamera } from "./pinch_zoom_math.js";
 
-const MIN_VIEW_WIDTH = 1400;
-const MAX_VIEW_WIDTH = 28000;
-
-function clampWidth(w: number): number {
-  return Math.max(MIN_VIEW_WIDTH, Math.min(MAX_VIEW_WIDTH, w));
-}
-
-/** Manages pointer drag pan, cursor-anchored wheel zoom, and camera fitting on SVG viewBox. */
-export function usePanZoomViewport(initialBounds: TreeWorldBounds) {
+/** Manages multi-touch pinch-to-zoom, 1-finger/mouse pan, cursor wheel zoom, and node tap detection on SVG viewBox. */
+export function usePanZoomViewport(
+  initialBounds: TreeWorldBounds,
+  onTapNode?: (nodeId: string | null) => void,
+) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [size, setSize] = useState({ w: 1000, h: 700 });
-  const [camera, setCamera] = useState<ViewportCamera>(() => ({
+  const initialCamera: ViewportCamera = {
     centerX: (initialBounds.minX + initialBounds.maxX) / 2,
     centerY: (initialBounds.minY + initialBounds.maxY) / 2,
-    width: clampWidth(initialBounds.maxX - initialBounds.minX),
-  }));
+    width: clampViewWidth(initialBounds.maxX - initialBounds.minX),
+  };
+  const [camera, setCamera] = useState<ViewportCamera>(initialCamera);
+  const cameraRef = useRef<ViewportCamera>(initialCamera);
+  const onTapNodeRef = useRef(onTapNode);
+  onTapNodeRef.current = onTapNode;
+  const gestureRef = useRef(createGestureState());
 
-  const dragRef = useRef<{
-    active: boolean;
-    startX: number;
-    startY: number;
-    origCenterX: number;
-    origCenterY: number;
-    moved: boolean;
-  } | null>(null);
+  const applyCamera = useCallback((next: ViewportCamera) => {
+    cameraRef.current = next;
+    setCamera(next);
+  }, []);
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
     const update = () => {
       const rect = el.getBoundingClientRect();
-      if (rect.width > 40 && rect.height > 40) {
-        setSize({ w: rect.width, h: rect.height });
-      }
+      if (rect.width > 40 && rect.height > 40) setSize({ w: rect.width, h: rect.height });
     };
     update();
     const ro = new ResizeObserver(update);
@@ -58,23 +59,29 @@ export function usePanZoomViewport(initialBounds: TreeWorldBounds) {
       const spanH = Math.max(1400, bounds.maxY - bounds.minY);
       const rect = containerRef.current?.getBoundingClientRect();
       const curAspect = rect && rect.width > 40 ? rect.height / rect.width : aspect;
-      const targetWidth = Math.max(spanW, spanH / Math.max(0.35, curAspect));
-      setCamera({
+      applyCamera({
         centerX: (bounds.minX + bounds.maxX) / 2,
         centerY: (bounds.minY + bounds.maxY) / 2,
-        width: clampWidth(targetWidth),
+        width: clampViewWidth(Math.max(spanW, spanH / Math.max(0.35, curAspect))),
       });
     },
-    [aspect],
+    [applyCamera, aspect],
   );
 
-  const focusPoint = useCallback((x: number, y: number, targetWidth = 3400) => {
-    setCamera({ centerX: x, centerY: y, width: clampWidth(targetWidth) });
-  }, []);
+  const focusPoint = useCallback(
+    (x: number, y: number, targetWidth = 3400) => {
+      applyCamera({ centerX: x, centerY: y, width: clampViewWidth(targetWidth) });
+    },
+    [applyCamera],
+  );
 
-  const zoomBy = useCallback((factor: number) => {
-    setCamera((prev) => ({ ...prev, width: clampWidth(prev.width * factor) }));
-  }, []);
+  const zoomBy = useCallback(
+    (factor: number) => {
+      const prev = cameraRef.current;
+      applyCamera({ ...prev, width: clampViewWidth(prev.width * factor) });
+    },
+    [applyCamera],
+  );
 
   useEffect(() => {
     const el = containerRef.current;
@@ -83,74 +90,107 @@ export function usePanZoomViewport(initialBounds: TreeWorldBounds) {
       e.preventDefault();
       const rect = el.getBoundingClientRect();
       if (rect.width <= 0 || rect.height <= 0) return;
-      const fx = (e.clientX - rect.left) / rect.width - 0.5;
-      const fy = (e.clientY - rect.top) / rect.height - 0.5;
-      const factor = e.deltaY > 0 ? 1.18 : 0.85;
-      setCamera((prev) => {
-        const curH = prev.width * (rect.height / rect.width);
-        const nextW = clampWidth(prev.width * factor);
-        const nextH = nextW * (rect.height / rect.width);
-        return {
-          centerX: prev.centerX + fx * (prev.width - nextW),
-          centerY: prev.centerY + fy * (curH - nextH),
-          width: nextW,
-        };
-      });
+      const factor = e.ctrlKey
+        ? Math.min(1.35, Math.max(0.74, Math.exp(e.deltaY * 0.01)))
+        : e.deltaY > 0
+          ? 1.18
+          : 0.85;
+      applyCamera(computeCursorZoomCamera(e.clientX, e.clientY, factor, cameraRef.current, rect));
     };
+    const preventGesture = (e: Event) => e.preventDefault();
+    const onBlur = () => resetGestureState(gestureRef.current);
     el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
-  }, []);
+    el.addEventListener("gesturestart", preventGesture, { passive: false });
+    el.addEventListener("gesturechange", preventGesture, { passive: false });
+    window.addEventListener("blur", onBlur);
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("gesturestart", preventGesture);
+      el.removeEventListener("gesturechange", preventGesture);
+      window.removeEventListener("blur", onBlur);
+    };
+  }, [applyCamera]);
 
-  const onPointerDown = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      if ((e.target as HTMLElement).closest("[data-tree-overlay-ui='true']")) return;
-      dragRef.current = {
-        active: true,
-        startX: e.clientX,
-        startY: e.clientY,
-        origCenterX: camera.centerX,
-        origCenterY: camera.centerY,
-        moved: false,
-      };
-    },
-    [camera.centerX, camera.centerY],
-  );
+  const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    const targetEl = e.target as Element | null;
+    if (targetEl?.closest?.("[data-tree-overlay-ui='true']")) return;
+    const el = containerRef.current;
+    if (!el) return;
+
+    const g = gestureRef.current;
+    if (g.pointers.size === 0) {
+      g.moved = false;
+      g.hadMultiTouch = false;
+      g.tapCandidateNodeId = targetEl?.closest?.("[data-tree-node-id]")?.getAttribute("data-tree-node-id") ?? null;
+    }
+    g.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch {
+      // Ignore synthetic events where pointerId is inactive
+    }
+    if (g.pointers.size >= 2) {
+      g.hadMultiTouch = true;
+      g.moved = true;
+      g.tapCandidateNodeId = null;
+    }
+    reanchorGestureState(g, cameraRef.current, el.getBoundingClientRect());
+  }, []);
 
   const onPointerMove = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
-      const drag = dragRef.current;
+      const g = gestureRef.current;
       const el = containerRef.current;
-      if (!drag?.active || !el) return;
-      const dx = e.clientX - drag.startX;
-      const dy = e.clientY - drag.startY;
-      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) drag.moved = true;
-      if (!drag.moved) return;
+      if (!el || !g.pointers.has(e.pointerId)) return;
+
+      g.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       const rect = el.getBoundingClientRect();
-      const worldPerPx = camera.width / Math.max(1, rect.width);
-      setCamera((prev) => ({
-        ...prev,
-        centerX: drag.origCenterX - dx * worldPerPx,
-        centerY: drag.origCenterY - dy * worldPerPx,
-      }));
+      if (g.pointers.size >= 2 && g.pinch) {
+        const [p1, p2] = [...g.pointers.values()];
+        if (p1 && p2) applyCamera(computePinchedCamera(p1, p2, g.pinch, rect));
+        return;
+      }
+      if (g.pointers.size === 1 && g.pan && g.pan.pointerId === e.pointerId) {
+        if (Math.hypot(e.clientX - g.pan.startX, e.clientY - g.pan.startY) > 6) g.moved = true;
+        if (g.moved) applyCamera(computeSinglePanCamera(g.pan, e.clientX, e.clientY, cameraRef.current, rect.width));
+      }
     },
-    [camera.width],
+    [applyCamera],
   );
 
-  const consumeDragMoved = useCallback(() => {
-    const moved = Boolean(dragRef.current?.moved);
-    dragRef.current = null;
-    return moved;
+  const finishPointer = useCallback((e: React.PointerEvent<HTMLDivElement>, allowTap: boolean) => {
+    const g = gestureRef.current;
+    if (!g.pointers.has(e.pointerId)) return;
+
+    const el = containerRef.current;
+    g.pointers.delete(e.pointerId);
+    if (el) {
+      try {
+        if (el.hasPointerCapture?.(e.pointerId)) el.releasePointerCapture(e.pointerId);
+      } catch {
+        // Ignore release error
+      }
+    }
+    if (g.pointers.size > 0) {
+      if (el) reanchorGestureState(g, cameraRef.current, el.getBoundingClientRect());
+      return;
+    }
+    const shouldTap = allowTap && !g.moved && !g.hadMultiTouch;
+    const tappedNode = g.tapCandidateNodeId;
+    resetGestureState(g);
+    if (shouldTap) onTapNodeRef.current?.(tappedNode);
   }, []);
 
-  return {
-    containerRef,
-    viewBox,
-    viewWidth: camera.width,
-    fitBounds,
-    focusPoint,
-    zoomBy,
-    onPointerDown,
-    onPointerMove,
-    consumeDragMoved,
-  };
+  const pointerHandlers = useMemo(
+    () => ({
+      onPointerDown,
+      onPointerMove,
+      onPointerUp: (e: React.PointerEvent<HTMLDivElement>) => finishPointer(e, true),
+      onPointerCancel: (e: React.PointerEvent<HTMLDivElement>) => finishPointer(e, false),
+    }),
+    [onPointerDown, onPointerMove, finishPointer],
+  );
+
+  return { containerRef, viewBox, viewWidth: camera.width, fitBounds, focusPoint, zoomBy, pointerHandlers };
 }

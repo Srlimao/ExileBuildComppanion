@@ -1,5 +1,6 @@
 import type { PassiveTreeBracketDiff } from "@exile-hud/core";
 import type { PassiveTreeNodeMetadata } from "@exile-hud/game-data";
+import type React from "react";
 import { memo } from "react";
 import type { BuiltPoe1TreeGeometry, BuiltTreeEdge } from "./passive_tree_geometry_builder.js";
 import { PassiveTreeCanvasOverlays } from "./passive_tree_node_tooltip.js";
@@ -54,9 +55,10 @@ interface PassiveTreeCanvasSvgProps {
   onToggleAllocatedNodes: (nodeIds: string[], allocated: boolean) => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
-  onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => void;
-  onPointerMove: (e: React.PointerEvent<HTMLDivElement>) => void;
-  consumeDragMoved: () => boolean;
+  pointerHandlers: Pick<
+    React.HTMLAttributes<HTMLDivElement>,
+    "onPointerDown" | "onPointerMove" | "onPointerUp" | "onPointerCancel"
+  >;
 }
 
 export function PassiveTreeCanvasSvg({
@@ -75,9 +77,7 @@ export function PassiveTreeCanvasSvg({
   onToggleAllocatedNodes,
   onZoomIn,
   onZoomOut,
-  onPointerDown,
-  onPointerMove,
-  consumeDragMoved,
+  pointerHandlers,
 }: PassiveTreeCanvasSvgProps) {
   const addedSet = new Set(diff.addedInBracketIds);
   const missedSet = new Set(diff.earlierMissedIds);
@@ -115,14 +115,10 @@ export function PassiveTreeCanvasSvg({
   return (
     <div
       ref={containerRef}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={() => {
-        if (!consumeDragMoved()) onSelectNode(null);
-      }}
+      {...pointerHandlers}
       className="relative flex-1 min-h-[430px] lg:min-h-[600px] rounded-xl border border-neutral-800 bg-[#020813] overflow-hidden select-none touch-none cursor-grab active:cursor-grabbing"
     >
-      <svg viewBox={viewBox} className="w-full h-full block">
+      <svg viewBox={viewBox} className="w-full h-full block touch-none">
         <StaticWireframeLayer edges={visibleEdges} nodes={visibleNodes} />
 
         <g>
@@ -172,11 +168,8 @@ export function PassiveTreeCanvasSvg({
             return (
               <g
                 key={`n_${node.id}`}
+                data-tree-node-id={node.id}
                 className="cursor-pointer"
-                onPointerUp={(e) => {
-                  e.stopPropagation();
-                  if (!consumeDragMoved()) onSelectNode(node.id);
-                }}
               >
                 {isSearch && <circle cx={node.x} cy={node.y} r={r + 36} fill="none" stroke="#818cf8" strokeWidth={14} opacity={0.9} />}
                 {isSel && <circle cx={node.x} cy={node.y} r={r + 22} fill="none" stroke="#ffffff" strokeWidth={10} />}
