@@ -2,15 +2,29 @@ name: Release Desktop (Windows)
 
 on:
   push:
-    tags:
-      - "v*"
+    branches: [main]
+    paths:
+      - "apps/desktop/**"
+      - "packages/core/**"
+      - "packages/game-data/**"
+      - "scripts/generate_tauri_icons.mjs"
+      - ".github/workflows/release-desktop.yml"
   workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Optional release tag (defaults to v0.1.<run_number>)"
+        required: false
+        type: string
 
 permissions:
   contents: write
 
+concurrency:
+  group: release-desktop
+  cancel-in-progress: false
+
 jobs:
-  build-windows-installer:
+  build-windows-release:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,14 +39,67 @@ jobs:
           workspaces: "apps/desktop/src-tauri -> target"
       - run: pnpm install --frozen-lockfile
       - run: node scripts/generate_tauri_icons.mjs
-      - run: pnpm --filter @exile-hud/core build && pnpm --filter @exile-hud/desktop build
       - run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
-      - uses: tauri-apps/tauri-action@v0
+      - name: Build Tauri Portable Exe & NSIS Installer
+        run: pnpm --filter @exile-hud/desktop tauri build --bundles nsis --no-binary-patching --ci
+      - name: Stage Stable Assets & Publish Latest GitHub Release
+        shell: pwsh
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          projectPath: apps/desktop
-          tagName: ${{ github.ref_name }}
-          releaseName: "Exile Companion HUD ${{ github.ref_name }}"
-          releaseDraft: true
-          prerelease: false
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $inputTag = "${{ inputs.tag_name }}".Trim()
+          if ($inputTag) {
+            $tag = $inputTag
+          } elseif ($env:GITHUB_REF_TYPE -eq "tag") {
+            $tag = $env:GITHUB_REF_NAME
+          } else {
+            $tag = "v0.1.$($env:GITHUB_RUN_NUMBER)"
+          }
+
+          New-Item -ItemType Directory -Force -Path release-assets | Out-Null
+
+          $portableSrc = "apps/desktop/src-tauri/target/release/exile_companion_host.exe"
+          if (-not (Test-Path $portableSrc)) {
+            throw "Missing portable executable at $portableSrc"
+          }
+          Copy-Item $portableSrc "release-assets/ExileCompanionHUD.exe" -Force
+
+          $nsisInstaller = Get-ChildItem "apps/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe" | Select-Object -First 1
+          if (-not $nsisInstaller) {
+            throw "Missing NSIS setup installer in apps/desktop/src-tauri/target/release/bundle/nsis/"
+          }
+          Copy-Item $nsisInstaller.FullName "release-assets/ExileCompanionHUD-Setup.exe" -Force
+
+          $hashes = Get-ChildItem "release-assets/*.exe" | ForEach-Object {
+            $h = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+            "$h  $($_.Name)"
+          }
+          $hashes | Set-Content -Path "release-assets/SHA256SUMS.txt" -Encoding UTF8
+
+          $shortSha = $env:GITHUB_SHA.Substring(0, 7)
+          $notes = @(
+            "## Exile Companion HUD ($tag)",
+            "",
+            '- **Ready-to-Run Portable App (Recommended):** `ExileCompanionHUD.exe` — standalone Windows x64 executable, zero installation required. Pre-configured for `https://exile.dunhas.com`.',
+            '- **Windows Setup Installer:** `ExileCompanionHUD-Setup.exe` — NSIS installer with Start Menu shortcut & WebView2 runtime check.',
+            ('- **Source Commit:** `' + $shortSha + '`'),
+            "",
+            "### SHA-256 Checksums",
+            '```text',
+            ($hashes -join "`n"),
+            '```'
+          ) -join "`n"
+          $notes | Set-Content -Path "release-notes.md" -Encoding UTF8
+
+          $PSNativeCommandUseErrorActionPreference = $false
+          gh release view $tag *> $null
+          $exists = ($LASTEXITCODE -eq 0)
+          $PSNativeCommandUseErrorActionPreference = $true
+
+          if ($exists) {
+            gh release upload $tag release-assets/ExileCompanionHUD.exe release-assets/ExileCompanionHUD-Setup.exe release-assets/SHA256SUMS.txt --clobber
+            gh release edit $tag --title "Exile Companion HUD $tag" --notes-file release-notes.md --draft=false --prerelease=false --latest
+          } else {
+            gh release create $tag release-assets/ExileCompanionHUD.exe release-assets/ExileCompanionHUD-Setup.exe release-assets/SHA256SUMS.txt --target $env:GITHUB_SHA --title "Exile Companion HUD $tag" --notes-file release-notes.md --latest
+          }

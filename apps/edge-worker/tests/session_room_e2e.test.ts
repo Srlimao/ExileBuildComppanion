@@ -192,6 +192,18 @@ describe("Cloudflare Worker + SessionRoomDurableObject E2E", () => {
   });
 
   it("rejects POESESSID payloads on query and body with 400 and closes unregistered WS with 4001", async () => {
+    const portableRedirect = await fetch(`${BASE_HTTP}/api/download/desktop`, { redirect: "manual" });
+    expect(portableRedirect.status).toBe(302);
+    expect(portableRedirect.headers.get("location")).toBe(
+      "https://github.com/Srlimao/ExileBuildComppanion/releases/latest/download/ExileCompanionHUD.exe",
+    );
+
+    const setupRedirect = await fetch(`${BASE_HTTP}/api/download/desktop?variant=setup`, { redirect: "manual" });
+    expect(setupRedirect.status).toBe(302);
+    expect(setupRedirect.headers.get("location")).toBe(
+      "https://github.com/Srlimao/ExileBuildComppanion/releases/latest/download/ExileCompanionHUD-Setup.exe",
+    );
+
     const queryLeak = await fetch(`${BASE_HTTP}/api/session/LEAK01/register?poesessid=secret`);
     expect(queryLeak.status).toBe(400);
 

@@ -1,5 +1,6 @@
 import { MonitorSmartphone, Play, QrCode } from "lucide-react";
 import { useState, type FormEvent } from "react";
+import { DesktopCompanionDownloadCard } from "../desktop_download/desktop_companion_download_card.js";
 
 interface QrPinJoinModalProps {
   initialRoomId: string;
@@ -78,7 +79,9 @@ export function QrPinJoinModal({
           </button>
         </form>
 
-        <div className="pt-4 border-t border-neutral-800">
+        <div className="pt-4 border-t border-neutral-800 space-y-3">
+          <DesktopCompanionDownloadCard />
+
           <button
             type="button"
             onClick={onStartDemo}

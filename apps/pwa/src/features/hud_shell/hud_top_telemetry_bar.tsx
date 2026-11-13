@@ -1,5 +1,6 @@
 import type { DeviceFormFactor, HudContextMode, HudSessionSnapshot } from "@exile-hud/core";
-import { LayoutGrid, Lock, RefreshCw, ShieldAlert, Unlock, Wifi, WifiOff } from "lucide-react";
+import { Download, LayoutGrid, Lock, RefreshCw, ShieldAlert, Unlock, Wifi, WifiOff } from "lucide-react";
+import { LATEST_PORTABLE_EXE_URL } from "../desktop_download/github_latest_release_client.js";
 import type { ConnectionPhase } from "../pairing_and_connection/edge_websocket_room_client.js";
 
 interface HudTopTelemetryBarProps {
@@ -14,6 +15,7 @@ interface HudTopTelemetryBarProps {
   onToggleEditLayout: () => void;
   onSelectPreviewMode: (mode: HudContextMode | null) => void;
   onTriggerManualSync: () => void;
+  onOpenPairingModal?: () => void;
 }
 
 function getXpRangeLabel(playerLvl: number, zoneLvl: number): { label: string; ok: boolean } {
@@ -37,6 +39,7 @@ export function HudTopTelemetryBar({
   onToggleEditLayout,
   onSelectPreviewMode,
   onTriggerManualSync,
+  onOpenPairingModal,
 }: HudTopTelemetryBarProps) {
   const xp = getXpRangeLabel(snapshot.characterLevel, snapshot.currentAreaLevel);
   const modePills: HudContextMode[] = ["FIELD", "TOWN", "LAB"];
@@ -121,6 +124,25 @@ export function HudTopTelemetryBar({
             <LayoutGrid className="h-3.5 w-3.5" />
             {editLayoutMode ? `Editing (${formFactor})` : "Layout"}
           </button>
+
+          <a
+            href={LATEST_PORTABLE_EXE_URL}
+            title="Download Ready-to-Run Windows PC Companion (.exe)"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-xs font-semibold"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span>Download PC App</span>
+          </a>
+
+          {isDemo && onOpenPairingModal && (
+            <button
+              type="button"
+              onClick={onOpenPairingModal}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 text-xs font-semibold cursor-pointer"
+            >
+              Pair PC
+            </button>
+          )}
 
           <div
             className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-mono ${

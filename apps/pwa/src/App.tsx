@@ -209,6 +209,10 @@ export function App() {
         onToggleEditLayout={() => setEditMode((v) => !v)}
         onSelectPreviewMode={(m) => setPreviewModeOverride(m)}
         onTriggerManualSync={() => clientRef.current?.sendCommand({ type: "viewer:request_character_sync" })}
+        onOpenPairingModal={() => {
+          setIsDemo(false);
+          setSnapshot(null);
+        }}
       />
 
       {snapshot.resumeZoneBanner && (
