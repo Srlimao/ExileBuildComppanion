@@ -5,6 +5,7 @@ import defaultRoutesJson from "../data/poe1/default_routes.json" with { type: "j
 import gemColoursJson from "../data/poe1/gem-colours.json" with { type: "json" };
 import gemsJson from "../data/poe1/gems.json" with { type: "json" };
 import killWaypointsJson from "../data/poe1/kill-waypoints.json" with { type: "json" };
+import passiveTreeGraphMetaJson from "../data/poe1/passive_tree_graph_meta.json" with { type: "json" };
 import passiveTreeNodesJson from "../data/poe1/passive_tree_nodes.json" with { type: "json" };
 import questsJson from "../data/poe1/quests.json" with { type: "json" };
 import vaalGemLookupJson from "../data/poe1/vaal-gem-lookup.json" with { type: "json" };
@@ -13,6 +14,7 @@ import type {
   AreaDefinition,
   CharacterStartGems,
   GemDefinition,
+  PassiveTreeGraphMetadata,
   PassiveTreeNodeMetadata,
   QuestDefinition,
 } from "./game_adapter_contract.js";
@@ -28,3 +30,4 @@ export const poe1VaalGemLookup = vaalGemLookupJson as Record<string, string>;
 export const poe1DefaultRoutes = defaultRoutesJson as Record<string, string>;
 export const poe1ZoneLayoutManifest = zoneLayoutManifestJson as Record<string, string[]>;
 export const poe1PassiveTreeNodes = passiveTreeNodesJson as Record<string, PassiveTreeNodeMetadata>;
+export const poe1PassiveTreeGraphMeta = passiveTreeGraphMetaJson as PassiveTreeGraphMetadata;

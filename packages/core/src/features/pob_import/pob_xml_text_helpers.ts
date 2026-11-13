@@ -29,3 +29,17 @@ export function inferLevelFromTitle(title: string, fallback = 1): number {
 
   return fallback;
 }
+
+/** Parses PoB Spec masteryEffects="{nodeId,effectId},..." attributes into a map. */
+export function parseXmlMasteryEffectsAttr(rawAttr: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  const text = String(rawAttr ?? "");
+  const regex = /\{(\d+)\s*,\s*(\d+)\}/g;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(text)) !== null) {
+    if (match[1] && match[2]) {
+      out[match[1]] = match[2];
+    }
+  }
+  return out;
+}

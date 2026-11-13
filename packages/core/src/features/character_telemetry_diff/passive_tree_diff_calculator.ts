@@ -1,24 +1,50 @@
 import type { GameAdapter } from "@exile-hud/game-data";
 import type { ExtractedTreeSpec } from "../pob_import/pob_xml_skill_and_tree_extractor.js";
-import type { PassiveTreeTelemetry } from "../protocol/session_room_wire_protocol.js";
+import type {
+  PassiveTreeSpecSummary,
+  PassiveTreeTelemetry,
+} from "../protocol/session_room_wire_protocol.js";
+import { sortTreeSpecsByLevel } from "./passive_tree_bracket_differ.js";
 
-export function selectActiveTreeSpec(specs: ExtractedTreeSpec[], characterLevel: number): ExtractedTreeSpec | null {
+function toSpecSummaries(specs: ExtractedTreeSpec[]): PassiveTreeSpecSummary[] {
+  return sortTreeSpecsByLevel(
+    specs.map((spec) => ({
+      id: spec.id,
+      title: spec.title,
+      minLevel: spec.minLevel,
+      nodeIds: spec.nodeIds,
+      masteries: spec.masteries,
+    })),
+  );
+}
+
+export function selectActiveTreeSpec<T extends { minLevel: number }>(
+  specs: T[],
+  characterLevel: number,
+): T | null {
   if (specs.length === 0) return null;
-  let active = specs[0]!;
-  for (const spec of specs) {
+  const sorted = specs
+    .map((spec, idx) => ({ spec, idx }))
+    .sort((a, b) => a.spec.minLevel - b.spec.minLevel || a.idx - b.idx)
+    .map((entry) => entry.spec);
+
+  let active = sorted[0]!;
+  for (const spec of sorted) {
     if (spec.minLevel <= characterLevel) active = spec;
   }
   return active;
 }
 
-export function computePassiveTreeDiff(params: {
-  treeSpecs: ExtractedTreeSpec[];
-  allocatedHashes: number[];
+function computeFromSpecSummaries(params: {
+  specs: PassiveTreeSpecSummary[];
+  allocatedNodeIds: string[];
+  localOverrideNodeIds: string[];
+  allocatedMasteries: Record<string, string>;
   characterLevel: number;
   adapter: GameAdapter;
 }): PassiveTreeTelemetry {
-  const { treeSpecs, allocatedHashes, characterLevel, adapter } = params;
-  const spec = selectActiveTreeSpec(treeSpecs, characterLevel);
+  const { specs, allocatedNodeIds, localOverrideNodeIds, allocatedMasteries, characterLevel, adapter } = params;
+  const spec = selectActiveTreeSpec(specs, characterLevel);
   if (!spec) {
     return {
       specName: "No Passive Tree",
@@ -28,11 +54,15 @@ export function computePassiveTreeDiff(params: {
       remainingNotableNames: [],
       respecPointsNeeded: 0,
       targetNodesPreview: [],
+      allocatedNodeIds,
+      localOverrideNodeIds,
+      allocatedMasteries,
+      specs,
     };
   }
 
   const targetSet = new Set(spec.nodeIds);
-  const allocatedSet = new Set(allocatedHashes.map(String));
+  const allocatedSet = new Set([...allocatedNodeIds, ...localOverrideNodeIds]);
   const passiveNodes = adapter.getPassiveTreeNodes();
 
   const remainingNodeIds: string[] = [];
@@ -53,7 +83,7 @@ export function computePassiveTreeDiff(params: {
 
   let respecPointsNeeded = 0;
   for (const allocId of allocatedSet) {
-    if (!targetSet.has(allocId)) {
+    if (!targetSet.has(allocId) && passiveNodes[allocId]?.classStartIndex === undefined) {
       respecPointsNeeded++;
     }
   }
@@ -71,11 +101,51 @@ export function computePassiveTreeDiff(params: {
 
   return {
     specName: spec.title,
+    activeSpecId: spec.id,
     targetNodeCount: spec.nodeIds.length,
     allocatedTargetCount,
     remainingNodeIds,
     remainingNotableNames: remainingNotableNames.slice(0, 12),
     respecPointsNeeded,
     targetNodesPreview,
+    allocatedNodeIds,
+    localOverrideNodeIds,
+    allocatedMasteries,
+    specs,
   };
+}
+
+/** Computes passive tree diff against GGG hashes + optional local manual overrides. */
+export function computePassiveTreeDiff(params: {
+  treeSpecs: ExtractedTreeSpec[];
+  allocatedHashes: number[];
+  localOverrideNodeIds?: string[];
+  allocatedMasteries?: Record<string, string>;
+  characterLevel: number;
+  adapter: GameAdapter;
+}): PassiveTreeTelemetry {
+  return computeFromSpecSummaries({
+    specs: toSpecSummaries(params.treeSpecs),
+    allocatedNodeIds: [...new Set(params.allocatedHashes.map(String))],
+    localOverrideNodeIds: [...new Set(params.localOverrideNodeIds ?? [])],
+    allocatedMasteries: params.allocatedMasteries ?? {},
+    characterLevel: params.characterLevel,
+    adapter: params.adapter,
+  });
+}
+
+/** Recomputes PassiveTreeTelemetry counts after local Web HUD node override updates. */
+export function recomputePassiveTreeTelemetry(params: {
+  passiveTree: PassiveTreeTelemetry;
+  characterLevel: number;
+  adapter: GameAdapter;
+}): PassiveTreeTelemetry {
+  return computeFromSpecSummaries({
+    specs: sortTreeSpecsByLevel(params.passiveTree.specs ?? []),
+    allocatedNodeIds: params.passiveTree.allocatedNodeIds ?? [],
+    localOverrideNodeIds: params.passiveTree.localOverrideNodeIds ?? [],
+    allocatedMasteries: params.passiveTree.allocatedMasteries ?? {},
+    characterLevel: params.characterLevel,
+    adapter: params.adapter,
+  });
 }

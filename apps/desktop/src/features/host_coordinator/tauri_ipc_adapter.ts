@@ -143,11 +143,22 @@ export async function openAppDataFolderIpc(): Promise<string | null> {
   return callInvoke<string>("open_app_data_folder");
 }
 
+export async function setPassiveTreeHotkeyIpc(hotkey: string): Promise<boolean> {
+  if (!isTauriRuntime()) return hotkey.toUpperCase() !== "OFF";
+  return callInvoke<boolean>("set_passive_tree_hotkey", { hotkey });
+}
+
+export async function setInGameTreeOpenIpc(open: boolean): Promise<void> {
+  if (!isTauriRuntime()) return;
+  await callInvoke("set_in_game_tree_open", { open });
+}
+
 export async function subscribeTauriListeners(handlers: {
   onClientLogLines: (lines: string[]) => void;
   onPoeProcessState: (running: boolean) => void;
   onTrayAction: (action: string) => void;
   onClientLogPathChanged?: (path: string) => void;
+  onPassiveTreeState?: (open: boolean) => void;
 }): Promise<() => void> {
   if (!isTauriRuntime()) return () => undefined;
   const { listen } = await import("@tauri-apps/api/event");
@@ -157,10 +168,14 @@ export async function subscribeTauriListeners(handlers: {
   const unsub4 = await listen<string>("client-log-path-changed", (ev) =>
     handlers.onClientLogPathChanged?.(ev.payload),
   );
+  const unsub5 = await listen<boolean>("poe-passive-tree-state", (ev) =>
+    handlers.onPassiveTreeState?.(ev.payload),
+  );
   return () => {
     unsub1();
     unsub2();
     unsub3();
     unsub4();
+    unsub5();
   };
 }

@@ -5,6 +5,7 @@ export interface HostIdentityPrefs {
   relayUrl: string;
   accountName: string;
   characterName: string;
+  passiveTreeHotkey: string;
 }
 
 export const DEFAULT_RELAY_URL = "https://exile.dunhas.com";
@@ -30,6 +31,7 @@ export function loadHostIdentityPrefs(): HostIdentityPrefs {
     relayUrl: localStorage.getItem("exile_relay_url") || DEFAULT_RELAY_URL,
     accountName: localStorage.getItem("exile_account") || "",
     characterName: localStorage.getItem("exile_character") || "ExileRunner",
+    passiveTreeHotkey: localStorage.getItem("exile_tree_hotkey") || "P",
   };
 }
 
@@ -41,4 +43,5 @@ export function saveHostIdentityPrefs(prefs: HostIdentityPrefs): void {
   localStorage.setItem("exile_relay_url", prefs.relayUrl);
   localStorage.setItem("exile_account", prefs.accountName);
   localStorage.setItem("exile_character", prefs.characterName);
+  localStorage.setItem("exile_tree_hotkey", prefs.passiveTreeHotkey);
 }

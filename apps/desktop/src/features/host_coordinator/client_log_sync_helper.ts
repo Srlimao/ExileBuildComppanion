@@ -88,11 +88,16 @@ export function syncBuildSetsForLevel(
 
   const activeSpec = selectActiveTreeSpec(build.treeSpecs, snapshot.characterLevel);
   if (activeSpec && activeSpec.title !== snapshot.passiveTree.specName) {
+    const existingAllocated = (snapshot.passiveTree.allocatedNodeIds ?? [])
+      .map((id) => Number(id))
+      .filter(Number.isFinite);
     next = {
       ...next,
       passiveTree: computePassiveTreeDiff({
         treeSpecs: build.treeSpecs,
-        allocatedHashes: [],
+        allocatedHashes: existingAllocated,
+        localOverrideNodeIds: snapshot.passiveTree.localOverrideNodeIds,
+        allocatedMasteries: snapshot.passiveTree.allocatedMasteries,
         characterLevel: snapshot.characterLevel,
         adapter: poe1GameAdapter,
       }),
@@ -143,4 +148,27 @@ export function markEquippedItemSets(
         equippedTokens.has(slot.baseType.toLowerCase()),
     })),
   }));
+}
+
+/** Extracts GGG get-passive-skills mastery_effects into a nodeId -> effectId map. */
+export function extractAllocatedMasteriesFromPassives(
+  passivesJson: Record<string, any> | null,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  const raw = passivesJson?.mastery_effects;
+  if (!raw || typeof raw !== "object") return out;
+  for (const [k, v] of Object.entries(raw)) {
+    if (k && v !== undefined && v !== null) out[String(k)] = String(v);
+  }
+  return out;
+}
+
+/** Retains only local node overrides not yet confirmed by the latest GGG passive hashes. */
+export function pruneConfirmedLocalOverrides(
+  localOverrides: string[] | undefined,
+  allocatedHashes: number[],
+): string[] {
+  if (!localOverrides?.length) return [];
+  const confirmed = new Set(allocatedHashes.map(String));
+  return localOverrides.filter((id) => !confirmed.has(id));
 }

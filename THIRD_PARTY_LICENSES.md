@@ -55,3 +55,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## grindinggear/skilltree-export
+Source: https://github.com/grindinggear/skilltree-export (Tag `3.30.0`)
+
+Official Path of Exile Passive Skill Tree export JSON (`data.json`) provided publicly by Grinding Gear Games for community build planners and tools.

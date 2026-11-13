@@ -1,13 +1,18 @@
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tauri::{AppHandle, Emitter};
 
 use crate::client_txt_byte_offset_tailer::read_recent_bootstrap_lines;
+use crate::foreground_poe_hotkey_poller::poll_foreground_poe_hotkey;
 use crate::poe_process_heartbeat::find_running_poe_process;
 use crate::HostSharedState;
 
-/// Spawns async Client.txt tailing and Path of Exile process / active log path watchers.
+/// Spawns async Client.txt tailing, PoE process monitoring, and foreground hotkey observation.
 pub fn spawn_background_watchers(app: &AppHandle, shared: &HostSharedState) {
+    let active_pid = Arc::new(AtomicU32::new(
+        find_running_poe_process().map(|p| p.pid).unwrap_or(0),
+    ));
     let log_app = app.clone();
     let tailer_ref = Arc::clone(&shared.tailer);
     tauri::async_runtime::spawn(async move {
@@ -25,17 +30,27 @@ pub fn spawn_background_watchers(app: &AppHandle, shared: &HostSharedState) {
     });
 
     let proc_app = app.clone();
+    let proc_pid = Arc::clone(&active_pid);
+    let hotkey_tracker_reset = Arc::clone(&shared.tree_hotkey_tracker);
     let tailer_switch_ref = Arc::clone(&shared.tailer);
     let manual_override_ref = Arc::clone(&shared.manual_log_override);
     tauri::async_runtime::spawn(async move {
         let mut last_state: Option<bool> = None;
-        let mut interval = tokio::time::interval(Duration::from_secs(5));
+        let mut interval = tokio::time::interval(Duration::from_secs(3));
         loop {
             interval.tick().await;
             let proc_info = find_running_poe_process();
+            proc_pid.store(proc_info.as_ref().map(|p| p.pid).unwrap_or(0), Ordering::Relaxed);
             let running = proc_info.is_some();
             if last_state != Some(running) {
                 last_state = Some(running);
+                if !running {
+                    if let Ok(mut guard) = hotkey_tracker_reset.lock() {
+                        if guard.set_tree_open(false) {
+                            let _ = proc_app.emit("poe-passive-tree-state", false);
+                        }
+                    }
+                }
                 let _ = proc_app.emit("poe-process-state", running);
             }
             let is_manual = manual_override_ref
@@ -78,6 +93,20 @@ pub fn spawn_background_watchers(app: &AppHandle, shared: &HostSharedState) {
                         }
                     }
                 }
+            }
+        }
+    });
+
+    let hotkey_app = app.clone();
+    let hotkey_pid = Arc::clone(&active_pid);
+    let hotkey_tracker = Arc::clone(&shared.tree_hotkey_tracker);
+    tauri::async_runtime::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_millis(60));
+        loop {
+            interval.tick().await;
+            let pid = hotkey_pid.load(Ordering::Relaxed);
+            if let Some(open) = poll_foreground_poe_hotkey(&hotkey_tracker, pid) {
+                let _ = hotkey_app.emit("poe-passive-tree-state", open);
             }
         }
     });

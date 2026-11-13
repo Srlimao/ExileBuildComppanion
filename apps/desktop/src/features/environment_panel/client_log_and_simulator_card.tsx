@@ -1,4 +1,4 @@
-import { ClipboardCopy, Cpu, FileSearch, FlaskConical, Skull } from "lucide-react";
+import { ClipboardCopy, Cpu, FileSearch, FlaskConical, GitBranch, Skull } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface ClientLogAndSimulatorCardProps {
@@ -6,14 +6,18 @@ interface ClientLogAndSimulatorCardProps {
   clientLogFound: boolean;
   autoClipboard: boolean;
   poeRunning: boolean;
+  inGameTreeOpen: boolean;
+  passiveTreeHotkey: string;
   simulatedOutage: boolean;
   activeVendorRegex: string;
   onSetLogPath: (nextPath: string) => Promise<void>;
   onAutoDetectPath: () => Promise<void>;
   onToggleAutoClipboard: () => void;
+  onChangePassiveTreeHotkey: (nextKey: string) => void;
   onCopyRegexNow: () => Promise<void>;
   onSimulateLogLines: (lines: string[]) => void;
   onToggleSimPoeRunning: () => void;
+  onToggleSimInGameTree: () => void;
   onToggleSimulatedOutage: () => void;
 }
 
@@ -22,14 +26,18 @@ export function ClientLogAndSimulatorCard({
   clientLogFound,
   autoClipboard,
   poeRunning,
+  inGameTreeOpen,
+  passiveTreeHotkey,
   simulatedOutage,
   activeVendorRegex,
   onSetLogPath,
   onAutoDetectPath,
   onToggleAutoClipboard,
+  onChangePassiveTreeHotkey,
   onCopyRegexNow,
   onSimulateLogLines,
   onToggleSimPoeRunning,
+  onToggleSimInGameTree,
   onToggleSimulatedOutage,
 }: ClientLogAndSimulatorCardProps) {
   const [draftPath, setDraftPath] = useState(clientLogPath);
@@ -94,6 +102,29 @@ export function ClientLogAndSimulatorCard({
             <ClipboardCopy className="h-3 w-3" />
             {activeVendorRegex || "Copy"}
           </button>
+        </div>
+
+        <div className="flex items-center justify-between pt-1.5 border-t border-neutral-800/70 text-xs">
+          <div className="flex items-center gap-1.5 text-neutral-300">
+            <GitBranch className="h-3.5 w-3.5 text-indigo-400" />
+            <span>Passive Tree Hotkey (PoE Active)</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className={`text-[10px] font-mono ${inGameTreeOpen ? "text-emerald-400" : "text-neutral-500"}`}>
+              {inGameTreeOpen ? "OPEN" : "CLOSED"}
+            </span>
+            <select
+              value={passiveTreeHotkey}
+              onChange={(e) => onChangePassiveTreeHotkey(e.target.value)}
+              className="rounded-lg bg-black border border-neutral-700 px-2 py-0.5 text-xs font-mono text-neutral-100 focus:outline-none focus:border-indigo-500"
+            >
+              {["P", "T", "K", "Tab", "F1", "F2", "F3", "F4", "Off"].map((k) => (
+                <option key={k} value={k}>
+                  {k}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </section>
 
@@ -205,6 +236,22 @@ export function ClientLogAndSimulatorCard({
             className="rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2.5 py-1.5 text-left text-amber-200 cursor-pointer"
           >
             6. Enter Labyrinth
+          </button>
+
+          <button
+            type="button"
+            onClick={onToggleSimInGameTree}
+            className={`col-span-2 rounded-lg border px-2.5 py-1.5 text-left inline-flex items-center justify-between cursor-pointer ${
+              inGameTreeOpen
+                ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-200"
+                : "border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-200"
+            }`}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <GitBranch className="h-3.5 w-3.5" />
+              7. Toggle In-Game Passive Tree ({passiveTreeHotkey})
+            </span>
+            <span className="font-mono text-[10px]">{inGameTreeOpen ? "TREE OPEN" : "CLOSED"}</span>
           </button>
         </div>
       </section>

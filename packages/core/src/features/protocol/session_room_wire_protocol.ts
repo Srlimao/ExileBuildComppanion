@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const HudContextModeSchema = z.enum(["FIELD", "TOWN", "LAB", "STANDBY"]);
+export const HudContextModeSchema = z.enum(["FIELD", "TOWN", "LAB", "TREE", "STANDBY"]);
 export type HudContextMode = z.infer<typeof HudContextModeSchema>;
 
 export const DeviceFormFactorSchema = z.enum([
@@ -146,14 +146,27 @@ export interface GearHygieneIssue {
   message: string;
 }
 
+export interface PassiveTreeSpecSummary {
+  id: string;
+  title: string;
+  minLevel: number;
+  nodeIds: string[];
+  masteries: Record<string, string>;
+}
+
 export interface PassiveTreeTelemetry {
   specName: string;
+  activeSpecId?: string;
   targetNodeCount: number;
   allocatedTargetCount: number;
   remainingNodeIds: string[];
   remainingNotableNames: string[];
   respecPointsNeeded: number;
   targetNodesPreview: Array<{ id: string; x: number; y: number; allocated: boolean; label: string }>;
+  allocatedNodeIds?: string[];
+  localOverrideNodeIds?: string[];
+  allocatedMasteries?: Record<string, string>;
+  specs?: PassiveTreeSpecSummary[];
 }
 
 export interface LabTelemetry {
@@ -182,6 +195,7 @@ export interface HudSessionSnapshot {
   characterSyncStatus: CharacterSyncStatus;
   lastCharacterSyncAt: number | null;
   mode: HudContextMode;
+  inGameTreeOpen?: boolean;
   currentAreaId: string;
   currentAreaName: string;
   currentAreaLevel: number;
@@ -216,6 +230,12 @@ export const ViewerCommandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("viewer:request_regex_copy"), regex: z.string().optional() }),
   z.object({ type: z.literal("viewer:save_widget_layout"), deviceFormFactor: DeviceFormFactorSchema, mode: HudContextModeSchema, items: z.array(WidgetGridItemLayoutSchema) }),
   z.object({ type: z.literal("viewer:import_poelab_daily"), rawJson: z.string() }),
+  z.object({
+    type: z.literal("viewer:toggle_allocated_nodes"),
+    nodeIds: z.array(z.string()),
+    allocated: z.boolean(),
+    clearOverrides: z.boolean().optional(),
+  }),
   z.object({ type: z.literal("viewer:ping") }),
 ]);
 export type ViewerToRoomMessage = z.infer<typeof ViewerCommandSchema>;

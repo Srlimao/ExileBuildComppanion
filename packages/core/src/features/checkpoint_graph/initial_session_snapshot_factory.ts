@@ -1,6 +1,7 @@
 import type { GameAdapter } from "@exile-hud/game-data";
 import type { ValidatedPobBuild } from "../pob_import/pob_endgame_fallback_validator.js";
 import type { HudSessionSnapshot } from "../protocol/session_room_wire_protocol.js";
+import { computePassiveTreeDiff } from "../character_telemetry_diff/passive_tree_diff_calculator.js";
 import { computeNextTownCurrencyBudget } from "../route_compiler/gem_quest_and_vendor_assigner.js";
 import { buildVendorSearchRegex } from "../vendor_regex/vendor_search_regex_builder.js";
 
@@ -14,11 +15,11 @@ export function buildInitialSessionSnapshot(params: {
   characterName?: string;
 }): HudSessionSnapshot {
   const { roomId, profileId, build, checkpoints, gemSteps, adapter, characterName } = params;
-  const activeSpec = build.treeSpecs[0];
-  const treeNodes = adapter.getPassiveTreeNodes();
-  const targetNodesPreview = (activeSpec?.nodeIds ?? []).slice(0, 120).map((id) => {
-    const meta = treeNodes[id];
-    return { id, x: meta?.x ?? 0, y: meta?.y ?? 0, allocated: false, label: meta?.name ?? id };
+  const passiveTree = computePassiveTreeDiff({
+    treeSpecs: build.treeSpecs,
+    allocatedHashes: [],
+    characterLevel: 1,
+    adapter,
   });
 
   const linkGroups =
@@ -59,6 +60,7 @@ export function buildInitialSessionSnapshot(params: {
     characterSyncStatus: "UNCONFIGURED",
     lastCharacterSyncAt: null,
     mode: "FIELD",
+    inGameTreeOpen: false,
     currentAreaId: "1_1_1",
     currentAreaName: "The Twilight Strand",
     currentAreaLevel: 1,
@@ -89,19 +91,7 @@ export function buildInitialSessionSnapshot(params: {
       upcomingBossWarning: adapter.getBossElementalWarnings(1)[0]?.warningText ?? null,
     },
     gearHygiene: [],
-    passiveTree: {
-      specName: activeSpec?.title ?? "Default Tree",
-      targetNodeCount: activeSpec?.nodeIds.length ?? 0,
-      allocatedTargetCount: 0,
-      remainingNodeIds: activeSpec?.nodeIds ?? [],
-      remainingNotableNames: (activeSpec?.nodeIds ?? [])
-        .map((id) => treeNodes[id])
-        .filter((m) => m && (m.isNotable || m.isKeystone))
-        .slice(0, 12)
-        .map((m) => m!.name),
-      respecPointsNeeded: 0,
-      targetNodesPreview,
-    },
+    passiveTree,
     lab: {
       hasDailyLayout: false,
       difficultyLabel: "Normal Labyrinth",

@@ -1,5 +1,6 @@
 import type { GameAdapter } from "@exile-hud/game-data";
 import type { HudContextMode, HudSessionSnapshot } from "../protocol/session_room_wire_protocol.js";
+import { recomputePassiveTreeTelemetry } from "../character_telemetry_diff/passive_tree_diff_calculator.js";
 import { computeNextTownCurrencyBudget } from "../route_compiler/gem_quest_and_vendor_assigner.js";
 import { buildVendorSearchRegex } from "../vendor_regex/vendor_search_regex_builder.js";
 import type { ParsedClientLogEvent } from "./zone_context_disambiguator.js";
@@ -10,6 +11,8 @@ export type TelemetryAction =
   | { type: "process_state"; running: boolean; nowMs?: number }
   | { type: "toggle_checkpoint"; checkpointId: string; completed?: boolean }
   | { type: "toggle_gem"; gemStepId: string; completed?: boolean }
+  | { type: "in_game_tree_state"; open: boolean }
+  | { type: "toggle_allocated_nodes"; nodeIds: string[]; allocated: boolean; clearOverrides?: boolean }
   | { type: "tick_timer"; deltaMs: number };
 
 export function computeEffectiveMode(areaId: string, poeRunning: boolean, adapter: GameAdapter): HudContextMode {
@@ -83,6 +86,7 @@ function transitionToZone(
     ...state,
     version: state.version + 1,
     mode,
+    inGameTreeOpen: false,
     currentAreaId: areaId,
     currentAreaName: areaName,
     currentAreaLevel: areaLevel > 0 ? areaLevel : state.currentAreaLevel,
@@ -126,7 +130,31 @@ export function reduceTelemetrySession(
       poeRunning: action.running,
       runTimerRunning: action.running,
       mode,
+      inGameTreeOpen: action.running ? Boolean(state.inGameTreeOpen) : false,
     };
+  }
+
+  if (action.type === "in_game_tree_state") {
+    if (Boolean(state.inGameTreeOpen) === action.open) return state;
+    return { ...state, version: state.version + 1, inGameTreeOpen: action.open };
+  }
+
+  if (action.type === "toggle_allocated_nodes") {
+    const nextOverrides = new Set<string>(
+      action.clearOverrides ? [] : (state.passiveTree.localOverrideNodeIds ?? []),
+    );
+    if (!action.clearOverrides) {
+      for (const id of action.nodeIds) {
+        if (action.allocated) nextOverrides.add(id);
+        else nextOverrides.delete(id);
+      }
+    }
+    const passiveTree = recomputePassiveTreeTelemetry({
+      passiveTree: { ...state.passiveTree, localOverrideNodeIds: [...nextOverrides] },
+      characterLevel: state.characterLevel,
+      adapter,
+    });
+    return { ...state, version: state.version + 1, passiveTree };
   }
 
   if (action.type === "toggle_checkpoint") {

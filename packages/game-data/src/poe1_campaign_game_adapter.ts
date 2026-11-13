@@ -12,6 +12,7 @@ import {
   poe1DefaultRoutes,
   poe1Gems,
   poe1KillWaypoints,
+  poe1PassiveTreeGraphMeta,
   poe1PassiveTreeNodes,
   poe1Quests,
   poe1VaalGemLookup,
@@ -119,6 +120,10 @@ export class Poe1CampaignGameAdapter implements GameAdapter {
 
   getPassiveTreeNodes() {
     return poe1PassiveTreeNodes;
+  }
+
+  getPassiveTreeGraphMeta() {
+    return poe1PassiveTreeGraphMeta;
   }
 
   resolveAreaById(areaId: string): AreaDefinition | null {

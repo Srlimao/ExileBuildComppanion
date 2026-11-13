@@ -88,14 +88,18 @@ export function App() {
           clientLogFound={ctl.clientLogFound}
           autoClipboard={ctl.snapshot?.autoClipboardEnabled ?? true}
           poeRunning={ctl.snapshot?.poeRunning ?? false}
+          inGameTreeOpen={ctl.snapshot?.inGameTreeOpen ?? false}
+          passiveTreeHotkey={ctl.passiveTreeHotkey}
           simulatedOutage={ctl.simulatedOutage}
           activeVendorRegex={ctl.snapshot?.activeVendorRegex ?? ""}
           onSetLogPath={ctl.setLogPath}
           onAutoDetectPath={ctl.autoDetectPath}
           onToggleAutoClipboard={ctl.toggleAutoClipboard}
+          onChangePassiveTreeHotkey={ctl.setPassiveTreeHotkey}
           onCopyRegexNow={ctl.copyRegexNow}
           onSimulateLogLines={ctl.simulateLogLines}
           onToggleSimPoeRunning={ctl.toggleSimPoeRunning}
+          onToggleSimInGameTree={ctl.toggleSimInGameTree}
           onToggleSimulatedOutage={ctl.toggleSimulatedOutage}
         />
       )}

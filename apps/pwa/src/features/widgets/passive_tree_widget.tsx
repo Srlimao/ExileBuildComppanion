@@ -1,9 +1,36 @@
 import type { HudSessionSnapshot } from "@exile-hud/core";
-import { GitBranch } from "lucide-react";
+import { poe1GameAdapter } from "@exile-hud/game-data";
+import { GitBranch, Maximize2 } from "lucide-react";
 
-export function PassiveTreeWidget({ snapshot }: { snapshot: HudSessionSnapshot }) {
+interface PassiveTreeWidgetProps {
+  snapshot: HudSessionSnapshot;
+  onOpenFullTree?: () => void;
+}
+
+export function PassiveTreeWidget({ snapshot, onOpenFullTree }: PassiveTreeWidgetProps) {
   const tree = snapshot.passiveTree;
   const pts = tree.targetNodesPreview;
+  const graphNodes = poe1GameAdapter.getPassiveTreeNodes();
+  const ptById = new Map(pts.map((pt) => [pt.id, pt]));
+
+  const edges: { key: string; x1: number; y1: number; x2: number; y2: number; allocated: boolean }[] = [];
+  for (const pt of pts) {
+    const meta = graphNodes[pt.id];
+    if (!meta?.out) continue;
+    for (const nbrId of meta.out) {
+      if (pt.id >= nbrId) continue;
+      const nbr = ptById.get(nbrId);
+      if (!nbr) continue;
+      edges.push({
+        key: `${pt.id}_${nbrId}`,
+        x1: pt.x,
+        y1: pt.y,
+        x2: nbr.x,
+        y2: nbr.y,
+        allocated: pt.allocated && nbr.allocated,
+      });
+    }
+  }
 
   let minX = -100;
   let maxX = 100;
@@ -32,6 +59,16 @@ export function PassiveTreeWidget({ snapshot }: { snapshot: HudSessionSnapshot }
               Respec: {tree.respecPointsNeeded}
             </span>
           )}
+          {onOpenFullTree && (
+            <button
+              type="button"
+              onClick={onOpenFullTree}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 font-sans font-semibold cursor-pointer"
+            >
+              <Maximize2 className="h-3 w-3" />
+              <span>Open Full Tree →</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -41,6 +78,19 @@ export function PassiveTreeWidget({ snapshot }: { snapshot: HudSessionSnapshot }
             viewBox={`${minX} ${minY} ${Math.max(100, maxX - minX)} ${Math.max(100, maxY - minY)}`}
             className="w-full h-36"
           >
+            {edges.map((edge) => (
+              <line
+                key={edge.key}
+                x1={edge.x1}
+                y1={edge.y1}
+                x2={edge.x2}
+                y2={edge.y2}
+                stroke={edge.allocated ? "#10b981" : "#eab308"}
+                strokeWidth={edge.allocated ? 36 : 26}
+                strokeLinecap="round"
+                opacity={edge.allocated ? 0.75 : 0.45}
+              />
+            ))}
             {pts.map((node) => (
               <circle
                 key={node.id}

@@ -36,12 +36,14 @@ import { createHostRelaySession, type HostRelaySession } from "./relay_host_conn
 import {
   clearPoesessid,
   detectClientLogPath,
-  pollCharacterWindow,
   savePoesessid,
+  setInGameTreeOpenIpc,
+  setPassiveTreeHotkeyIpc,
   setTrayTelemetryStatus,
   subscribeTauriListeners,
   writeVendorRegexClipboard,
 } from "./tauri_ipc_adapter.js";
+import { executeGggCharacterSync } from "./passive_tree_hotkey_sync_helper.js";
 
 export function useDesktopHostController() {
   const [initPrefs] = useState(loadHostIdentityPrefs);
@@ -51,6 +53,7 @@ export function useDesktopHostController() {
   const [relayUrl, setRelayUrl] = useState(initPrefs.relayUrl);
   const [accountName, setAccountName] = useState(initPrefs.accountName);
   const [characterName, setCharacterName] = useState(initPrefs.characterName);
+  const [passiveTreeHotkey, setPassiveTreeHotkey] = useState(initPrefs.passiveTreeHotkey);
 
   const [snapshot, setSnapshot] = useState<HudSessionSnapshot | null>(null);
   const [activeBuild, setActiveBuild] = useState<ValidatedPobBuild | null>(null);
@@ -74,18 +77,38 @@ export function useDesktopHostController() {
   const relayRef = useRef<HostRelaySession | null>(null);
   const snapshotRef = useRef<HudSessionSnapshot | null>(null);
   const activeBuildRef = useRef<ValidatedPobBuild | null>(null);
+  const syncPrefsRef = useRef({ accountName, characterName, hasStoredSession, simulatedOutage });
   snapshotRef.current = snapshot;
   activeBuildRef.current = activeBuild;
+  syncPrefsRef.current = { accountName, characterName, hasStoredSession, simulatedOutage };
 
   useEffect(() => {
-    saveHostIdentityPrefs({ roomId, hostSecret, pin, relayUrl, accountName, characterName });
-  }, [roomId, hostSecret, pin, relayUrl, accountName, characterName]);
+    saveHostIdentityPrefs({ roomId, hostSecret, pin, relayUrl, accountName, characterName, passiveTreeHotkey });
+  }, [roomId, hostSecret, pin, relayUrl, accountName, characterName, passiveTreeHotkey]);
+
+  useEffect(() => {
+    void setPassiveTreeHotkeyIpc(passiveTreeHotkey);
+  }, [passiveTreeHotkey]);
 
   const pushPatch = useCallback((next: HudSessionSnapshot, eventTag: string) => {
     setSnapshot(next);
     snapshotRef.current = next;
     relayRef.current?.sendPatch(next, eventTag);
   }, []);
+
+  const runGggSync = useCallback(
+    (force: boolean) => {
+      void executeGggCharacterSync({
+        force,
+        ...syncPrefsRef.current,
+        activeBuild: activeBuildRef.current,
+        getLatestSnapshot: () => snapshotRef.current,
+        pushPatch,
+        setSyncMessage,
+      });
+    },
+    [pushPatch],
+  );
 
   const connectRelay = useCallback(
     (overrideSnap?: HudSessionSnapshot, overridePin?: string, overrideRelayUrl?: string) => {
@@ -111,11 +134,12 @@ export function useDesktopHostController() {
           if (!snapshotRef.current) return;
           const outcome = applyViewerCommandToSnapshot(snapshotRef.current, cmd);
           if (outcome.copyRegex) void writeVendorRegexClipboard(outcome.copyRegex);
+          if (outcome.requestSync) runGggSync(true);
           if (outcome.nextSnapshot && outcome.eventTag) pushPatch(outcome.nextSnapshot, outcome.eventTag);
         },
       });
     },
-    [hostSecret, pin, pushPatch, relayUrl, roomId],
+    [hostSecret, pin, pushPatch, relayUrl, roomId, runGggSync],
   );
 
   useEffect(() => {
@@ -160,30 +184,17 @@ export function useDesktopHostController() {
       if (logged === cur) return;
       const next = syncBuildSetsForLevel(logged, activeBuildRef.current);
       if (next.characterName !== cur.characterName) setCharacterName(next.characterName);
-      if (next.mode === "TOWN" && cur.mode !== "TOWN" && next.autoClipboardEnabled && next.activeVendorRegex) {
-        void writeVendorRegexClipboard(next.activeVendorRegex);
+      if (cur.currentAreaId !== next.currentAreaId && cur.inGameTreeOpen) {
+        void setInGameTreeOpenIpc(false);
+      }
+      if (next.mode === "TOWN" && cur.mode !== "TOWN") {
+        if (next.autoClipboardEnabled && next.activeVendorRegex) void writeVendorRegexClipboard(next.activeVendorRegex);
+        runGggSync(false);
       }
       pushPatch(next, "client_log_batch");
     },
-    [pushPatch],
+    [pushPatch, runGggSync],
   );
-
-  const handleForceSync = useCallback(async () => {
-    const cur = snapshotRef.current;
-    if (!cur || !activeBuild) return;
-    if (simulatedOutage) {
-      setSyncMessage("Simulated GGG 429 outage active — using offline fallback targets");
-      pushPatch({ ...cur, version: cur.version + 1, characterSyncStatus: "OFFLINE_FALLBACK" }, "sim_429_outage");
-      return;
-    }
-    if (!accountName.trim() || !characterName.trim()) {
-      setSyncMessage("Set AccountName#1234 and CharacterName first");
-      return;
-    }
-    const res = await pollCharacterWindow({ accountName, characterName, usePoesessid: hasStoredSession, force: true });
-    setSyncMessage(res.ok ? `Synced via ${res.usedPoesessid ? "POESESSID" : "Public API"}` : res.error);
-    pushPatch(applyGggCharacterResponseToSnapshot(cur, activeBuild, res), "ggg_sync");
-  }, [accountName, activeBuild, characterName, hasStoredSession, pushPatch, simulatedOutage]);
 
   useEffect(() => {
     let cleanup: () => void = () => undefined;
@@ -200,8 +211,13 @@ export function useDesktopHostController() {
           pushPatch({ ...snapshotRef.current, clientLogHooked: true }, "log_auto_switched");
         }
       },
+      onPassiveTreeState: (open) => {
+        const cur = snapshotRef.current;
+        if (cur) pushPatch(reduceTelemetrySession(cur, { type: "in_game_tree_state", open }, poe1GameAdapter), "poe_tree_hotkey");
+        if (open) runGggSync(false);
+      },
       onTrayAction: (action) => {
-        if (action === "force-sync") void handleForceSync();
+        if (action === "force-sync") runGggSync(true);
         if (action === "copy-regex" && snapshotRef.current?.activeVendorRegex) {
           void writeVendorRegexClipboard(snapshotRef.current.activeVendorRegex);
         }
@@ -210,7 +226,7 @@ export function useDesktopHostController() {
       cleanup = fn;
     });
     return () => cleanup();
-  }, [handleForceSync, processLogLines, pushPatch]);
+  }, [processLogLines, pushPatch, runGggSync]);
 
   const applyBuild = async (nextCfg: { pobInput: string; cachedXml?: string | null; selection?: PobSetSelection | null; leagueStart: boolean; customRouteText: string }) => {
     setCompileLoading(true);
@@ -249,11 +265,19 @@ export function useDesktopHostController() {
     roomId, pin, relayUrl, snapshot, pobInput, pobPreview, pobSelection, pobStoragePath,
     leagueStart, customRouteText, compileLoading, compileError, accountName, characterName,
     hasStoredSession, syncMessage, simulatedOutage, clientLogPath, clientLogFound,
-    relayConnected, relayError, viewers, setAccountName, setCharacterName, applyBuild,
+    relayConnected, relayError, viewers, passiveTreeHotkey, setPassiveTreeHotkey,
+    setAccountName, setCharacterName, applyBuild,
     inspectBuild: (rawPobInput: string, previousSelection?: PobSetSelection | null) => inspectPobBuildSets({ rawPobInput, previousSelection }),
     openStorageFolder: openPobStorageFolder,
-    forceSync: handleForceSync,
+    forceSync: async () => runGggSync(true),
     simulateLogLines: processLogLines,
+    toggleSimInGameTree: () => {
+      const cur = snapshotRef.current;
+      if (!cur) return;
+      const open = !cur.inGameTreeOpen;
+      void setInGameTreeOpenIpc(open);
+      pushPatch(reduceTelemetrySession(cur, { type: "in_game_tree_state", open }, poe1GameAdapter), "sim_tree");
+    },
     reconnectRelay: () => connectRelay(),
     setRelayUrl: (u: string) => { setRelayUrl(u); connectRelay(undefined, undefined, u); },
     rotatePin: () => { const nextPin = generateRoomPin(); setPin(nextPin); connectRelay(undefined, nextPin); },

@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use tauri::{AppHandle, Manager, State, WindowEvent};
+use tauri::{AppHandle, Emitter, Manager, State, WindowEvent};
 
 #[path = "features/system_tray/tray_icon_and_menu_controller.rs"]
 mod tray_icon_and_menu_controller;
@@ -26,6 +26,9 @@ mod windows_clipboard_writer;
 #[path = "features/pob_profile_store/local_pob_profile_disk_store.rs"]
 mod local_pob_profile_disk_store;
 
+#[path = "features/passive_tree_hotkey/foreground_poe_hotkey_poller.rs"]
+pub(crate) mod foreground_poe_hotkey_poller;
+
 mod background_telemetry_watchers;
 
 use local_pob_profile_disk_store::{
@@ -44,6 +47,7 @@ pub struct HostSharedState {
     pub tailer: Arc<Mutex<ByteOffsetTailer>>,
     pub circuit_breaker: Arc<Mutex<CircuitBreakerState>>,
     pub manual_log_override: Arc<Mutex<bool>>,
+    pub tree_hotkey_tracker: Arc<Mutex<foreground_poe_hotkey_poller::PassiveTreeHotkeyTracker>>,
 }
 
 #[tauri::command]
@@ -164,6 +168,24 @@ fn set_tray_telemetry_status(app: AppHandle, status: String, tooltip: String) ->
 }
 
 #[tauri::command]
+fn set_passive_tree_hotkey(hotkey: String, state: State<'_, HostSharedState>) -> bool {
+    state
+        .tree_hotkey_tracker
+        .lock()
+        .map(|mut guard| guard.set_hotkey_label(&hotkey))
+        .unwrap_or(false)
+}
+
+#[tauri::command]
+fn set_in_game_tree_open(open: bool, app: AppHandle, state: State<'_, HostSharedState>) {
+    if let Ok(mut guard) = state.tree_hotkey_tracker.lock() {
+        if guard.set_tree_open(open) {
+            let _ = app.emit("poe-passive-tree-state", open);
+        }
+    }
+}
+
+#[tauri::command]
 fn get_pob_profile_storage_path(app: AppHandle) -> Result<String, String> {
     resolve_profile_file_path(&app).map(|p| p.to_string_lossy().to_string())
 }
@@ -234,6 +256,8 @@ pub fn run() {
             load_saved_pob_profile,
             save_pob_profile,
             open_app_data_folder,
+            set_passive_tree_hotkey,
+            set_in_game_tree_open,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Exile Companion Control Center");

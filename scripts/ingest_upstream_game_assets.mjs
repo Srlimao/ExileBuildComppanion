@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
+import { ingestGggPassiveTree } from "./ingest_ggg_passive_tree.mjs";
 
 const ROOT = process.cwd();
 const CACHE_EXILE_LEVELING = path.join(ROOT, ".upstream-cache", "exile-leveling");
@@ -17,12 +18,6 @@ const CACHE_EXILE_UI_ZONES = path.join(
 );
 const GAME_DATA_DIR = path.join(ROOT, "packages", "game-data", "data", "poe1");
 const PWA_ASSETS_DIR = path.join(ROOT, "apps", "pwa", "public", "assets", "poe1");
-
-const ANGLES_16 = [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330];
-const ANGLES_40 = [
-  0, 10, 20, 30, 40, 45, 50, 60, 70, 80, 90, 100, 110, 120, 130, 135, 140, 150, 160, 170, 180, 190,
-  200, 210, 220, 225, 230, 240, 250, 260, 270, 280, 290, 300, 310, 315, 320, 330, 340, 350,
-];
 
 function ensureUpstreamExists() {
   if (!fs.existsSync(CACHE_EXILE_LEVELING) || !fs.existsSync(CACHE_EXILE_UI_ZONES)) {
@@ -74,46 +69,6 @@ function copyExileLevelingData() {
       }
     }
   }
-}
-
-function computeNodeCoords(tree, node) {
-  const group = tree.groups[node.group];
-  if (!group) return { x: 0, y: 0 };
-  const orbit = Number(node.orbit || 0);
-  const orbitIndex = Number(node.orbitindex || 0);
-  const radius = Number(tree.constants.orbitradii[orbit] || 0);
-  const skillsPerOrbit = Number(tree.constants.skillsperorbit[orbit] || 1);
-  let angleDeg;
-  if (skillsPerOrbit === 16) angleDeg = ANGLES_16[orbitIndex] ?? 0;
-  else if (skillsPerOrbit === 40) angleDeg = ANGLES_40[orbitIndex] ?? 0;
-  else angleDeg = (360 / skillsPerOrbit) * orbitIndex;
-  const rad = (angleDeg * Math.PI) / 180;
-  return {
-    x: Math.round(Number(group.x) + radius * Math.sin(rad)),
-    y: Math.round(Number(group.y) - radius * Math.cos(rad)),
-  };
-}
-
-function extractPassiveTreeNodes() {
-  const rawPath = path.join(CACHE_EXILE_UI, "data", "global", "[leveltracker] tree 3_29.json");
-  const rawTree = JSON.parse(fs.readFileSync(rawPath, "utf8"));
-  const compactNodes = {};
-  for (const [id, node] of Object.entries(rawTree.nodes)) {
-    if (node.classstartindex !== undefined) continue;
-    const { x, y } = computeNodeCoords(rawTree, node);
-    compactNodes[id] = {
-      id,
-      name: node.name || `Node ${id}`,
-      isNotable: node.isnotable === "1",
-      isKeystone: node.iskeystone === "1",
-      isMastery: node.ismastery === "1",
-      stats: Array.isArray(node.stats) ? node.stats : [],
-      x,
-      y,
-    };
-  }
-  fs.writeFileSync(path.join(GAME_DATA_DIR, "passive_tree_nodes.json"), JSON.stringify(compactNodes));
-  return Object.keys(compactNodes).length;
 }
 
 async function convertZoneLayoutsToWebp() {
@@ -175,6 +130,11 @@ Source: https://github.com/Lailloken/Exile-UI
 \`\`\`
 ${exileUiLic}
 \`\`\`
+
+## grindinggear/skilltree-export
+Source: https://github.com/grindinggear/skilltree-export (Tag \`3.30.0\`)
+
+Official Path of Exile Passive Skill Tree export JSON (\`data.json\`) provided publicly by Grinding Gear Games for community build planners and tools.
 `;
   fs.writeFileSync(path.join(ROOT, "THIRD_PARTY_LICENSES.md"), content);
 }
@@ -182,7 +142,7 @@ ${exileUiLic}
 async function main() {
   ensureUpstreamExists();
   copyExileLevelingData();
-  const nodeCount = extractPassiveTreeNodes();
+  const { nodeCount } = await ingestGggPassiveTree(ROOT);
   const layoutCount = await convertZoneLayoutsToWebp();
   writeThirdPartyLicenses();
   console.log(`Ingested PoE1 assets: ${nodeCount} passive tree nodes, ${layoutCount} WebP zone layouts.`);

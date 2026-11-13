@@ -27,6 +27,7 @@ import { DeferredBacklogWidget } from "./features/widgets/deferred_backlog_widge
 import { GearHygieneWidget } from "./features/widgets/gear_hygiene_widget.js";
 import { LabCompassWidget } from "./features/widgets/lab_compass_widget.js";
 import { PassiveTreeWidget } from "./features/widgets/passive_tree_widget.js";
+import { PassiveTreeCommandView } from "./features/passive_tree_visualizer/passive_tree_command_view.js";
 import { RegexSyncWidget } from "./features/widgets/regex_sync_widget.js";
 import { ResistanceCapWidget } from "./features/widgets/resistance_cap_widget.js";
 import { RunTimerWidget } from "./features/widgets/run_timer_widget.js";
@@ -140,6 +141,27 @@ export function App() {
     }
   }, []);
 
+  const handleToggleAllocatedNodes = useCallback(
+    (nodeIds: string[], allocated: boolean, clearOverrides?: boolean) => {
+      setSnapshot((prev) =>
+        prev
+          ? reduceTelemetrySession(
+              prev,
+              { type: "toggle_allocated_nodes", nodeIds, allocated, clearOverrides },
+              poe1GameAdapter,
+            )
+          : prev,
+      );
+      clientRef.current?.sendCommand({
+        type: "viewer:toggle_allocated_nodes",
+        nodeIds,
+        allocated,
+        clearOverrides,
+      });
+    },
+    [],
+  );
+
   if (!snapshot) {
     return (
       <QrPinJoinModal
@@ -159,7 +181,8 @@ export function App() {
     );
   }
 
-  const effectiveMode: HudContextMode = previewModeOverride ?? snapshot.mode;
+  const autoMode: HudContextMode = snapshot.inGameTreeOpen ? "TREE" : snapshot.mode;
+  const effectiveMode: HudContextMode = previewModeOverride ?? autoMode;
   const activeGridItems =
     layouts[formFactor]?.[effectiveMode] ?? getDefaultLayoutForMode(formFactor, effectiveMode);
 
@@ -174,7 +197,7 @@ export function App() {
       case "socket_links":
         return <SocketLinksWidget snapshot={snapshot} />;
       case "passive_tree":
-        return <PassiveTreeWidget snapshot={snapshot} />;
+        return <PassiveTreeWidget snapshot={snapshot} onOpenFullTree={() => setPreviewModeOverride("TREE")} />;
       case "regex_sync":
         return (
           <RegexSyncWidget
@@ -226,6 +249,12 @@ export function App() {
         <StandbySessionSummaryView
           snapshot={snapshot}
           onOverridePreview={() => setPreviewModeOverride("FIELD")}
+        />
+      ) : effectiveMode === "TREE" ? (
+        <PassiveTreeCommandView
+          snapshot={snapshot}
+          onToggleAllocatedNodes={handleToggleAllocatedNodes}
+          onTriggerManualSync={() => clientRef.current?.sendCommand({ type: "viewer:request_character_sync" })}
         />
       ) : (
         <CustomizableModeWidgetGrid

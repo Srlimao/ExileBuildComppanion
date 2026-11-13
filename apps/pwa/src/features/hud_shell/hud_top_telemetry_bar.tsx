@@ -42,7 +42,7 @@ export function HudTopTelemetryBar({
   onOpenPairingModal,
 }: HudTopTelemetryBarProps) {
   const xp = getXpRangeLabel(snapshot.characterLevel, snapshot.currentAreaLevel);
-  const modePills: HudContextMode[] = ["FIELD", "TOWN", "LAB"];
+  const modePills: HudContextMode[] = ["FIELD", "TOWN", "LAB", "TREE"];
 
   return (
     <header className="sticky top-0 z-30 bg-black/95 backdrop-blur border-b border-neutral-800 px-3 sm:px-5 py-3">
@@ -80,18 +80,25 @@ export function HudTopTelemetryBar({
           <div className="flex items-center rounded-lg bg-neutral-950 border border-neutral-800 p-0.5">
             {modePills.map((m) => {
               const selected = activeDisplayMode === m;
+              const isPinned = previewModeOverride === m;
+              const treePulse = m === "TREE" && Boolean(snapshot.inGameTreeOpen);
               return (
                 <button
                   key={m}
                   type="button"
+                  title={isPinned ? `${m} pinned (click to return to auto)` : `View ${m}`}
                   onClick={() => onSelectPreviewMode(previewModeOverride === m ? null : m)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-semibold tracking-wide transition-colors cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold tracking-wide transition-colors cursor-pointer ${
                     selected
                       ? "bg-indigo-600 text-white"
                       : "text-neutral-400 hover:text-neutral-200"
                   }`}
                 >
-                  {m}
+                  {treePulse && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
+                  )}
+                  <span>{m}</span>
+                  {isPinned && <span className="text-[9px] text-indigo-200">PIN</span>}
                 </button>
               );
             })}
@@ -111,19 +118,21 @@ export function HudTopTelemetryBar({
             {snapshot.characterSyncStatus === "OFFLINE_FALLBACK" ? "API Fallback" : "Sync"}
           </button>
 
-          <button
-            type="button"
-            onClick={onToggleEditLayout}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer ${
-              editLayoutMode
-                ? "border-indigo-500 bg-indigo-500/20 text-indigo-200"
-                : "border-neutral-800 bg-neutral-950 text-neutral-300 hover:border-neutral-700"
-            }`}
-          >
-            {editLayoutMode ? <Unlock className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
-            <LayoutGrid className="h-3.5 w-3.5" />
-            {editLayoutMode ? `Editing (${formFactor})` : "Layout"}
-          </button>
+          {activeDisplayMode !== "TREE" && activeDisplayMode !== "STANDBY" && (
+            <button
+              type="button"
+              onClick={onToggleEditLayout}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer ${
+                editLayoutMode
+                  ? "border-indigo-500 bg-indigo-500/20 text-indigo-200"
+                  : "border-neutral-800 bg-neutral-950 text-neutral-300 hover:border-neutral-700"
+              }`}
+            >
+              {editLayoutMode ? <Unlock className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+              <LayoutGrid className="h-3.5 w-3.5" />
+              {editLayoutMode ? `Editing (${formFactor})` : "Layout"}
+            </button>
+          )}
 
           <a
             href={LATEST_PORTABLE_EXE_URL}

@@ -1,7 +1,7 @@
 import type { GameAdapter, GemDefinition } from "@exile-hud/game-data";
 import { decodeBase64UrlToBytes } from "./pob_code_zlib_xml_decoder.js";
 import { extractPobItemSets, type ExtractedItemSet } from "./pob_xml_item_set_extractor.js";
-import { cleanPobColorCodes, inferLevelFromTitle } from "./pob_xml_text_helpers.js";
+import { cleanPobColorCodes, inferLevelFromTitle, parseXmlMasteryEffectsAttr } from "./pob_xml_text_helpers.js";
 
 export { cleanPobColorCodes, inferLevelFromTitle };
 
@@ -219,14 +219,15 @@ export function extractPobBuild(parsedXml: Record<string, any>, adapter: GameAda
     const csvNodes = String(specEl["@_nodes"] ?? "").split(",").map((s) => s.trim()).filter(Boolean);
     const urlText = Array.isArray(specEl.URL) ? String(specEl.URL[0] ?? "") : String(specEl.URL ?? "");
     const decodedUrl = urlText ? decodeTreeUrlNodes(urlText) : { nodeIds: [], masteries: {} };
+    const xmlMasteries = parseXmlMasteryEffectsAttr(specEl["@_masteryEffects"]);
     const nodeIds = csvNodes.length > 0 ? csvNodes : decodedUrl.nodeIds;
     return {
       id,
       title,
-      treeVersion: String(specEl["@_treeVersion"] ?? "3_29"),
+      treeVersion: String(specEl["@_treeVersion"] ?? "3_30"),
       minLevel: inferLevelFromTitle(title, idx === 0 ? 1 : 50),
       nodeIds,
-      masteries: decodedUrl.masteries,
+      masteries: { ...decodedUrl.masteries, ...xmlMasteries },
     };
   });
 

@@ -28,7 +28,11 @@ const DEMO_XML = `<PathOfBuilding>
       </Skill>
     </SkillSet>
   </Skills>
-  <Tree><Spec title="Campaign" treeVersion="3_29" nodes="26725,44103,14993,57226"/></Tree>
+  <Tree activeSpec="2">
+    <Spec title="Act 1 (Lv 1-12)" treeVersion="3_30" nodes="54447,57264,37569,36542,4397,11420,57226,21678,32210,8948,27929"/>
+    <Spec title="Act 3 Transition (Lv 28)" treeVersion="3_30" nodes="54447,57264,37569,36542,4397,11420,7938,1031,33755,21958,14021,55332,22088,16023,12738,53123"/>
+    <Spec title="Endgame (Lv 75)" treeVersion="3_30" masteryEffects="{34927,24180}" nodes="54447,57264,37569,36542,4397,11420,7938,1031,33755,21958,14021,55332,22088,14936,44184,61804,14040,18715,10893,60501,34927,16023,12738,53123,37114,61259"/>
+  </Tree>
   <Items activeItemSet="1">
     <Item id="1">
 Rarity: MAGIC
@@ -95,10 +99,19 @@ export function createInteractiveDemoSnapshot(): HudSessionSnapshot {
   snap = reduceTelemetrySession(snap, { type: "process_state", running: true }, poe1GameAdapter);
   const coastEvent = parseClientLogLine('2026/11/13 [INFO Client 1] Generating level 2 area "1_1_2" with seed 12345')!;
   snap = reduceTelemetrySession(snap, { type: "client_log", event: coastEvent, autoDetectCharacter: true }, poe1GameAdapter);
+  snap = reduceTelemetrySession(
+    snap,
+    {
+      type: "toggle_allocated_nodes",
+      nodeIds: ["54447", "57264", "37569", "36542", "4397", "11420", "57226", "21678"],
+      allocated: true,
+    },
+    poe1GameAdapter,
+  );
 
   return {
     ...snap,
-    characterLevel: 3,
+    characterLevel: 30,
     characterSyncStatus: "ONLINE_PUBLIC",
     runElapsedMs: 142_000,
     runTimerRunning: true,

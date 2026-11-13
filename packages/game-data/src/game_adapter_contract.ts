@@ -48,6 +48,11 @@ export interface CharacterStartGems {
   chest_gem_id: string;
 }
 
+export interface PassiveTreeMasteryEffect {
+  effectId: string;
+  stats: string[];
+}
+
 export interface PassiveTreeNodeMetadata {
   id: string;
   name: string;
@@ -57,6 +62,41 @@ export interface PassiveTreeNodeMetadata {
   stats: string[];
   x: number;
   y: number;
+  isJewelSocket?: boolean;
+  isAscendancyStart?: boolean;
+  isBlighted?: boolean;
+  ascendancyName?: string;
+  classStartIndex?: number;
+  group?: number;
+  orbit?: number;
+  orbitIndex?: number;
+  out?: string[];
+  masteryEffects?: PassiveTreeMasteryEffect[];
+}
+
+export interface PassiveTreeClassMeta {
+  classIndex: number;
+  name: string;
+  startNodeId: string;
+  ascendancies: string[];
+}
+
+export interface PassiveTreeGroupMeta {
+  x: number;
+  y: number;
+  orbits: number[];
+}
+
+export interface PassiveTreeGraphMetadata {
+  version: string;
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+  orbitRadii: number[];
+  skillsPerOrbit: number[];
+  classes: PassiveTreeClassMeta[];
+  groups: Record<string, PassiveTreeGroupMeta>;
 }
 
 export interface BossElementalWarning {
@@ -96,6 +136,7 @@ export interface GameAdapter {
   getDefaultRouteFiles(): Record<string, string>;
   getZoneLayoutVariants(areaId: string): string[];
   getPassiveTreeNodes(): Record<string, PassiveTreeNodeMetadata>;
+  getPassiveTreeGraphMeta(): PassiveTreeGraphMetadata;
   resolveAreaById(areaId: string): AreaDefinition | null;
   resolveAreasByName(localizedName: string): AreaDefinition[];
   getResistancePenaltyForAct(highestUnlockedAct: number, completedBossFlags: string[]): number;

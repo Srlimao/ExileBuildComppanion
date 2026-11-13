@@ -6,6 +6,7 @@
   "packageManager": "pnpm@11.2.2",
   "scripts": {
     "ingest-assets": "node scripts/ingest_upstream_game_assets.mjs",
+    "ingest:tree": "node scripts/ingest_ggg_passive_tree.mjs",
     "check:lines": "node scripts/verify_max_file_lines.mjs",
     "build": "pnpm --filter @exile-hud/core build && pnpm --filter @exile-hud/pwa build",
     "prepare": "pnpm run build",
