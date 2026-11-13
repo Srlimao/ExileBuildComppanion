@@ -1,0 +1,27 @@
+{
+  "name": "exile-build-companion-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Path of Exile Companion HUD monorepo (game-data, core engine, Cloudflare Worker/DO relay, OLED PWA, Tauri v2 tray host)",
+  "packageManager": "pnpm@11.2.2",
+  "scripts": {
+    "ingest-assets": "node scripts/ingest_upstream_game_assets.mjs",
+    "check:lines": "node scripts/verify_max_file_lines.mjs",
+    "build": "pnpm --filter @exile-hud/pwa build",
+    "build:all": "pnpm --filter @exile-hud/core build && pnpm --filter @exile-hud/pwa build && pnpm --filter @exile-hud/desktop build",
+    "test": "pnpm --filter @exile-hud/core test && pnpm --filter @exile-hud/edge-worker test",
+    "dev:edge": "pnpm --filter @exile-hud/pwa build && wrangler dev",
+    "dev:pwa": "pnpm --filter @exile-hud/pwa dev",
+    "dev:desktop": "pnpm --filter @exile-hud/desktop tauri dev"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250310.0",
+    "@types/node": "^22.13.10",
+    "@types/ws": "^8.18.0",
+    "sharp": "^0.33.5",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.8",
+    "wrangler": "^4.4.0",
+    "ws": "^8.18.1"
+  }
+}
