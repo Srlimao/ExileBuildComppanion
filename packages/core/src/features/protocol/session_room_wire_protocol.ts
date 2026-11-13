@@ -225,6 +225,7 @@ export interface HudSessionSnapshot {
 export const ViewerCommandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("viewer:toggle_checkpoint"), checkpointId: z.string(), completed: z.boolean().optional() }),
   z.object({ type: z.literal("viewer:toggle_gem"), gemStepId: z.string(), completed: z.boolean().optional() }),
+  z.object({ type: z.literal("viewer:reset_progress") }),
   z.object({ type: z.literal("viewer:request_character_sync") }),
   z.object({ type: z.literal("viewer:request_regex_copy"), regex: z.string().optional() }),
   z.object({ type: z.literal("viewer:save_widget_layout"), deviceFormFactor: DeviceFormFactorSchema, mode: HudContextModeSchema, items: z.array(WidgetGridItemLayoutSchema) }),

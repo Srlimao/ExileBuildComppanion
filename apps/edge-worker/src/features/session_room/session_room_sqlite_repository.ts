@@ -1,10 +1,13 @@
-import type {
-  DeviceFormFactor,
-  HudContextMode,
-  HudSessionSnapshot,
-  ModeWidgetGrids,
-  ViewerToRoomMessage,
-  WidgetGridItemLayout,
+import {
+  buildVendorSearchRegex,
+  computeNextTownCurrencyBudget,
+  resetSnapshotProgress,
+  type DeviceFormFactor,
+  type HudContextMode,
+  type HudSessionSnapshot,
+  type ModeWidgetGrids,
+  type ViewerToRoomMessage,
+  type WidgetGridItemLayout,
 } from "@exile-hud/core";
 
 export interface RoomMetaRecord {
@@ -127,26 +130,47 @@ export class SessionRoomSqliteRepository {
   applyViewerToggleToSnapshot(command: ViewerToRoomMessage): HudSessionSnapshot | null {
     if (
       command.type !== "viewer:toggle_checkpoint" &&
-      command.type !== "viewer:toggle_gem"
+      command.type !== "viewer:toggle_gem" &&
+      command.type !== "viewer:reset_progress"
     ) {
       return null;
     }
     const snapshot = this.getSnapshot();
     if (!snapshot) return null;
 
+    if (command.type === "viewer:reset_progress") {
+      const updated = resetSnapshotProgress(snapshot);
+      this.saveSnapshot(updated);
+      return updated;
+    }
+
     if (command.type === "viewer:toggle_checkpoint") {
       const nextCheckpoints = snapshot.checkpoints.map((cp) =>
-        cp.id === command.checkpointId ? { ...cp, completed: command.completed ?? !cp.completed } : cp,
+        cp.id === command.checkpointId
+          ? { ...cp, completed: command.completed ?? !cp.completed, softCompleted: false }
+          : cp,
       );
       const updated = { ...snapshot, version: snapshot.version + 1, checkpoints: nextCheckpoints };
       this.saveSnapshot(updated);
       return updated;
     }
 
-    const nextGems = snapshot.gemSteps.map((gem) =>
-      gem.id === command.gemStepId ? { ...gem, manualCompleted: command.completed ?? !gem.manualCompleted } : gem,
-    );
-    const updated = { ...snapshot, version: snapshot.version + 1, gemSteps: nextGems };
+    const nextGems = snapshot.gemSteps.map((gem) => {
+      if (gem.id !== command.gemStepId) return gem;
+      const nextDone = command.completed ?? !(gem.manualCompleted || gem.softAcquired);
+      return { ...gem, manualCompleted: nextDone, softAcquired: false };
+    });
+    const updated: HudSessionSnapshot = {
+      ...snapshot,
+      version: snapshot.version + 1,
+      gemSteps: nextGems,
+      nextTownCurrencyBudget: computeNextTownCurrencyBudget(nextGems, snapshot.highestUnlockedAct),
+      activeVendorRegex: buildVendorSearchRegex({
+        gemSteps: nextGems,
+        linkGroups: snapshot.linkGroups,
+        currentAct: snapshot.highestUnlockedAct,
+      }),
+    };
     this.saveSnapshot(updated);
     return updated;
   }

@@ -3,6 +3,7 @@ import { ClientLogAndSimulatorCard } from "./features/environment_panel/client_l
 import { CharacterSyncSettingsCard } from "./features/ggg_sync_panel/character_sync_settings_card.js";
 import { useDesktopHostController } from "./features/host_coordinator/use_desktop_host_controller.js";
 import { QrRoomPairingCard } from "./features/pairing_panel/qr_room_pairing_card.js";
+import { CampaignProgressResetBar } from "./features/pob_profile_panel/campaign_progress_reset_bar.js";
 import { PobBuildLoaderCard } from "./features/pob_profile_panel/pob_build_loader_card.js";
 
 type TabKey = "pairing" | "build" | "simulator";
@@ -35,6 +36,10 @@ export function App() {
           ))}
         </div>
       </header>
+
+      {ctl.snapshot && (
+        <CampaignProgressResetBar snapshot={ctl.snapshot} onResetProgress={ctl.resetProgress} />
+      )}
 
       {tab === "pairing" && (
         <QrRoomPairingCard

@@ -2,6 +2,7 @@ import type { GameAdapter } from "@exile-hud/game-data";
 import type { HudContextMode, HudSessionSnapshot } from "../protocol/session_room_wire_protocol.js";
 import { computeNextTownCurrencyBudget } from "../route_compiler/gem_quest_and_vendor_assigner.js";
 import { buildVendorSearchRegex } from "../vendor_regex/vendor_search_regex_builder.js";
+import { resetSnapshotProgress } from "./campaign_progress_persistence.js";
 import type { ParsedClientLogEvent } from "./zone_context_disambiguator.js";
 import { disambiguateZoneByName, isLabyrinthArea, isTownOrHideoutArea } from "./zone_context_disambiguator.js";
 
@@ -10,6 +11,7 @@ export type TelemetryAction =
   | { type: "process_state"; running: boolean; nowMs?: number }
   | { type: "toggle_checkpoint"; checkpointId: string; completed?: boolean }
   | { type: "toggle_gem"; gemStepId: string; completed?: boolean }
+  | { type: "reset_progress" }
   | { type: "in_game_tree_state"; open: boolean }
   | { type: "tick_timer"; deltaMs: number };
 
@@ -137,6 +139,10 @@ export function reduceTelemetrySession(
     return { ...state, version: state.version + 1, inGameTreeOpen: action.open };
   }
 
+  if (action.type === "reset_progress") {
+    return resetSnapshotProgress(state);
+  }
+
   if (action.type === "toggle_checkpoint") {
     const checkpoints = state.checkpoints.map((cp) =>
       cp.id === action.checkpointId
@@ -147,9 +153,11 @@ export function reduceTelemetrySession(
   }
 
   if (action.type === "toggle_gem") {
-    const gemSteps = state.gemSteps.map((gs) =>
-      gs.id === action.gemStepId ? { ...gs, manualCompleted: action.completed ?? !gs.manualCompleted } : gs,
-    );
+    const gemSteps = state.gemSteps.map((gs) => {
+      if (gs.id !== action.gemStepId) return gs;
+      const nextDone = action.completed ?? !(gs.manualCompleted || gs.softAcquired);
+      return { ...gs, manualCompleted: nextDone, softAcquired: false };
+    });
     return {
       ...state,
       version: state.version + 1,

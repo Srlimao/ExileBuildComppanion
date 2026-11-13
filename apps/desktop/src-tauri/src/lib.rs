@@ -26,11 +26,18 @@ mod windows_clipboard_writer;
 #[path = "features/pob_profile_store/local_pob_profile_disk_store.rs"]
 mod local_pob_profile_disk_store;
 
+#[path = "features/campaign_progress_store/local_campaign_progress_disk_store.rs"]
+mod local_campaign_progress_disk_store;
+
 #[path = "features/passive_tree_hotkey/foreground_poe_hotkey_poller.rs"]
 pub(crate) mod foreground_poe_hotkey_poller;
 
 mod background_telemetry_watchers;
 
+use local_campaign_progress_disk_store::{
+    load_campaign_progress_from_path, resolve_campaign_progress_file_path,
+    save_campaign_progress_to_path, SavedCampaignProgressRecord,
+};
 use local_pob_profile_disk_store::{
     load_saved_pob_profile_from_path, resolve_profile_file_path, save_pob_profile_to_path,
     SavedPobProfileRecord,
@@ -204,6 +211,19 @@ fn save_pob_profile(app: AppHandle, profile: SavedPobProfileRecord) -> Result<St
 }
 
 #[tauri::command]
+fn load_saved_campaign_progress(app: AppHandle) -> Result<Option<SavedCampaignProgressRecord>, String> {
+    let path = resolve_campaign_progress_file_path(&app)?;
+    load_campaign_progress_from_path(&path)
+}
+
+#[tauri::command]
+fn save_campaign_progress(app: AppHandle, progress: SavedCampaignProgressRecord) -> Result<String, String> {
+    let path = resolve_campaign_progress_file_path(&app)?;
+    save_campaign_progress_to_path(&path, &progress)?;
+    Ok(path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
 fn open_app_data_folder(app: AppHandle) -> Result<String, String> {
     let dir = app
         .path()
@@ -255,6 +275,8 @@ pub fn run() {
             get_pob_profile_storage_path,
             load_saved_pob_profile,
             save_pob_profile,
+            load_saved_campaign_progress,
+            save_campaign_progress,
             open_app_data_folder,
             set_passive_tree_hotkey,
             set_in_game_tree_open,

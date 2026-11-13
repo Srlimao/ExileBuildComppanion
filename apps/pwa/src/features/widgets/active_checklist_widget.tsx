@@ -1,5 +1,6 @@
 import type { HudSessionSnapshot } from "@exile-hud/core";
 import { Check, Circle, ListChecks } from "lucide-react";
+import { useState } from "react";
 
 interface ActiveChecklistWidgetProps {
   snapshot: HudSessionSnapshot;
@@ -7,12 +8,19 @@ interface ActiveChecklistWidgetProps {
 }
 
 export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveChecklistWidgetProps) {
+  const [showCompleted, setShowCompleted] = useState(false);
   const currentActSteps = snapshot.checkpoints.filter(
     (cp) => cp.sectionAct === snapshot.currentAct || cp.areaId === snapshot.currentAreaId,
   );
+  const doneCount = currentActSteps.filter((c) => c.completed).length;
   const firstPendingIdx = currentActSteps.findIndex((cp) => !cp.completed);
+  const allActDone = currentActSteps.length > 0 && firstPendingIdx === -1;
   const startIdx = Math.max(0, firstPendingIdx - 1);
-  const visible = currentActSteps.slice(startIdx, startIdx + 7);
+  const visible = showCompleted
+    ? currentActSteps
+    : allActDone
+      ? []
+      : currentActSteps.slice(startIdx, startIdx + 7);
 
   return (
     <div className="flex flex-col h-full gap-3">
@@ -21,9 +29,21 @@ export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveCh
           <ListChecks className="h-5 w-5 text-emerald-400" />
           <h2 className="text-lg font-bold text-white">Act {snapshot.currentAct} Checklist</h2>
         </div>
-        <span className="text-xs font-mono text-neutral-400 tabular-nums">
-          {currentActSteps.filter((c) => c.completed).length}/{currentActSteps.length}
-        </span>
+        <div className="flex items-center gap-2">
+          {doneCount > 0 && (
+            <button
+              type="button"
+              data-testid="toggle-completed-steps"
+              onClick={() => setShowCompleted((v) => !v)}
+              className="rounded-md border border-neutral-800 bg-black hover:border-neutral-700 px-2 py-0.5 text-[11px] font-mono text-neutral-300 cursor-pointer"
+            >
+              {showCompleted ? "Pending only" : "Show all"}
+            </button>
+          )}
+          <span className="text-xs font-mono text-neutral-400 tabular-nums">
+            {doneCount}/{currentActSteps.length}
+          </span>
+        </div>
       </div>
 
       <div className="space-y-2 overflow-y-auto pr-1">
@@ -51,7 +71,11 @@ export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveCh
                       : "border-neutral-600 text-neutral-600"
                 }`}
               >
-                {cp.completed || cp.softCompleted ? <Check className="h-3.5 w-3.5" /> : <Circle className="h-2.5 w-2.5" />}
+                {cp.completed || cp.softCompleted ? (
+                  <Check className="h-3.5 w-3.5" />
+                ) : (
+                  <Circle className="h-2.5 w-2.5" />
+                )}
               </span>
               <div className="min-w-0 flex-1">
                 <div className="text-base leading-snug font-medium">{cp.title}</div>
@@ -72,6 +96,12 @@ export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveCh
             </button>
           );
         })}
+
+        {allActDone && !showCompleted && (
+          <p className="text-sm text-emerald-400 py-6 text-center font-medium">
+            All Act {snapshot.currentAct} steps complete!
+          </p>
+        )}
       </div>
     </div>
   );

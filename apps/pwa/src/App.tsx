@@ -6,7 +6,15 @@ import type {
   WidgetGridItemLayout,
   WidgetId,
 } from "@exile-hud/core";
-import { parsePoelabDailyJson, reduceTelemetrySession } from "@exile-hud/core";
+import {
+  applySavedCampaignProgress,
+  createEmptyCampaignProgress,
+  extractCampaignProgress,
+  parsePoelabDailyJson,
+  reduceTelemetrySession,
+  resetSnapshotProgress,
+  type SavedCampaignProgress,
+} from "@exile-hud/core";
 import { poe1GameAdapter } from "@exile-hud/game-data";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DeathRespawnResumeBanner } from "./features/hud_shell/death_respawn_resume_banner.js";
@@ -36,6 +44,24 @@ import { VendorShoppingWidget } from "./features/widgets/vendor_shopping_widget.
 import { ZoneLayoutWidget } from "./features/widgets/zone_layout_widget.js";
 
 const LOCAL_LAYOUT_KEY = "exile_hud_widget_layouts_v1";
+const DEMO_PROGRESS_KEY = "exile_hud_demo_progress_v1";
+
+function loadDemoProgress(): SavedCampaignProgress | null {
+  try {
+    const raw = localStorage.getItem(DEMO_PROGRESS_KEY);
+    return raw ? (JSON.parse(raw) as SavedCampaignProgress) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveDemoProgress(record: SavedCampaignProgress): void {
+  try {
+    localStorage.setItem(DEMO_PROGRESS_KEY, JSON.stringify(record));
+  } catch {
+    // Ignore storage error
+  }
+}
 
 function loadCachedLayouts(): ModeWidgetGrids {
   try {
@@ -52,9 +78,10 @@ export function App() {
   const [roomId, setRoomId] = useState(() => params.get("room")?.toUpperCase() ?? "");
   const [pin, setPin] = useState(() => params.get("pin") ?? "");
   const [isDemo, setIsDemo] = useState(() => params.get("demo") === "1");
-  const [snapshot, setSnapshot] = useState<HudSessionSnapshot | null>(() =>
-    params.get("demo") === "1" ? createInteractiveDemoSnapshot() : null,
-  );
+  const [snapshot, setSnapshot] = useState<HudSessionSnapshot | null>(() => {
+    if (params.get("demo") !== "1") return null;
+    return applySavedCampaignProgress(createInteractiveDemoSnapshot(), loadDemoProgress());
+  });
   const [layouts, setLayouts] = useState<ModeWidgetGrids>(loadCachedLayouts);
   const [formFactor, setFormFactor] = useState<DeviceFormFactor>(detectDeviceFormFactor);
   const [editMode, setEditMode] = useState(false);
@@ -99,20 +126,39 @@ export function App() {
 
   const handleToggleCheckpoint = useCallback(
     (checkpointId: string) => {
-      setSnapshot((prev) =>
-        prev ? reduceTelemetrySession(prev, { type: "toggle_checkpoint", checkpointId }, poe1GameAdapter) : prev,
-      );
+      setSnapshot((prev) => {
+        if (!prev) return prev;
+        const next = reduceTelemetrySession(prev, { type: "toggle_checkpoint", checkpointId }, poe1GameAdapter);
+        if (isDemo) saveDemoProgress(extractCampaignProgress(next, { wasExplicitlyReset: false }));
+        return next;
+      });
       clientRef.current?.sendCommand({ type: "viewer:toggle_checkpoint", checkpointId });
     },
-    [],
+    [isDemo],
   );
 
-  const handleToggleGem = useCallback((gemStepId: string) => {
-    setSnapshot((prev) =>
-      prev ? reduceTelemetrySession(prev, { type: "toggle_gem", gemStepId }, poe1GameAdapter) : prev,
-    );
-    clientRef.current?.sendCommand({ type: "viewer:toggle_gem", gemStepId });
-  }, []);
+  const handleToggleGem = useCallback(
+    (gemStepId: string) => {
+      setSnapshot((prev) => {
+        if (!prev) return prev;
+        const next = reduceTelemetrySession(prev, { type: "toggle_gem", gemStepId }, poe1GameAdapter);
+        if (isDemo) saveDemoProgress(extractCampaignProgress(next, { wasExplicitlyReset: false }));
+        return next;
+      });
+      clientRef.current?.sendCommand({ type: "viewer:toggle_gem", gemStepId });
+    },
+    [isDemo],
+  );
+
+  const handleResetProgress = useCallback(() => {
+    setSnapshot((prev) => {
+      if (!prev) return prev;
+      const next = resetSnapshotProgress(prev);
+      if (isDemo) saveDemoProgress(createEmptyCampaignProgress());
+      return next;
+    });
+    clientRef.current?.sendCommand({ type: "viewer:reset_progress" });
+  }, [isDemo]);
 
   const handleUpdateLayout = useCallback(
     (mode: HudContextMode, items: WidgetGridItemLayout[]) => {
@@ -154,7 +200,7 @@ export function App() {
         }}
         onStartDemo={() => {
           setIsDemo(true);
-          setSnapshot(createInteractiveDemoSnapshot());
+          setSnapshot(applySavedCampaignProgress(createInteractiveDemoSnapshot(), loadDemoProgress()));
         }}
       />
     );
@@ -211,6 +257,7 @@ export function App() {
         onToggleEditLayout={() => setEditMode((v) => !v)}
         onSelectPreviewMode={(m) => setPreviewModeOverride(m)}
         onTriggerManualSync={() => clientRef.current?.sendCommand({ type: "viewer:request_character_sync" })}
+        onResetProgress={handleResetProgress}
         onOpenPairingModal={() => {
           setIsDemo(false);
           setSnapshot(null);

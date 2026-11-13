@@ -1,5 +1,6 @@
 import {
   reduceTelemetrySession,
+  resetSnapshotProgress,
   type HudSessionSnapshot,
   type PobBuildPreview,
   type PobSetSelection,
@@ -9,13 +10,16 @@ import {
 import { poe1GameAdapter } from "@exile-hud/game-data";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  initializeHostSessionWithProgress,
+  persistSnapshotProgressIfNeeded,
+} from "./campaign_progress_persistence_client.js";
+import {
   generateRoomPin,
   loadHostIdentityPrefs,
   saveHostIdentityPrefs,
 } from "./desktop_host_settings_storage.js";
 import {
   applyLogLinesToSnapshot,
-  bootstrapHostEnvironment,
   hookAndBootstrapLogPath,
   syncBuildSetsForLevel,
 } from "./client_log_sync_helper.js";
@@ -29,7 +33,6 @@ import {
 } from "./desktop_telemetry_bridge.js";
 import {
   compileAndSavePobProfile,
-  loadInitialSavedOrDefaultProfile,
   openPobStorageFolder,
 } from "./pob_profile_persistence_client.js";
 import { createHostRelaySession, type HostRelaySession } from "./relay_host_connection.js";
@@ -91,6 +94,7 @@ export function useDesktopHostController() {
   }, [passiveTreeHotkey]);
 
   const pushPatch = useCallback((next: HudSessionSnapshot, eventTag: string) => {
+    persistSnapshotProgressIfNeeded(snapshotRef.current, next, eventTag);
     setSnapshot(next);
     snapshotRef.current = next;
     relayRef.current?.sendPatch(next, eventTag);
@@ -144,27 +148,26 @@ export function useDesktopHostController() {
 
   useEffect(() => {
     void (async () => {
-      const loaded = await loadInitialSavedOrDefaultProfile({ roomId, characterName }, compilePobProfileToSnapshot);
-      const env = await bootstrapHostEnvironment(loaded.compiled.snapshot);
-      const synced = syncBuildSetsForLevel(env.snapshot, loaded.compiled.build);
+      const init = await initializeHostSessionWithProgress({ roomId, characterName }, compilePobProfileToSnapshot);
+      const { compiled, env, hydratedSnapshot } = init;
 
-      if (loaded.storagePath) setPobStoragePath(loaded.storagePath);
-      setPobInput(loaded.rawInput);
-      setLeagueStart(loaded.leagueStart);
-      setCustomRouteText(loaded.customRouteText);
-      setPobPreview(loaded.compiled.preview);
-      setPobSelection(loaded.compiled.selection);
-      setActiveBuild(loaded.compiled.build);
+      if (init.storagePath) setPobStoragePath(init.storagePath);
+      setPobInput(init.rawInput);
+      setLeagueStart(init.leagueStart);
+      setCustomRouteText(init.customRouteText);
+      setPobPreview(compiled.preview);
+      setPobSelection(compiled.selection);
+      setActiveBuild(compiled.build);
       setHasStoredSession(env.hasSession);
       if (env.detectedPath) setClientLogPathState(env.detectedPath);
       setClientLogFound(env.hooked);
-      if (synced.characterName && synced.characterName !== characterName) {
-        setCharacterName(synced.characterName);
+      if (hydratedSnapshot.characterName && hydratedSnapshot.characterName !== characterName) {
+        setCharacterName(hydratedSnapshot.characterName);
       }
 
-      setSnapshot(synced);
-      snapshotRef.current = synced;
-      connectRelay(synced);
+      setSnapshot(hydratedSnapshot);
+      snapshotRef.current = hydratedSnapshot;
+      connectRelay(hydratedSnapshot);
     })();
     return () => relayRef.current?.close();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -289,5 +292,6 @@ export function useDesktopHostController() {
     copyRegexNow: async () => { if (snapshot?.activeVendorRegex) await writeVendorRegexClipboard(snapshot.activeVendorRegex); },
     toggleSimPoeRunning: () => { const cur = snapshotRef.current; if (cur) pushPatch(reduceTelemetrySession(cur, { type: "process_state", running: !cur.poeRunning }, poe1GameAdapter), "sim_poe"); },
     toggleSimulatedOutage: () => { const next = !simulatedOutage; setSimulatedOutage(next); const cur = snapshotRef.current; if (cur && next) pushPatch({ ...cur, version: cur.version + 1, characterSyncStatus: "OFFLINE_FALLBACK" }, "sim_outage_on"); },
+    resetProgress: () => { const cur = snapshotRef.current; if (cur) pushPatch(resetSnapshotProgress(cur), "reset_progress"); },
   };
 }

@@ -1,5 +1,6 @@
 import type { DeviceFormFactor, HudContextMode, HudSessionSnapshot } from "@exile-hud/core";
-import { Download, LayoutGrid, Lock, Pin, RefreshCw, ShieldAlert, Unlock, Wifi, WifiOff } from "lucide-react";
+import { Download, LayoutGrid, Lock, Pin, RefreshCw, RotateCcw, ShieldAlert, Unlock, Wifi, WifiOff } from "lucide-react";
+import { useEffect, useState } from "react";
 import { LATEST_PORTABLE_EXE_URL } from "../desktop_download/github_latest_release_client.js";
 import type { ConnectionPhase } from "../pairing_and_connection/edge_websocket_room_client.js";
 
@@ -15,6 +16,7 @@ interface HudTopTelemetryBarProps {
   onToggleEditLayout: () => void;
   onSelectPreviewMode: (mode: HudContextMode | null) => void;
   onTriggerManualSync: () => void;
+  onResetProgress: () => void;
   onOpenPairingModal?: () => void;
 }
 
@@ -39,8 +41,17 @@ export function HudTopTelemetryBar({
   onToggleEditLayout,
   onSelectPreviewMode,
   onTriggerManualSync,
+  onResetProgress,
   onOpenPairingModal,
 }: HudTopTelemetryBarProps) {
+  const [confirmingReset, setConfirmingReset] = useState(false);
+
+  useEffect(() => {
+    if (!confirmingReset) return;
+    const timer = window.setTimeout(() => setConfirmingReset(false), 4000);
+    return () => window.clearTimeout(timer);
+  }, [confirmingReset]);
+
   const xp = getXpRangeLabel(snapshot.characterLevel, snapshot.currentAreaLevel);
   const modePills: HudContextMode[] = ["FIELD", "TOWN", "LAB", "TREE"];
 
@@ -127,6 +138,41 @@ export function HudTopTelemetryBar({
             <RefreshCw className="h-3.5 w-3.5" />
             {snapshot.characterSyncStatus === "OFFLINE_FALLBACK" ? "API Fallback" : "Sync"}
           </button>
+
+          {confirmingReset ? (
+            <div className="inline-flex items-center gap-1">
+              <button
+                type="button"
+                data-testid="pwa-confirm-reset-progress-btn"
+                onClick={() => {
+                  onResetProgress();
+                  setConfirmingReset(false);
+                }}
+                className="px-2.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-xs font-semibold text-white cursor-pointer"
+              >
+                Confirm Reset
+              </button>
+              <button
+                type="button"
+                data-testid="pwa-cancel-reset-progress-btn"
+                onClick={() => setConfirmingReset(false)}
+                className="px-2 py-1.5 rounded-lg border border-neutral-700 bg-neutral-950 hover:border-neutral-600 text-xs text-neutral-300 cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              data-testid="pwa-reset-progress-btn"
+              onClick={() => setConfirmingReset(true)}
+              title="Reset all checklist and gem checks back to zero"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-neutral-800 bg-neutral-950 text-neutral-300 hover:border-red-500/50 hover:text-red-300 text-xs font-medium cursor-pointer transition-colors"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>Reset Checks</span>
+            </button>
+          )}
 
           {activeDisplayMode !== "TREE" && activeDisplayMode !== "STANDBY" && (
             <button

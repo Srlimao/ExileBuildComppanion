@@ -1,4 +1,5 @@
 import {
+  applySavedCampaignProgress,
   assignGemsToCampaignRoute,
   auditGearAndFlaskHygiene,
   buildCheckpointGraph,
@@ -9,6 +10,7 @@ import {
   combineRouteActFiles,
   computePassiveTreeDiff,
   estimateEquippedResistances,
+  extractCampaignProgress,
   extractPobBuild,
   filterExtractedPobBuildBySelection,
   parsePoelabDailyJson,
@@ -16,6 +18,7 @@ import {
   preprocessRouteConditionals,
   reconcilePobSetSelection,
   reduceTelemetrySession,
+  resetSnapshotProgress,
   resolveAndDecodePobInput,
   validateAndEnrichPobBuild,
   verifySocketsAndGems,
@@ -109,24 +112,36 @@ export async function compilePobProfileToSnapshot(params: {
     };
   }
 
+  const prevVerifiedGems = new Map(
+    params.previousSnapshot.gemSteps.map((gs) => [gs.id, gs.verifiedByApi]),
+  );
+  const carriedGemSteps = fresh.gemSteps.map((gs) => ({
+    ...gs,
+    verifiedByApi: prevVerifiedGems.get(gs.id) ?? gs.verifiedByApi,
+  }));
+
   return {
     build,
     decodedXml: decoded.xmlString,
     preview,
     selection,
-    snapshot: {
-      ...fresh,
-      leagueStart: params.leagueStart,
-      poeRunning: params.previousSnapshot.poeRunning,
-      clientLogHooked: params.previousSnapshot.clientLogHooked,
-      autoClipboardEnabled: params.previousSnapshot.autoClipboardEnabled,
-      currentAreaId: params.previousSnapshot.currentAreaId,
-      currentAreaName: params.previousSnapshot.currentAreaName,
-      currentAreaLevel: params.previousSnapshot.currentAreaLevel,
-      currentAct: params.previousSnapshot.currentAct,
-      highestUnlockedAct: params.previousSnapshot.highestUnlockedAct,
-      mode: params.previousSnapshot.mode,
-    },
+    snapshot: applySavedCampaignProgress(
+      {
+        ...fresh,
+        gemSteps: carriedGemSteps,
+        leagueStart: params.leagueStart,
+        poeRunning: params.previousSnapshot.poeRunning,
+        clientLogHooked: params.previousSnapshot.clientLogHooked,
+        autoClipboardEnabled: params.previousSnapshot.autoClipboardEnabled,
+        currentAreaId: params.previousSnapshot.currentAreaId,
+        currentAreaName: params.previousSnapshot.currentAreaName,
+        currentAreaLevel: params.previousSnapshot.currentAreaLevel,
+        currentAct: params.previousSnapshot.currentAct,
+        highestUnlockedAct: params.previousSnapshot.highestUnlockedAct,
+        mode: params.previousSnapshot.mode,
+      },
+      extractCampaignProgress(params.previousSnapshot),
+    ),
   };
 }
 
@@ -249,6 +264,12 @@ export function applyViewerCommandToSnapshot(
         poe1GameAdapter,
       ),
       eventTag: "viewer_gem",
+    };
+  }
+  if (cmd.type === "viewer:reset_progress") {
+    return {
+      nextSnapshot: resetSnapshotProgress(cur),
+      eventTag: "viewer_reset_progress",
     };
   }
   if (cmd.type === "viewer:request_character_sync") {

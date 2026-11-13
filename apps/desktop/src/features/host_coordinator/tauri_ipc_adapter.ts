@@ -1,3 +1,5 @@
+import type { SavedCampaignProgress } from "@exile-hud/core";
+
 export interface ClientLogDetectionResult {
   detectedPath: string | null;
   checkedCandidates: string[];
@@ -136,6 +138,16 @@ export async function loadSavedPobProfileIpc(): Promise<TauriSavedPobProfileReco
 export async function savePobProfileIpc(profile: TauriSavedPobProfileRecord): Promise<string | null> {
   if (!isTauriRuntime()) return null;
   return callInvoke<string>("save_pob_profile", { profile });
+}
+
+export async function loadSavedCampaignProgressIpc(): Promise<SavedCampaignProgress | null> {
+  if (!isTauriRuntime()) return null;
+  return callInvoke<SavedCampaignProgress | null>("load_saved_campaign_progress");
+}
+
+export async function saveCampaignProgressIpc(progress: SavedCampaignProgress): Promise<string | null> {
+  if (!isTauriRuntime()) return null;
+  return callInvoke<string>("save_campaign_progress", { progress });
 }
 
 export async function openAppDataFolderIpc(): Promise<string | null> {

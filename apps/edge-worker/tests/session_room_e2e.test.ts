@@ -272,6 +272,14 @@ describe("Cloudflare Worker + SessionRoomDurableObject E2E", () => {
     );
     expect(regexForward.type).toBe("room:command_forwarded");
 
+    viewer.ws.send(JSON.stringify({ type: "viewer:toggle_checkpoint", checkpointId: "cp-1", completed: true }));
+    await viewer.nextMessage((m) => m.type === "room:state_patch" && m.eventTag === "viewer:toggle_checkpoint");
+    viewer.ws.send(JSON.stringify({ type: "viewer:reset_progress" }));
+    const resetForward = await host.nextMessage(
+      (m) => m.type === "room:command_forwarded" && m.command.type === "viewer:reset_progress",
+    );
+    expect(resetForward.type).toBe("room:command_forwarded");
+
     viewer.ws.close();
     host.ws.close();
 
@@ -280,6 +288,7 @@ describe("Cloudflare Worker + SessionRoomDurableObject E2E", () => {
     const rehydrated = await reconnected.nextMessage((m) => m.type === "room:hydrated_state");
     if (rehydrated.type !== "room:hydrated_state") throw new Error("Unexpected rehydrate");
     expect(rehydrated.snapshot.currentAreaName).toBe("The Coast");
+    expect(rehydrated.snapshot.checkpoints[0]?.completed).toBe(false);
     expect(rehydrated.layouts["tablet-landscape"]?.FIELD?.[0]?.widgetId).toBe("zone_layout");
     reconnected.ws.close();
   });
