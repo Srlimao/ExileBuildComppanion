@@ -40,6 +40,10 @@ export function extractPobbinId(input: string): string | null {
   return match?.[1] ?? null;
 }
 
+export function parsePobXmlString(xmlString: string): Record<string, any> {
+  return xmlParser.parse(xmlString) as Record<string, any>;
+}
+
 export function decodePobCodeToXmlString(rawInput: string): string {
   const trimmed = rawInput.trim();
   if (trimmed.startsWith("<")) {
