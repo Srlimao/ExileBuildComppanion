@@ -1,5 +1,4 @@
 import {
-  parseClientLogLine,
   reduceTelemetrySession,
   type HudSessionSnapshot,
   type ValidatedPobBuild,
@@ -8,20 +7,23 @@ import {
 import { poe1GameAdapter } from "@exile-hud/game-data";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  applyLogLinesToSnapshot,
+  bootstrapHostEnvironment,
+  hookAndBootstrapLogPath,
+} from "./client_log_sync_helper.js";
+import {
   applyGggCharacterResponseToSnapshot,
   applyViewerCommandToSnapshot,
   compilePobProfileToSnapshot,
   DEFAULT_STARTER_POB_XML,
   deriveTrayIndicator,
 } from "./desktop_telemetry_bridge.js";
-import { registerAndOpenHostRelaySocket } from "./relay_host_connection.js";
+import { createHostRelaySession, type HostRelaySession } from "./relay_host_connection.js";
 import {
   clearPoesessid,
   detectClientLogPath,
-  hasPoesessid,
   pollCharacterWindow,
   savePoesessid,
-  setClientLogPath,
   setTrayTelemetryStatus,
   subscribeTauriListeners,
   writeVendorRegexClipboard,
@@ -63,7 +65,7 @@ export function useDesktopHostController() {
   const [relayError, setRelayError] = useState<string | null>(null);
   const [viewers, setViewers] = useState<ViewerPresenceEntry[]>([]);
 
-  const wsRef = useRef<WebSocket | null>(null);
+  const relayRef = useRef<HostRelaySession | null>(null);
   const snapshotRef = useRef<HudSessionSnapshot | null>(null);
   snapshotRef.current = snapshot;
 
@@ -79,43 +81,36 @@ export function useDesktopHostController() {
   const pushPatch = useCallback((next: HudSessionSnapshot, eventTag: string) => {
     setSnapshot(next);
     snapshotRef.current = next;
-    const ws = wsRef.current;
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: "host:state_patch", snapshot: next, eventTag }));
-    }
+    relayRef.current?.sendPatch(next, eventTag);
   }, []);
 
   const connectRelay = useCallback(
-    async (overrideSnap?: HudSessionSnapshot, overridePin?: string, overrideRelayUrl?: string) => {
+    (overrideSnap?: HudSessionSnapshot, overridePin?: string, overrideRelayUrl?: string) => {
       const targetSnap = overrideSnap ?? snapshotRef.current;
       if (!targetSnap) return;
-      try {
-        setRelayError(null);
-        wsRef.current?.close();
-        wsRef.current = await registerAndOpenHostRelaySocket({
-          relayUrl: overrideRelayUrl ?? relayUrl,
-          roomId,
-          hostSecret,
-          pin: overridePin ?? pin,
-          snapshot: targetSnap,
-          getLatestSnapshot: () => snapshotRef.current,
-          onConnected: () => {
-            setRelayConnected(true);
-            setRelayError(null);
-          },
-          onDisconnected: () => setRelayConnected(false),
-          onViewersChange: setViewers,
-          onViewerCommand: (cmd) => {
-            if (!snapshotRef.current) return;
-            const outcome = applyViewerCommandToSnapshot(snapshotRef.current, cmd);
-            if (outcome.copyRegex) void writeVendorRegexClipboard(outcome.copyRegex);
-            if (outcome.nextSnapshot && outcome.eventTag) pushPatch(outcome.nextSnapshot, outcome.eventTag);
-          },
-        });
-      } catch (err) {
-        setRelayConnected(false);
-        setRelayError(`Relay unreachable (${err instanceof Error ? err.message : String(err)}) — running offline locally`);
-      }
+      setRelayError(null);
+      relayRef.current?.close();
+      relayRef.current = createHostRelaySession({
+        relayUrl: overrideRelayUrl ?? relayUrl,
+        roomId,
+        hostSecret,
+        pin: overridePin ?? pin,
+        snapshot: targetSnap,
+        getLatestSnapshot: () => snapshotRef.current,
+        onConnected: () => {
+          setRelayConnected(true);
+          setRelayError(null);
+        },
+        onDisconnected: () => setRelayConnected(false),
+        onError: (msg) => setRelayError(`${msg} — running offline locally`),
+        onViewersChange: setViewers,
+        onViewerCommand: (cmd) => {
+          if (!snapshotRef.current) return;
+          const outcome = applyViewerCommandToSnapshot(snapshotRef.current, cmd);
+          if (outcome.copyRegex) void writeVendorRegexClipboard(outcome.copyRegex);
+          if (outcome.nextSnapshot && outcome.eventTag) pushPatch(outcome.nextSnapshot, outcome.eventTag);
+        },
+      });
     },
     [hostSecret, pin, pushPatch, relayUrl, roomId],
   );
@@ -129,19 +124,20 @@ export function useDesktopHostController() {
         leagueStart: true,
         characterName,
       });
-      setActiveBuild(compiled.build);
-      setSnapshot(compiled.snapshot);
-      snapshotRef.current = compiled.snapshot;
-
-      const [logRes, sess] = await Promise.all([detectClientLogPath(), hasPoesessid()]);
-      setHasStoredSession(sess);
-      if (logRes.detectedPath) {
-        setClientLogPathState(logRes.detectedPath);
-        setClientLogFound(await setClientLogPath(logRes.detectedPath));
+      const env = await bootstrapHostEnvironment(compiled.snapshot);
+      setHasStoredSession(env.hasSession);
+      if (env.detectedPath) setClientLogPathState(env.detectedPath);
+      setClientLogFound(env.hooked);
+      if (env.snapshot.characterName && env.snapshot.characterName !== characterName) {
+        setCharacterName(env.snapshot.characterName);
       }
-      await connectRelay(compiled.snapshot);
+
+      setActiveBuild(compiled.build);
+      setSnapshot(env.snapshot);
+      snapshotRef.current = env.snapshot;
+      connectRelay(env.snapshot);
     })();
-    return () => wsRef.current?.close();
+    return () => relayRef.current?.close();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -153,20 +149,15 @@ export function useDesktopHostController() {
 
   const processLogLines = useCallback(
     (lines: string[]) => {
-      let next = snapshotRef.current;
-      if (!next) return;
-      const prevMode = next.mode;
-      for (const raw of lines) {
-        const parsed = parseClientLogLine(raw);
-        if (!parsed) continue;
-        next = reduceTelemetrySession(next, { type: "client_log", event: parsed, autoDetectCharacter: true }, poe1GameAdapter);
+      const cur = snapshotRef.current;
+      if (!cur || lines.length === 0) return;
+      const next = applyLogLinesToSnapshot(cur, lines);
+      if (next === cur) return;
+      if (next.characterName !== cur.characterName) setCharacterName(next.characterName);
+      if (next.mode === "TOWN" && cur.mode !== "TOWN" && next.autoClipboardEnabled && next.activeVendorRegex) {
+        void writeVendorRegexClipboard(next.activeVendorRegex);
       }
-      if (next !== snapshotRef.current) {
-        if (next.mode === "TOWN" && prevMode !== "TOWN" && next.autoClipboardEnabled && next.activeVendorRegex) {
-          void writeVendorRegexClipboard(next.activeVendorRegex);
-        }
-        pushPatch(next, "client_log_batch");
-      }
+      pushPatch(next, "client_log_batch");
     },
     [pushPatch],
   );
@@ -195,6 +186,13 @@ export function useDesktopHostController() {
       onPoeProcessState: (running) => {
         const cur = snapshotRef.current;
         if (cur) pushPatch(reduceTelemetrySession(cur, { type: "process_state", running }, poe1GameAdapter), "poe_process");
+      },
+      onClientLogPathChanged: (nextPath) => {
+        setClientLogPathState(nextPath);
+        setClientLogFound(true);
+        if (snapshotRef.current && !snapshotRef.current.clientLogHooked) {
+          pushPatch({ ...snapshotRef.current, clientLogHooked: true }, "log_auto_switched");
+        }
       },
       onTrayAction: (action) => {
         if (action === "force-sync") void handleForceSync();
@@ -233,6 +231,16 @@ export function useDesktopHostController() {
     }
   };
 
+  const applySelectedLogPath = async (p: string, manual: boolean, eventTag: string) => {
+    setClientLogPathState(p);
+    const { hooked, nextSnapshot } = await hookAndBootstrapLogPath(p, manual, snapshotRef.current);
+    setClientLogFound(hooked);
+    if (nextSnapshot) {
+      if (nextSnapshot.characterName) setCharacterName(nextSnapshot.characterName);
+      pushPatch(nextSnapshot, eventTag);
+    }
+  };
+
   return {
     roomId, pin, relayUrl, snapshot, pobInput, leagueStart, customRouteText,
     compileLoading, compileError, accountName, characterName, hasStoredSession,
@@ -240,15 +248,15 @@ export function useDesktopHostController() {
     relayError, viewers, setAccountName, setCharacterName, applyBuild,
     forceSync: handleForceSync,
     simulateLogLines: processLogLines,
-    reconnectRelay: () => void connectRelay(),
+    reconnectRelay: () => connectRelay(),
     setRelayUrl: (u: string) => {
       setRelayUrl(u);
-      void connectRelay(undefined, undefined, u);
+      connectRelay(undefined, undefined, u);
     },
     rotatePin: () => {
       const nextPin = randomCode(4, "0123456789");
       setPin(nextPin);
-      void connectRelay(undefined, nextPin);
+      connectRelay(undefined, nextPin);
     },
     savePoesessid: async (val: string) => {
       await savePoesessid(val);
@@ -258,18 +266,10 @@ export function useDesktopHostController() {
       await clearPoesessid();
       setHasStoredSession(false);
     },
-    setLogPath: async (p: string) => {
-      setClientLogPathState(p);
-      const ok = await setClientLogPath(p);
-      setClientLogFound(ok);
-      if (snapshot) pushPatch({ ...snapshot, clientLogHooked: ok }, "log_path");
-    },
+    setLogPath: (p: string) => applySelectedLogPath(p, true, "log_path"),
     autoDetectPath: async () => {
       const res = await detectClientLogPath();
-      if (res.detectedPath) {
-        setClientLogPathState(res.detectedPath);
-        setClientLogFound(await setClientLogPath(res.detectedPath));
-      }
+      if (res.detectedPath) await applySelectedLogPath(res.detectedPath, false, "log_auto_detect");
     },
     toggleAutoClipboard: () => {
       if (snapshot) pushPatch({ ...snapshot, autoClipboardEnabled: !snapshot.autoClipboardEnabled }, "toggle_clip");

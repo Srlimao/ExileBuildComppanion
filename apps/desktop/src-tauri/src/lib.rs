@@ -27,13 +27,14 @@ mod windows_clipboard_writer;
 use character_window_http_poller::{
     execute_character_window_fetch, now_epoch_ms, CharacterPollResponse, CircuitBreakerState,
 };
-use client_txt_byte_offset_tailer::ByteOffsetTailer;
+use client_txt_byte_offset_tailer::{read_recent_bootstrap_lines, ByteOffsetTailer};
 use client_txt_path_detector::{detect_client_txt_path, ClientLogDetectionResult};
 
 #[derive(Default)]
 pub struct HostSharedState {
     pub tailer: Arc<Mutex<ByteOffsetTailer>>,
     pub circuit_breaker: Arc<Mutex<CircuitBreakerState>>,
+    pub manual_log_override: Arc<Mutex<bool>>,
 }
 
 #[tauri::command]
@@ -42,13 +43,23 @@ fn detect_client_log_path() -> ClientLogDetectionResult {
 }
 
 #[tauri::command]
-fn set_client_log_path(path: String, state: State<'_, HostSharedState>) -> Result<bool, String> {
+fn set_client_log_path(
+    path: String,
+    manual: Option<bool>,
+    state: State<'_, HostSharedState>,
+) -> Result<bool, String> {
     let trimmed = path.trim();
     if trimmed.is_empty() {
+        if let Ok(mut manual_flag) = state.manual_log_override.lock() {
+            *manual_flag = false;
+        }
         if let Ok(mut tailer) = state.tailer.lock() {
             tailer.set_path(None, true);
         }
         return Ok(false);
+    }
+    if let Ok(mut manual_flag) = state.manual_log_override.lock() {
+        *manual_flag = manual.unwrap_or(false);
     }
     let candidate = PathBuf::from(trimmed);
     let exists = Path::new(&candidate).is_file();
@@ -56,6 +67,20 @@ fn set_client_log_path(path: String, state: State<'_, HostSharedState>) -> Resul
         tailer.set_path(Some(candidate), true);
     }
     Ok(exists)
+}
+
+#[tauri::command]
+fn read_bootstrap_log_lines(state: State<'_, HostSharedState>) -> Vec<String> {
+    let current_path = state
+        .tailer
+        .lock()
+        .ok()
+        .and_then(|guard| guard.current_path().cloned());
+    let Some(path) = current_path else {
+        return Vec::new();
+    };
+    let active_pid = poe_process_heartbeat::find_running_poe_process().map(|info| info.pid);
+    read_recent_bootstrap_lines(&path, active_pid, 256 * 1024)
 }
 
 #[tauri::command]
@@ -147,15 +172,59 @@ fn spawn_background_watchers(app: &AppHandle, shared: &HostSharedState) {
     });
 
     let proc_app = app.clone();
+    let tailer_switch_ref = Arc::clone(&shared.tailer);
+    let manual_override_ref = Arc::clone(&shared.manual_log_override);
     tauri::async_runtime::spawn(async move {
         let mut last_state: Option<bool> = None;
         let mut interval = tokio::time::interval(Duration::from_secs(5));
         loop {
             interval.tick().await;
-            let running = poe_process_heartbeat::is_poe_process_running();
+            let proc_info = poe_process_heartbeat::find_running_poe_process();
+            let running = proc_info.is_some();
             if last_state != Some(running) {
                 last_state = Some(running);
                 let _ = proc_app.emit("poe-process-state", running);
+            }
+            let is_manual = manual_override_ref
+                .lock()
+                .map(|flag| *flag)
+                .unwrap_or(false);
+            if !is_manual {
+                if let Some(info) = proc_info {
+                    if let Some(active_log) = info
+                        .exe_path
+                        .as_deref()
+                        .and_then(|exe| exe.parent())
+                        .map(|dir| dir.join("logs").join("Client.txt"))
+                    {
+                        if active_log.is_file() {
+                            let switched = if let Ok(mut guard) = tailer_switch_ref.lock() {
+                                if guard.current_path() != Some(&active_log) {
+                                    guard.set_path(Some(active_log.clone()), true);
+                                    true
+                                } else {
+                                    false
+                                }
+                            } else {
+                                false
+                            };
+                            if switched {
+                                let _ = proc_app.emit(
+                                    "client-log-path-changed",
+                                    active_log.to_string_lossy().to_string(),
+                                );
+                                let boot = read_recent_bootstrap_lines(
+                                    &active_log,
+                                    Some(info.pid),
+                                    256 * 1024,
+                                );
+                                if !boot.is_empty() {
+                                    let _ = proc_app.emit("client-log-lines", boot);
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     });
@@ -187,6 +256,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             detect_client_log_path,
             set_client_log_path,
+            read_bootstrap_log_lines,
             check_poe_running,
             write_vendor_regex_clipboard,
             save_poesessid,

@@ -159,6 +159,12 @@ export class SessionRoomDurableObject extends DurableObject<unknown> {
     const attachment = ws.deserializeAttachment() as SocketAttachment | null;
     if (!attachment) return;
 
+    const frameType = (payload as { type?: unknown })?.type;
+    if (frameType === "host:ping" || frameType === "viewer:ping") {
+      this.sendJson(ws, { type: "room:pong", ts: Date.now() });
+      return;
+    }
+
     if (attachment.role === "host") {
       const hostMsg = payload as HostToRoomMessage;
       if ((hostMsg.type === "host:full_snapshot" || hostMsg.type === "host:state_patch") && hostMsg.snapshot) {

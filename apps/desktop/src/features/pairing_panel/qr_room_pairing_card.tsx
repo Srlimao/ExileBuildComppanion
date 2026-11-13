@@ -1,7 +1,7 @@
 import type { ViewerPresenceEntry } from "@exile-hud/core";
 import { Check, Copy, Link2, RefreshCw, Users, Wifi, WifiOff } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface QrRoomPairingCardProps {
   roomId: string;
@@ -28,6 +28,10 @@ export function QrRoomPairingCard({
 }: QrRoomPairingCardProps) {
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [draftRelay, setDraftRelay] = useState(relayUrl);
+
+  useEffect(() => {
+    setDraftRelay(relayUrl);
+  }, [relayUrl]);
 
   const normalizedBase = relayUrl.replace(/\/+$/, "");
   const pairUrl = `${normalizedBase}/?room=${encodeURIComponent(roomId)}&pin=${encodeURIComponent(pin)}`;

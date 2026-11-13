@@ -37,6 +37,7 @@ export class EdgeWebSocketRoomClient {
   private socket: WebSocket | null = null;
   private retryAttempt = 0;
   private retryTimer: number | null = null;
+  private pingTimer: number | null = null;
   private closedManually = false;
 
   constructor(
@@ -52,12 +53,23 @@ export class EdgeWebSocketRoomClient {
 
   disconnect(): void {
     this.closedManually = true;
-    if (this.retryTimer !== null) window.clearTimeout(this.retryTimer);
+    this.clearTimers();
     if (this.socket) {
       this.socket.close();
       this.socket = null;
     }
     this.callbacks.onStatusChange("idle");
+  }
+
+  private clearTimers(): void {
+    if (this.retryTimer !== null) {
+      window.clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+    }
+    if (this.pingTimer !== null) {
+      window.clearInterval(this.pingTimer);
+      this.pingTimer = null;
+    }
   }
 
   sendCommand(cmd: ViewerToRoomMessage): void {
@@ -67,6 +79,7 @@ export class EdgeWebSocketRoomClient {
   }
 
   private openSocket(): void {
+    this.clearTimers();
     this.callbacks.onStatusChange(this.retryAttempt > 0 ? "reconnecting" : "connecting");
     const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
     const device = encodeURIComponent(detectDeviceLabel());
@@ -78,6 +91,11 @@ export class EdgeWebSocketRoomClient {
     ws.onopen = () => {
       this.retryAttempt = 0;
       this.callbacks.onStatusChange("connected");
+      this.pingTimer = window.setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: "viewer:ping" }));
+        }
+      }, 25_000);
     };
 
     ws.onmessage = (event) => {
@@ -96,6 +114,10 @@ export class EdgeWebSocketRoomClient {
     };
 
     ws.onclose = (ev) => {
+      if (this.pingTimer !== null) {
+        window.clearInterval(this.pingTimer);
+        this.pingTimer = null;
+      }
       if (this.closedManually) return;
       if (ev.code === 4001 || ev.code === 4003) {
         this.callbacks.onStatusChange("error", "Invalid Room ID or 4-digit PIN");

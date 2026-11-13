@@ -196,6 +196,7 @@ export const ViewerCommandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("viewer:request_regex_copy"), regex: z.string().optional() }),
   z.object({ type: z.literal("viewer:save_widget_layout"), deviceFormFactor: DeviceFormFactorSchema, mode: HudContextModeSchema, items: z.array(WidgetGridItemLayoutSchema) }),
   z.object({ type: z.literal("viewer:import_poelab_daily"), rawJson: z.string() }),
+  z.object({ type: z.literal("viewer:ping") }),
 ]);
 export type ViewerToRoomMessage = z.infer<typeof ViewerCommandSchema>;
 
@@ -207,11 +208,13 @@ export interface ViewerPresenceEntry {
 
 export type HostToRoomMessage =
   | { type: "host:full_snapshot"; snapshot: HudSessionSnapshot }
-  | { type: "host:state_patch"; snapshot: HudSessionSnapshot; eventTag: string };
+  | { type: "host:state_patch"; snapshot: HudSessionSnapshot; eventTag: string }
+  | { type: "host:ping" };
 
 export type RoomToClientMessage =
   | { type: "room:hydrated_state"; snapshot: HudSessionSnapshot; layouts: ModeWidgetGrids; viewers: ViewerPresenceEntry[] }
   | { type: "room:state_patch"; snapshot: HudSessionSnapshot; eventTag: string }
   | { type: "room:viewer_presence"; viewers: ViewerPresenceEntry[] }
   | { type: "room:layout_updated"; deviceFormFactor: DeviceFormFactor; mode: HudContextMode; items: WidgetGridItemLayout[] }
-  | { type: "room:command_forwarded"; command: ViewerToRoomMessage };
+  | { type: "room:command_forwarded"; command: ViewerToRoomMessage }
+  | { type: "room:pong"; ts: number };

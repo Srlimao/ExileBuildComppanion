@@ -1,5 +1,5 @@
 import { ClipboardCopy, Cpu, FileSearch, FlaskConical, Skull } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface ClientLogAndSimulatorCardProps {
   clientLogPath: string;
@@ -33,6 +33,10 @@ export function ClientLogAndSimulatorCard({
   onToggleSimulatedOutage,
 }: ClientLogAndSimulatorCardProps) {
   const [draftPath, setDraftPath] = useState(clientLogPath);
+
+  useEffect(() => {
+    setDraftPath(clientLogPath);
+  }, [clientLogPath]);
 
   return (
     <div className="space-y-3">

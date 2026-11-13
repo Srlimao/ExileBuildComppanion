@@ -32,7 +32,10 @@ function transitionToZone(
   nowMs: number,
 ): HudSessionSnapshot {
   const prevWasTown = isTownOrHideoutArea(state.currentAreaId, adapter);
-  const nextHighestAct = isTown ? state.highestUnlockedAct : Math.max(state.highestUnlockedAct, areaAct || state.highestUnlockedAct);
+  const isHideout = /hideout/i.test(areaId);
+  const nextHighestAct = isHideout
+    ? state.highestUnlockedAct
+    : Math.max(state.highestUnlockedAct, areaAct || state.highestUnlockedAct);
 
   const checkpoints = state.checkpoints.map((cp) => ({ ...cp }));
   const matchedIdx = checkpoints.findIndex((cp) => cp.areaId === areaId && !cp.completed);
@@ -165,6 +168,11 @@ export function reduceTelemetrySession(
   }
 
   if (ev.type === "zone_entered") {
+    if (/hideout/i.test(state.currentAreaId) && /hideout/i.test(ev.areaName)) {
+      return state.currentAreaName === ev.areaName
+        ? state
+        : { ...state, version: state.version + 1, currentAreaName: ev.areaName };
+    }
     const resolved = disambiguateZoneByName(
       ev.areaName,
       {
@@ -175,6 +183,11 @@ export function reduceTelemetrySession(
       adapter,
     );
     if (!resolved) return state;
+    if (resolved.id === state.currentAreaId) {
+      return state.currentAreaName === resolved.name
+        ? state
+        : { ...state, version: state.version + 1, currentAreaName: resolved.name };
+    }
     const isTown = resolved.is_town_area || /hideout/i.test(resolved.id);
     const isLab = isLabyrinthArea(resolved.id);
     return transitionToZone(

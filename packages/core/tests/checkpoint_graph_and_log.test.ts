@@ -93,4 +93,46 @@ describe("Checkpoint Graph, Zone Disambiguator & Progression Reducer", () => {
     expect(state.mode).toBe("STANDBY");
     expect(state.runTimerRunning).toBe(false);
   });
+
+  it("preserves area seed and monster level when zone_entered follows area_generated for Prisoner's Gate", async () => {
+    let state = await createTestSnapshot();
+    state = reduceTelemetrySession(state, { type: "process_state", running: true }, poe1GameAdapter);
+
+    const genLine = parseClientLogLine(
+      '2026/11/13 20:09:18 455442718 1186a803 [DEBUG Client 18744] Generating level 10 area "1_1_8" with seed 2509906852',
+    )!;
+    state = reduceTelemetrySession(
+      state,
+      { type: "client_log", event: genLine, autoDetectCharacter: true },
+      poe1GameAdapter,
+    );
+    const versionAfterGen = state.version;
+
+    const enteredLine = parseClientLogLine(
+      "2026/11/13 20:09:19 455443453 cffb06be [INFO Client 18744] : You have entered Prisoner's Gate.",
+    )!;
+    state = reduceTelemetrySession(
+      state,
+      { type: "client_log", event: enteredLine, autoDetectCharacter: true },
+      poe1GameAdapter,
+    );
+
+    expect(state.currentAreaId).toBe("1_1_8");
+    expect(state.currentAreaName).toBe("Prisoner's Gate");
+    expect(state.currentAreaLevel).toBe(10);
+    expect(state.currentAreaSeed).toBe("2509906852");
+    expect(state.version).toBe(versionAfterGen);
+
+    const levelUp = parseClientLogLine(
+      "2026/11/13 20:15:45 455829375 cffb06be [INFO Client 18744] : LumiLumiWill (Scion) is now level 13",
+    )!;
+    state = reduceTelemetrySession(
+      state,
+      { type: "client_log", event: levelUp, autoDetectCharacter: true },
+      poe1GameAdapter,
+    );
+
+    expect(state.characterName).toBe("LumiLumiWill");
+    expect(state.characterLevel).toBe(13);
+  });
 });

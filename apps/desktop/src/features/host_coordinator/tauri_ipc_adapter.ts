@@ -34,9 +34,14 @@ export async function detectClientLogPath(): Promise<ClientLogDetectionResult> {
   return callInvoke<ClientLogDetectionResult>("detect_client_log_path");
 }
 
-export async function setClientLogPath(path: string): Promise<boolean> {
+export async function setClientLogPath(path: string, manual = false): Promise<boolean> {
   if (!isTauriRuntime()) return false;
-  return callInvoke<boolean>("set_client_log_path", { path });
+  return callInvoke<boolean>("set_client_log_path", { path, manual });
+}
+
+export async function readBootstrapLogLines(): Promise<string[]> {
+  if (!isTauriRuntime()) return [];
+  return callInvoke<string[]>("read_bootstrap_log_lines");
 }
 
 export async function checkPoeRunning(): Promise<boolean> {
@@ -107,15 +112,20 @@ export async function subscribeTauriListeners(handlers: {
   onClientLogLines: (lines: string[]) => void;
   onPoeProcessState: (running: boolean) => void;
   onTrayAction: (action: string) => void;
+  onClientLogPathChanged?: (path: string) => void;
 }): Promise<() => void> {
   if (!isTauriRuntime()) return () => undefined;
   const { listen } = await import("@tauri-apps/api/event");
   const unsub1 = await listen<string[]>("client-log-lines", (ev) => handlers.onClientLogLines(ev.payload));
   const unsub2 = await listen<boolean>("poe-process-state", (ev) => handlers.onPoeProcessState(ev.payload));
   const unsub3 = await listen<string>("tray-action", (ev) => handlers.onTrayAction(ev.payload));
+  const unsub4 = await listen<string>("client-log-path-changed", (ev) =>
+    handlers.onClientLogPathChanged?.(ev.payload),
+  );
   return () => {
     unsub1();
     unsub2();
     unsub3();
+    unsub4();
   };
 }
