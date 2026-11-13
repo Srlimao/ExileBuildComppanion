@@ -3,6 +3,8 @@ dist/
 .wrangler/
 .upstream-cache/
 apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/
+*.tsbuildinfo
 *.log
 .env
 .env.*
