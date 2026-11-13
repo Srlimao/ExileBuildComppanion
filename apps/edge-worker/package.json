@@ -1,0 +1,21 @@
+{
+  "name": "@exile-hud/edge-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@exile-hud/core": "workspace:*",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250310.0",
+    "@types/node": "^22.13.10",
+    "@types/ws": "^8.18.0",
+    "vitest": "^3.0.8",
+    "ws": "^8.18.1"
+  }
+}
