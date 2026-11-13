@@ -4,6 +4,7 @@ Self-contained vertical slice for rendering and interacting with the GGG `3.30.0
 
 ## Architectural Rules
 - **Vector Wireframe + Overlay Layering:** Static background tree edges (circular orbit arcs `A r r` within the same group/orbit + straight cross-group highways) and passive nodes are memoized per character class/ascendancy so pan/zoom (`viewBox` updates) stays fast on tablets and phones.
+- **Read-Only Telemetry & Next-Passive Initial Zoom:** Allocation state reflects GGG/PoB telemetry only (no manual node modification controls). On opening `TREE` or switching brackets, `computeNextPassivesBounds` frames the immediate unallocated cluster (~2,000–3,200 world units wide) rather than zooming out to the entire tree or Ascendancy islands.
 - **Multi-Touch Pinch & Tap Delegation:** `usePanZoomViewport` tracks active touch/mouse pointers via `pointerHandlers` (`pinch_zoom_math.ts`), supporting focal-point two-finger pinch-to-zoom, midpoint panning, seamless 2-to-1 finger transition re-anchoring, trackpad `ctrl+wheel`/Safari gesture guards, and `data-tree-node-id` container-level tap delegation without swallowing multi-touch events.
 - **Bracket Progression Semantics:** Every spec in `snapshot.passiveTree.specs` is compared against its preceding level bracket via `computeBracketProgressionDiff`:
   - Emerald: Allocated (GGG API synced + local manual overrides).

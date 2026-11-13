@@ -38,12 +38,11 @@ export function selectActiveTreeSpec<T extends { minLevel: number }>(
 function computeFromSpecSummaries(params: {
   specs: PassiveTreeSpecSummary[];
   allocatedNodeIds: string[];
-  localOverrideNodeIds: string[];
   allocatedMasteries: Record<string, string>;
   characterLevel: number;
   adapter: GameAdapter;
 }): PassiveTreeTelemetry {
-  const { specs, allocatedNodeIds, localOverrideNodeIds, allocatedMasteries, characterLevel, adapter } = params;
+  const { specs, allocatedNodeIds, allocatedMasteries, characterLevel, adapter } = params;
   const spec = selectActiveTreeSpec(specs, characterLevel);
   if (!spec) {
     return {
@@ -55,14 +54,13 @@ function computeFromSpecSummaries(params: {
       respecPointsNeeded: 0,
       targetNodesPreview: [],
       allocatedNodeIds,
-      localOverrideNodeIds,
       allocatedMasteries,
       specs,
     };
   }
 
   const targetSet = new Set(spec.nodeIds);
-  const allocatedSet = new Set([...allocatedNodeIds, ...localOverrideNodeIds]);
+  const allocatedSet = new Set(allocatedNodeIds);
   const passiveNodes = adapter.getPassiveTreeNodes();
 
   const remainingNodeIds: string[] = [];
@@ -109,17 +107,15 @@ function computeFromSpecSummaries(params: {
     respecPointsNeeded,
     targetNodesPreview,
     allocatedNodeIds,
-    localOverrideNodeIds,
     allocatedMasteries,
     specs,
   };
 }
 
-/** Computes passive tree diff against GGG hashes + optional local manual overrides. */
+/** Computes passive tree diff against GGG allocated node hashes. */
 export function computePassiveTreeDiff(params: {
   treeSpecs: ExtractedTreeSpec[];
   allocatedHashes: number[];
-  localOverrideNodeIds?: string[];
   allocatedMasteries?: Record<string, string>;
   characterLevel: number;
   adapter: GameAdapter;
@@ -127,24 +123,7 @@ export function computePassiveTreeDiff(params: {
   return computeFromSpecSummaries({
     specs: toSpecSummaries(params.treeSpecs),
     allocatedNodeIds: [...new Set(params.allocatedHashes.map(String))],
-    localOverrideNodeIds: [...new Set(params.localOverrideNodeIds ?? [])],
     allocatedMasteries: params.allocatedMasteries ?? {},
-    characterLevel: params.characterLevel,
-    adapter: params.adapter,
-  });
-}
-
-/** Recomputes PassiveTreeTelemetry counts after local Web HUD node override updates. */
-export function recomputePassiveTreeTelemetry(params: {
-  passiveTree: PassiveTreeTelemetry;
-  characterLevel: number;
-  adapter: GameAdapter;
-}): PassiveTreeTelemetry {
-  return computeFromSpecSummaries({
-    specs: sortTreeSpecsByLevel(params.passiveTree.specs ?? []),
-    allocatedNodeIds: params.passiveTree.allocatedNodeIds ?? [],
-    localOverrideNodeIds: params.passiveTree.localOverrideNodeIds ?? [],
-    allocatedMasteries: params.passiveTree.allocatedMasteries ?? {},
     characterLevel: params.characterLevel,
     adapter: params.adapter,
   });

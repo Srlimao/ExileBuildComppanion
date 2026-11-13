@@ -1,7 +1,7 @@
 import type { PassiveTreeBracketDiff } from "@exile-hud/core";
 import { computeShortestPathToNode, resolveMasteryEffectStats } from "@exile-hud/core";
 import { poe1GameAdapter } from "@exile-hud/game-data";
-import { Check, CheckCircle2, Minus, Plus, Route, X } from "lucide-react";
+import { Minus, Plus, X } from "lucide-react";
 import type { BuiltPoe1TreeGeometry } from "./passive_tree_geometry_builder.js";
 
 interface PassiveTreeCanvasOverlaysProps {
@@ -11,12 +11,11 @@ interface PassiveTreeCanvasOverlaysProps {
   characterClass: string;
   selectedNodeId: string | null;
   onSelectNode: (id: string | null) => void;
-  onToggleAllocatedNodes: (nodeIds: string[], allocated: boolean) => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
 }
 
-/** Legend, zoom controls, and interactive node inspector tooltip overlaid on the passive tree SVG. */
+/** Legend, zoom controls, and read-only node inspector tooltip overlaid on the passive tree SVG. */
 export function PassiveTreeCanvasOverlays({
   geometry,
   diff,
@@ -24,7 +23,6 @@ export function PassiveTreeCanvasOverlays({
   characterClass,
   selectedNodeId,
   onSelectNode,
-  onToggleAllocatedNodes,
   onZoomIn,
   onZoomOut,
 }: PassiveTreeCanvasOverlaysProps) {
@@ -120,30 +118,32 @@ export function PassiveTreeCanvasOverlays({
             </ul>
           )}
 
-          <div className="flex flex-wrap gap-1.5 pt-1 border-t border-neutral-800">
-            <button
-              type="button"
-              onClick={() => onToggleAllocatedNodes([inspectedNode.id], !inspectedAllocated)}
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer ${
-                inspectedAllocated
-                  ? "bg-emerald-500/20 border border-emerald-500/40 text-emerald-200"
-                  : "bg-neutral-900 border border-neutral-700 text-neutral-200 hover:border-neutral-500"
-              }`}
-            >
-              {inspectedAllocated ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
-              {inspectedAllocated ? "Allocated (Undo)" : "Mark Allocated"}
-            </button>
-            {inspectedPath.length > 1 && (
-              <button
-                type="button"
-                onClick={() => onToggleAllocatedNodes(inspectedPath, true)}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold cursor-pointer"
-              >
-                <Route className="h-3.5 w-3.5" />
-                Allocate Path (+{inspectedPath.length})
-              </button>
-            )}
-          </div>
+          {(inspectedAllocated ||
+            diff.targetSet.has(inspectedNode.id) ||
+            diff.respecFromPrevIds.includes(inspectedNode.id) ||
+            diff.offSpecAllocatedIds.includes(inspectedNode.id)) && (
+            <div className="flex flex-wrap gap-1.5 pt-1 border-t border-neutral-800">
+              {inspectedAllocated ? (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-200 text-xs font-semibold">
+                  Allocated
+                </span>
+              ) : diff.targetSet.has(inspectedNode.id) ? (
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded-lg border text-xs font-semibold ${
+                    diff.addedInBracketIds.includes(inspectedNode.id)
+                      ? "bg-amber-500/15 border-amber-500/40 text-amber-200"
+                      : "bg-cyan-500/15 border-cyan-500/40 text-cyan-200"
+                  }`}
+                >
+                  Unallocated · {inspectedPath.length} pt{inspectedPath.length === 1 ? "" : "s"} away
+                </span>
+              ) : (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-rose-500/15 border border-rose-500/40 text-rose-200 text-xs font-semibold">
+                  Respec Target
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
     </>

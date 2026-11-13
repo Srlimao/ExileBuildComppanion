@@ -28,13 +28,9 @@ export interface PassiveTreeBracketDiff {
   nextNotableTargets: PassiveTreeTargetItem[];
 }
 
-/** Merges GGG API allocated node IDs with local Web HUD click overrides. */
+/** Returns the set of GGG API allocated passive node IDs. */
 export function resolveEffectiveAllocatedSet(passiveTree: PassiveTreeTelemetry): Set<string> {
-  const combined = new Set<string>(passiveTree.allocatedNodeIds ?? []);
-  for (const id of passiveTree.localOverrideNodeIds ?? []) {
-    combined.add(id);
-  }
-  return combined;
+  return new Set<string>(passiveTree.allocatedNodeIds ?? []);
 }
 
 /** Returns a stable ascending copy of passive specs sorted by minimum character level. */

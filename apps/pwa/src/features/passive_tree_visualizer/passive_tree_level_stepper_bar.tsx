@@ -1,5 +1,5 @@
 import type { PassiveTreeBracketDiff, PassiveTreeSpecSummary } from "@exile-hud/core";
-import { Crosshair, Eye, LocateFixed, RotateCcw, Search, Sparkles, X } from "lucide-react";
+import { Crosshair, Eye, LocateFixed, Search, Sparkles, X } from "lucide-react";
 
 interface PassiveTreeLevelStepperBarProps {
   characterLevel: number;
@@ -7,7 +7,6 @@ interface PassiveTreeLevelStepperBarProps {
   selectedIndex: number;
   manualSpecId: string | null;
   allocatedIds: ReadonlySet<string>;
-  overrideCount: number;
   diff: PassiveTreeBracketDiff;
   searchQuery: string;
   searchMatchCount: number;
@@ -19,7 +18,6 @@ interface PassiveTreeLevelStepperBarProps {
   onFitBracket: () => void;
   onFocusNextTarget: () => void;
   onFocusAscendancy: () => void;
-  onClearLocalOverrides: () => void;
 }
 
 export function PassiveTreeLevelStepperBar({
@@ -28,7 +26,6 @@ export function PassiveTreeLevelStepperBar({
   selectedIndex,
   manualSpecId,
   allocatedIds,
-  overrideCount,
   diff,
   searchQuery,
   searchMatchCount,
@@ -40,7 +37,6 @@ export function PassiveTreeLevelStepperBar({
   onFitBracket,
   onFocusNextTarget,
   onFocusAscendancy,
-  onClearLocalOverrides,
 }: PassiveTreeLevelStepperBarProps) {
   return (
     <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-2.5 space-y-2">
@@ -100,17 +96,6 @@ export function PassiveTreeLevelStepperBar({
             <span className="px-2 py-0.5 rounded bg-rose-500/15 border border-rose-500/30 text-rose-300">
               Respec {Math.max(diff.respecFromPrevIds.length, diff.offSpecAllocatedIds.length)}
             </span>
-          )}
-          {overrideCount > 0 && (
-            <button
-              type="button"
-              onClick={onClearLocalOverrides}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-neutral-900 border border-neutral-700 text-neutral-300 hover:text-white cursor-pointer"
-              title="Clear manual Web click overrides"
-            >
-              <RotateCcw className="h-3 w-3" />
-              Reset ({overrideCount})
-            </button>
           )}
         </div>
       </div>

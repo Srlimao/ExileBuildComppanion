@@ -164,7 +164,6 @@ export interface PassiveTreeTelemetry {
   respecPointsNeeded: number;
   targetNodesPreview: Array<{ id: string; x: number; y: number; allocated: boolean; label: string }>;
   allocatedNodeIds?: string[];
-  localOverrideNodeIds?: string[];
   allocatedMasteries?: Record<string, string>;
   specs?: PassiveTreeSpecSummary[];
 }
@@ -230,12 +229,6 @@ export const ViewerCommandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("viewer:request_regex_copy"), regex: z.string().optional() }),
   z.object({ type: z.literal("viewer:save_widget_layout"), deviceFormFactor: DeviceFormFactorSchema, mode: HudContextModeSchema, items: z.array(WidgetGridItemLayoutSchema) }),
   z.object({ type: z.literal("viewer:import_poelab_daily"), rawJson: z.string() }),
-  z.object({
-    type: z.literal("viewer:toggle_allocated_nodes"),
-    nodeIds: z.array(z.string()),
-    allocated: z.boolean(),
-    clearOverrides: z.boolean().optional(),
-  }),
   z.object({ type: z.literal("viewer:ping") }),
 ]);
 export type ViewerToRoomMessage = z.infer<typeof ViewerCommandSchema>;

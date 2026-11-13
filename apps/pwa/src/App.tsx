@@ -141,27 +141,6 @@ export function App() {
     }
   }, []);
 
-  const handleToggleAllocatedNodes = useCallback(
-    (nodeIds: string[], allocated: boolean, clearOverrides?: boolean) => {
-      setSnapshot((prev) =>
-        prev
-          ? reduceTelemetrySession(
-              prev,
-              { type: "toggle_allocated_nodes", nodeIds, allocated, clearOverrides },
-              poe1GameAdapter,
-            )
-          : prev,
-      );
-      clientRef.current?.sendCommand({
-        type: "viewer:toggle_allocated_nodes",
-        nodeIds,
-        allocated,
-        clearOverrides,
-      });
-    },
-    [],
-  );
-
   if (!snapshot) {
     return (
       <QrPinJoinModal
@@ -253,7 +232,6 @@ export function App() {
       ) : effectiveMode === "TREE" ? (
         <PassiveTreeCommandView
           snapshot={snapshot}
-          onToggleAllocatedNodes={handleToggleAllocatedNodes}
           onTriggerManualSync={() => clientRef.current?.sendCommand({ type: "viewer:request_character_sync" })}
         />
       ) : (

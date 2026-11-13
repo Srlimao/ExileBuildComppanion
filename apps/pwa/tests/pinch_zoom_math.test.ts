@@ -1,4 +1,10 @@
+import { computeBracketProgressionDiff, resolveEffectiveAllocatedSet, selectBracketSpecIndex, sortTreeSpecsByLevel } from "@exile-hud/core";
 import { describe, expect, it } from "vitest";
+import { createInteractiveDemoSnapshot } from "../src/features/pairing_and_connection/demo_campaign_snapshot_factory.js";
+import {
+  computeNextPassivesBounds,
+  getBuiltPoe1TreeGeometry,
+} from "../src/features/passive_tree_visualizer/passive_tree_geometry_builder.js";
 import {
   clampViewWidth,
   computeCursorZoomCamera,
@@ -96,5 +102,44 @@ describe("pinch_zoom_math", () => {
     const prevWorldX = startCamera.centerX + fx * startCamera.width;
     const nextWorldX = wheelZoomed.centerX + fx * wheelZoomed.width;
     expect(nextWorldX).toBeCloseTo(prevWorldX, 6);
+  });
+
+  it("frames computeNextPassivesBounds tightly around next unallocated passives instead of entire tree/Ascendancy", () => {
+    const snap = createInteractiveDemoSnapshot();
+    const geometry = getBuiltPoe1TreeGeometry();
+    const specs = sortTreeSpecsByLevel(snap.passiveTree.specs ?? []);
+    const selectedIndex = selectBracketSpecIndex(specs, snap.characterLevel);
+    const allocatedIds = resolveEffectiveAllocatedSet(snap.passiveTree);
+    const diff = computeBracketProgressionDiff({
+      specs,
+      selectedIndex,
+      allocatedIds,
+      characterClass: snap.characterClass,
+      adapter: {
+        getPassiveTreeNodes: () => geometry.nodes,
+        getPassiveTreeGraphMeta: () => geometry.meta,
+      } as Parameters<typeof computeBracketProgressionDiff>[0]["adapter"],
+    });
+
+    const bounds = computeNextPassivesBounds({
+      diff,
+      allocatedIds,
+      characterClass: snap.characterClass,
+      geometry,
+    });
+
+    expect(bounds.maxX - bounds.minX).toBeLessThanOrEqual(3600);
+    expect(bounds.maxY - bounds.minY).toBeLessThanOrEqual(3600);
+
+    for (const id of ["7938", "1031", "21958"]) {
+      const node = geometry.nodes[id]!;
+      expect(node.x).toBeGreaterThanOrEqual(bounds.minX);
+      expect(node.x).toBeLessThanOrEqual(bounds.maxX);
+      expect(node.y).toBeGreaterThanOrEqual(bounds.minY);
+      expect(node.y).toBeLessThanOrEqual(bounds.maxY);
+    }
+
+    const ascNode = geometry.nodes["16023"]!;
+    expect(ascNode.y).toBeLessThan(bounds.minY);
   });
 });

@@ -127,8 +127,7 @@ export class SessionRoomSqliteRepository {
   applyViewerToggleToSnapshot(command: ViewerToRoomMessage): HudSessionSnapshot | null {
     if (
       command.type !== "viewer:toggle_checkpoint" &&
-      command.type !== "viewer:toggle_gem" &&
-      command.type !== "viewer:toggle_allocated_nodes"
+      command.type !== "viewer:toggle_gem"
     ) {
       return null;
     }
@@ -144,28 +143,10 @@ export class SessionRoomSqliteRepository {
       return updated;
     }
 
-    if (command.type === "viewer:toggle_gem") {
-      const nextGems = snapshot.gemSteps.map((gem) =>
-        gem.id === command.gemStepId ? { ...gem, manualCompleted: command.completed ?? !gem.manualCompleted } : gem,
-      );
-      const updated = { ...snapshot, version: snapshot.version + 1, gemSteps: nextGems };
-      this.saveSnapshot(updated);
-      return updated;
-    }
-
-    const nextOverrides = new Set(command.clearOverrides ? [] : snapshot.passiveTree.localOverrideNodeIds ?? []);
-    for (const id of command.nodeIds) {
-      if (command.allocated) nextOverrides.add(id);
-      else nextOverrides.delete(id);
-    }
-    const updated = {
-      ...snapshot,
-      version: snapshot.version + 1,
-      passiveTree: {
-        ...snapshot.passiveTree,
-        localOverrideNodeIds: [...nextOverrides],
-      },
-    };
+    const nextGems = snapshot.gemSteps.map((gem) =>
+      gem.id === command.gemStepId ? { ...gem, manualCompleted: command.completed ?? !gem.manualCompleted } : gem,
+    );
+    const updated = { ...snapshot, version: snapshot.version + 1, gemSteps: nextGems };
     this.saveSnapshot(updated);
     return updated;
   }

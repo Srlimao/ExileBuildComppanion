@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildInitialSessionSnapshot,
   computeBracketProgressionDiff,
+  computePassiveTreeDiff,
   computeShortestPathToNode,
   extractPobBuild,
   parseClientLogLine,
@@ -122,9 +123,18 @@ describe("passive tree level brackets, mastery extraction, and HUD TREE state", 
     expect(toMastery[toMastery.length - 1]).toBe("34927");
   });
 
-  it("reduces toggle_allocated_nodes overrides and auto-resets inGameTreeOpen on zone or exit", () => {
+  it("tracks allocatedHashes in computePassiveTreeDiff and auto-resets inGameTreeOpen on zone or exit", () => {
     const parsed = parsePobXmlString(MULTI_SPEC_POB_XML);
     const build = extractPobBuild(parsed, poe1GameAdapter);
+    const diff = computePassiveTreeDiff({
+      treeSpecs: build.treeSpecs,
+      allocatedHashes: [54447, 57264, 11420],
+      characterLevel: 1,
+      adapter: poe1GameAdapter,
+    });
+    expect(diff.allocatedNodeIds).toEqual(["54447", "57264", "11420"]);
+    expect(diff.allocatedTargetCount).toBeGreaterThan(0);
+
     let snap = buildInitialSessionSnapshot({
       roomId: "TREE01",
       profileId: "tree-test",
@@ -133,21 +143,6 @@ describe("passive tree level brackets, mastery extraction, and HUD TREE state", 
       gemSteps: [],
       adapter: poe1GameAdapter,
     });
-
-    snap = reduceTelemetrySession(
-      snap,
-      { type: "toggle_allocated_nodes", nodeIds: ["54447", "57264", "11420"], allocated: true },
-      poe1GameAdapter,
-    );
-    expect(snap.passiveTree.localOverrideNodeIds).toEqual(["54447", "57264", "11420"]);
-    expect(snap.passiveTree.allocatedTargetCount).toBeGreaterThan(0);
-
-    snap = reduceTelemetrySession(
-      snap,
-      { type: "toggle_allocated_nodes", nodeIds: ["11420"], allocated: false },
-      poe1GameAdapter,
-    );
-    expect(snap.passiveTree.localOverrideNodeIds).toEqual(["54447", "57264"]);
 
     snap = reduceTelemetrySession(snap, { type: "in_game_tree_state", open: true }, poe1GameAdapter);
     expect(snap.inGameTreeOpen).toBe(true);
@@ -164,12 +159,5 @@ describe("passive tree level brackets, mastery extraction, and HUD TREE state", 
     snap = reduceTelemetrySession(snap, { type: "process_state", running: false }, poe1GameAdapter);
     expect(snap.inGameTreeOpen).toBe(false);
     expect(snap.mode).toBe("STANDBY");
-
-    snap = reduceTelemetrySession(
-      snap,
-      { type: "toggle_allocated_nodes", nodeIds: [], allocated: false, clearOverrides: true },
-      poe1GameAdapter,
-    );
-    expect(snap.passiveTree.localOverrideNodeIds).toEqual([]);
   });
 });

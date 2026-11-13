@@ -30,7 +30,6 @@ import { poe1GameAdapter } from "@exile-hud/game-data";
 import {
   extractAllocatedMasteriesFromPassives,
   markEquippedItemSets,
-  pruneConfirmedLocalOverrides,
 } from "./client_log_sync_helper.js";
 import { DEFAULT_STARTER_POB_XML } from "./pob_profile_persistence_client.js";
 import type { CharacterPollResponse } from "./tauri_ipc_adapter.js";
@@ -174,10 +173,6 @@ export function applyGggCharacterResponseToSnapshot(
   const passiveTree = computePassiveTreeDiff({
     treeSpecs: build.treeSpecs,
     allocatedHashes,
-    localOverrideNodeIds: pruneConfirmedLocalOverrides(
-      snapshot.passiveTree.localOverrideNodeIds,
-      allocatedHashes,
-    ),
     allocatedMasteries: extractAllocatedMasteriesFromPassives(response.passivesJson),
     characterLevel,
     adapter: poe1GameAdapter,
@@ -254,21 +249,6 @@ export function applyViewerCommandToSnapshot(
         poe1GameAdapter,
       ),
       eventTag: "viewer_gem",
-    };
-  }
-  if (cmd.type === "viewer:toggle_allocated_nodes") {
-    return {
-      nextSnapshot: reduceTelemetrySession(
-        cur,
-        {
-          type: "toggle_allocated_nodes",
-          nodeIds: cmd.nodeIds,
-          allocated: cmd.allocated,
-          clearOverrides: cmd.clearOverrides,
-        },
-        poe1GameAdapter,
-      ),
-      eventTag: "viewer_tree_nodes",
     };
   }
   if (cmd.type === "viewer:request_character_sync") {

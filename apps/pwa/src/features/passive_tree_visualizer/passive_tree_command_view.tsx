@@ -8,6 +8,8 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PassiveTreeCanvasSvg } from "./passive_tree_canvas_svg.js";
 import {
+  computeBracketOverviewBounds,
+  computeNextPassivesBounds,
   computeNodeSetBounds,
   getBuiltPoe1TreeGeometry,
   resolveVisibleAscendancies,
@@ -18,14 +20,12 @@ import { usePanZoomViewport } from "./use_pan_zoom_viewport.js";
 
 interface PassiveTreeCommandViewProps {
   snapshot: HudSessionSnapshot;
-  onToggleAllocatedNodes: (nodeIds: string[], allocated: boolean, clearOverrides?: boolean) => void;
   onTriggerManualSync: () => void;
 }
 
-/** Full-canvas interactive GGG 3.30.0 passive tree workspace rendered on the 4th TREE tab. */
+/** Full-canvas read-only GGG 3.30.0 passive tree workspace rendered on the 4th TREE tab. */
 export function PassiveTreeCommandView({
   snapshot,
-  onToggleAllocatedNodes,
   onTriggerManualSync,
 }: PassiveTreeCommandViewProps) {
   const geometry = useMemo(() => getBuiltPoe1TreeGeometry(), []);
@@ -105,7 +105,13 @@ export function PassiveTreeCommandView({
   }, [searchQuery, visibleNodes]);
 
   const initialBounds = useMemo(
-    () => computeNodeSetBounds(diff.targetSet, geometry.nodes),
+    () =>
+      computeNextPassivesBounds({
+        diff,
+        allocatedIds,
+        characterClass: snapshot.characterClass,
+        geometry,
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
@@ -117,8 +123,15 @@ export function PassiveTreeCommandView({
     const specKey = diff.selectedSpec?.id ?? "__empty__";
     if (lastFittedSpecKey.current === specKey) return;
     lastFittedSpecKey.current = specKey;
-    viewport.fitBounds(computeNodeSetBounds(diff.targetSet, geometry.nodes));
-  }, [diff.selectedSpec?.id, diff.targetSet, geometry.nodes, viewport]);
+    viewport.fitBounds(
+      computeNextPassivesBounds({
+        diff,
+        allocatedIds,
+        characterClass: snapshot.characterClass,
+        geometry,
+      }),
+    );
+  }, [diff, allocatedIds, snapshot.characterClass, geometry, viewport]);
 
   const focusNode = (nodeId: string) => {
     const node = geometry.nodes[nodeId];
@@ -135,7 +148,6 @@ export function PassiveTreeCommandView({
         selectedIndex={selectedIndex}
         manualSpecId={manualSpecId}
         allocatedIds={allocatedIds}
-        overrideCount={snapshot.passiveTree.localOverrideNodeIds?.length ?? 0}
         diff={diff}
         searchQuery={searchQuery}
         searchMatchCount={searchMatchIds.size}
@@ -147,13 +159,19 @@ export function PassiveTreeCommandView({
         }}
         onSearchChange={setSearchQuery}
         onToggleShowFuture={() => setShowFuture((v) => !v)}
-        onFitBracket={() => viewport.fitBounds(computeNodeSetBounds(diff.targetSet, geometry.nodes))}
+        onFitBracket={() => viewport.fitBounds(computeBracketOverviewBounds(diff.targetSet, geometry.nodes))}
         onFocusNextTarget={() => {
-          const next = diff.nextNotableTargets[0];
-          if (next) focusNode(next.nodeId);
+          viewport.fitBounds(
+            computeNextPassivesBounds({
+              diff,
+              allocatedIds,
+              characterClass: snapshot.characterClass,
+              geometry,
+            }),
+          );
+          setSelectedNodeId(diff.nextNotableTargets[0]?.nodeId ?? null);
         }}
         onFocusAscendancy={() => viewport.fitBounds(computeNodeSetBounds(ascendancyNodeIds, geometry.nodes))}
-        onClearLocalOverrides={() => onToggleAllocatedNodes([], false, true)}
       />
 
       <div className="flex flex-col lg:flex-row gap-3 items-stretch">
@@ -170,7 +188,6 @@ export function PassiveTreeCommandView({
           containerRef={viewport.containerRef}
           viewBox={viewport.viewBox}
           onSelectNode={setSelectedNodeId}
-          onToggleAllocatedNodes={(ids, alloc) => onToggleAllocatedNodes(ids, alloc)}
           onZoomIn={() => viewport.zoomBy(0.75)}
           onZoomOut={() => viewport.zoomBy(1.33)}
           pointerHandlers={viewport.pointerHandlers}
@@ -181,7 +198,6 @@ export function PassiveTreeCommandView({
           nodes={geometry.nodes}
           allocatedIds={allocatedIds}
           onFocusNode={focusNode}
-          onToggleAllocatedNodes={(ids, alloc) => onToggleAllocatedNodes(ids, alloc)}
           onTriggerManualSync={onTriggerManualSync}
         />
       </div>

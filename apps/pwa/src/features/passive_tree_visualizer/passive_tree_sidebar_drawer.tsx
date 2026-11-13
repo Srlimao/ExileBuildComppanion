@@ -1,14 +1,13 @@
 import type { PassiveTreeBracketDiff } from "@exile-hud/core";
 import { resolveMasteryEffectStats } from "@exile-hud/core";
 import { poe1GameAdapter, type PassiveTreeNodeMetadata } from "@exile-hud/game-data";
-import { Check, Crosshair, GitCommitHorizontal, RefreshCw, Sparkles, TriangleAlert } from "lucide-react";
+import { Crosshair, GitCommitHorizontal, RefreshCw, Sparkles, TriangleAlert } from "lucide-react";
 
 interface PassiveTreeSidebarDrawerProps {
   diff: PassiveTreeBracketDiff;
   nodes: Record<string, PassiveTreeNodeMetadata>;
   allocatedIds: ReadonlySet<string>;
   onFocusNode: (nodeId: string) => void;
-  onToggleAllocatedNodes: (nodeIds: string[], allocated: boolean) => void;
   onTriggerManualSync: () => void;
 }
 
@@ -17,7 +16,6 @@ export function PassiveTreeSidebarDrawer({
   nodes,
   allocatedIds,
   onFocusNode,
-  onToggleAllocatedNodes,
   onTriggerManualSync,
 }: PassiveTreeSidebarDrawerProps) {
   const masteryEntries = Object.entries(diff.selectedSpec?.masteries ?? {});
@@ -82,14 +80,9 @@ export function PassiveTreeSidebarDrawer({
                     >
                       <Crosshair className="h-3 w-3" />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => onToggleAllocatedNodes(item.pathToAllocateIds, true)}
-                      title={`Mark path (${item.pathToAllocateIds.length} pt)`}
-                      className="inline-flex items-center gap-0.5 px-2 py-1 rounded bg-emerald-500/15 border border-emerald-500/35 hover:bg-emerald-500/25 text-[10px] font-mono text-emerald-300 cursor-pointer"
-                    >
-                      <Check className="h-3 w-3" />+{item.pathToAllocateIds.length}
-                    </button>
+                    <span className="px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-[10px] font-mono tabular-nums text-neutral-300">
+                      {item.pathToAllocateIds.length} pt
+                    </span>
                   </div>
                 </div>
               </div>

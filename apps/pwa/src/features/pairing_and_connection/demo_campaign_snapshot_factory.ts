@@ -5,6 +5,7 @@ import {
   buildInitialSessionSnapshot,
   buildPreprocessorDefinitions,
   combineRouteActFiles,
+  computePassiveTreeDiff,
   extractPobBuild,
   parseClientLogLine,
   parsePobXmlString,
@@ -99,18 +100,16 @@ export function createInteractiveDemoSnapshot(): HudSessionSnapshot {
   snap = reduceTelemetrySession(snap, { type: "process_state", running: true }, poe1GameAdapter);
   const coastEvent = parseClientLogLine('2026/11/13 [INFO Client 1] Generating level 2 area "1_1_2" with seed 12345')!;
   snap = reduceTelemetrySession(snap, { type: "client_log", event: coastEvent, autoDetectCharacter: true }, poe1GameAdapter);
-  snap = reduceTelemetrySession(
-    snap,
-    {
-      type: "toggle_allocated_nodes",
-      nodeIds: ["54447", "57264", "37569", "36542", "4397", "11420", "57226", "21678"],
-      allocated: true,
-    },
-    poe1GameAdapter,
-  );
+  const passiveTree = computePassiveTreeDiff({
+    treeSpecs: extracted.treeSpecs,
+    allocatedHashes: [54447, 57264, 37569, 36542, 4397, 11420, 57226, 21678],
+    characterLevel: 30,
+    adapter: poe1GameAdapter,
+  });
 
   return {
     ...snap,
+    passiveTree,
     characterLevel: 30,
     characterSyncStatus: "ONLINE_PUBLIC",
     runElapsedMs: 142_000,

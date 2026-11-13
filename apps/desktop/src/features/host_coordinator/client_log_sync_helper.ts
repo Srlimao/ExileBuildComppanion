@@ -96,7 +96,6 @@ export function syncBuildSetsForLevel(
       passiveTree: computePassiveTreeDiff({
         treeSpecs: build.treeSpecs,
         allocatedHashes: existingAllocated,
-        localOverrideNodeIds: snapshot.passiveTree.localOverrideNodeIds,
         allocatedMasteries: snapshot.passiveTree.allocatedMasteries,
         characterLevel: snapshot.characterLevel,
         adapter: poe1GameAdapter,
@@ -161,14 +160,4 @@ export function extractAllocatedMasteriesFromPassives(
     if (k && v !== undefined && v !== null) out[String(k)] = String(v);
   }
   return out;
-}
-
-/** Retains only local node overrides not yet confirmed by the latest GGG passive hashes. */
-export function pruneConfirmedLocalOverrides(
-  localOverrides: string[] | undefined,
-  allocatedHashes: number[],
-): string[] {
-  if (!localOverrides?.length) return [];
-  const confirmed = new Set(allocatedHashes.map(String));
-  return localOverrides.filter((id) => !confirmed.has(id));
 }

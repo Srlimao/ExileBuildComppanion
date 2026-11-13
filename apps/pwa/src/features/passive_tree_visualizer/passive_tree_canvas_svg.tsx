@@ -52,7 +52,6 @@ interface PassiveTreeCanvasSvgProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
   viewBox: string;
   onSelectNode: (id: string | null) => void;
-  onToggleAllocatedNodes: (nodeIds: string[], allocated: boolean) => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
   pointerHandlers: Pick<
@@ -74,7 +73,6 @@ export function PassiveTreeCanvasSvg({
   containerRef,
   viewBox,
   onSelectNode,
-  onToggleAllocatedNodes,
   onZoomIn,
   onZoomOut,
   pointerHandlers,
@@ -215,7 +213,6 @@ export function PassiveTreeCanvasSvg({
         characterClass={characterClass}
         selectedNodeId={selectedNodeId}
         onSelectNode={onSelectNode}
-        onToggleAllocatedNodes={onToggleAllocatedNodes}
         onZoomIn={onZoomIn}
         onZoomOut={onZoomOut}
       />
