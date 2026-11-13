@@ -16,6 +16,7 @@ import {
 } from "./passive_tree_geometry_builder.js";
 import { PassiveTreeLevelStepperBar } from "./passive_tree_level_stepper_bar.js";
 import { PassiveTreeSidebarDrawer } from "./passive_tree_sidebar_drawer.js";
+import { loadSavedTreeViewport, saveTreeViewport } from "./passive_tree_viewport_storage.js";
 import { usePanZoomViewport } from "./use_pan_zoom_viewport.js";
 
 interface PassiveTreeCommandViewProps {
@@ -33,8 +34,9 @@ export function PassiveTreeCommandView({
     () => sortTreeSpecsByLevel(snapshot.passiveTree.specs ?? []),
     [snapshot.passiveTree.specs],
   );
+  const savedViewport = useMemo(() => loadSavedTreeViewport(snapshot.profileId), [snapshot.profileId]);
 
-  const [manualSpecId, setManualSpecId] = useState<string | null>(null);
+  const [manualSpecId, setManualSpecId] = useState<string | null>(() => savedViewport?.manualSpecId ?? null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showFuture, setShowFuture] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -104,6 +106,10 @@ export function PassiveTreeCommandView({
     return hits;
   }, [searchQuery, visibleNodes]);
 
+  const currentSpecKey = `${snapshot.profileId}::${diff.selectedSpec?.id ?? "__empty__"}`;
+  const restoredCamera =
+    savedViewport && savedViewport.specKey === currentSpecKey ? savedViewport.camera : null;
+
   const initialBounds = useMemo(
     () =>
       computeNextPassivesBounds({
@@ -116,13 +122,12 @@ export function PassiveTreeCommandView({
     [],
   );
 
-  const viewport = usePanZoomViewport(initialBounds, setSelectedNodeId);
-  const lastFittedSpecKey = useRef<string>("");
+  const viewport = usePanZoomViewport(initialBounds, setSelectedNodeId, restoredCamera);
+  const lastFittedSpecKey = useRef<string>(restoredCamera ? currentSpecKey : "");
 
   useEffect(() => {
-    const specKey = diff.selectedSpec?.id ?? "__empty__";
-    if (lastFittedSpecKey.current === specKey) return;
-    lastFittedSpecKey.current = specKey;
+    if (lastFittedSpecKey.current === currentSpecKey) return;
+    lastFittedSpecKey.current = currentSpecKey;
     viewport.fitBounds(
       computeNextPassivesBounds({
         diff,
@@ -131,7 +136,44 @@ export function PassiveTreeCommandView({
         geometry,
       }),
     );
-  }, [diff, allocatedIds, snapshot.characterClass, geometry, viewport]);
+  }, [currentSpecKey, diff, allocatedIds, snapshot.characterClass, geometry, viewport]);
+
+  const latestPersistRef = useRef({
+    profileId: snapshot.profileId,
+    specKey: currentSpecKey,
+    camera: viewport.camera,
+    manualSpecId,
+  });
+  latestPersistRef.current = {
+    profileId: snapshot.profileId,
+    specKey: currentSpecKey,
+    camera: viewport.camera,
+    manualSpecId,
+  };
+
+  useEffect(() => {
+    saveTreeViewport(snapshot.profileId, {
+      specKey: currentSpecKey,
+      camera: viewport.camera,
+      manualSpecId,
+    });
+  }, [snapshot.profileId, currentSpecKey, viewport.camera, manualSpecId]);
+
+  useEffect(
+    () => () => {
+      const latest = latestPersistRef.current;
+      saveTreeViewport(
+        latest.profileId,
+        {
+          specKey: latest.specKey,
+          camera: latest.camera,
+          manualSpecId: latest.manualSpecId,
+        },
+        true,
+      );
+    },
+    [],
+  );
 
   const focusNode = (nodeId: string) => {
     const node = geometry.nodes[nodeId];

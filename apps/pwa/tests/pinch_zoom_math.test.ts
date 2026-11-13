@@ -1,10 +1,15 @@
 import { computeBracketProgressionDiff, resolveEffectiveAllocatedSet, selectBracketSpecIndex, sortTreeSpecsByLevel } from "@exile-hud/core";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createInteractiveDemoSnapshot } from "../src/features/pairing_and_connection/demo_campaign_snapshot_factory.js";
 import {
   computeNextPassivesBounds,
   getBuiltPoe1TreeGeometry,
 } from "../src/features/passive_tree_visualizer/passive_tree_geometry_builder.js";
+import {
+  clearSavedTreeViewportCache,
+  loadSavedTreeViewport,
+  saveTreeViewport,
+} from "../src/features/passive_tree_visualizer/passive_tree_viewport_storage.js";
 import {
   clampViewWidth,
   computeCursorZoomCamera,
@@ -141,5 +146,83 @@ describe("pinch_zoom_math", () => {
 
     const ascNode = geometry.nodes["16023"]!;
     expect(ascNode.y).toBeLessThan(bounds.minY);
+  });
+});
+
+describe("passive_tree_viewport_storage", () => {
+  beforeEach(() => clearSavedTreeViewportCache(true));
+  afterEach(() => clearSavedTreeViewportCache(true));
+
+  it("persists and restores camera and manualSpecId per profile with clamped zoom width", () => {
+    saveTreeViewport(
+      "profile-a",
+      {
+        specKey: "profile-a::spec_40",
+        camera: { centerX: -1450, centerY: -4200, width: 120 },
+        manualSpecId: "spec_40",
+      },
+      true,
+    );
+    saveTreeViewport(
+      "profile-b",
+      {
+        specKey: "profile-b::spec_75",
+        camera: { centerX: 500, centerY: 1200, width: 99999 },
+        manualSpecId: null,
+      },
+      true,
+    );
+
+    const a = loadSavedTreeViewport("profile-a");
+    const b = loadSavedTreeViewport("profile-b");
+    expect(a?.specKey).toBe("profile-a::spec_40");
+    expect(a?.manualSpecId).toBe("spec_40");
+    expect(a?.camera).toEqual({ centerX: -1450, centerY: -4200, width: MIN_VIEW_WIDTH });
+
+    expect(b?.specKey).toBe("profile-b::spec_75");
+    expect(b?.manualSpecId).toBeNull();
+    expect(b?.camera).toEqual({ centerX: 500, centerY: 1200, width: MAX_VIEW_WIDTH });
+    expect(loadSavedTreeViewport("profile-missing")).toBeNull();
+  });
+
+  it("re-hydrates saved camera cleanly across simulated browser reloads", () => {
+    const store = new Map<string, string>();
+    const prevStorage = (globalThis as { localStorage?: unknown }).localStorage;
+    Object.defineProperty(globalThis, "localStorage", {
+      configurable: true,
+      value: {
+        getItem: (k: string) => store.get(k) ?? null,
+        setItem: (k: string, v: string) => {
+          store.set(k, v);
+        },
+        removeItem: (k: string) => {
+          store.delete(k);
+        },
+      },
+    });
+    try {
+      saveTreeViewport(
+        "demo",
+        {
+          specKey: "demo::spec_act4",
+          camera: { centerX: -1800, centerY: -6400, width: 1420 },
+          manualSpecId: "spec_act4",
+        },
+        true,
+      );
+      clearSavedTreeViewportCache(false);
+
+      const restored = loadSavedTreeViewport("demo");
+      expect(restored?.specKey).toBe("demo::spec_act4");
+      expect(restored?.manualSpecId).toBe("spec_act4");
+      expect(restored?.camera).toEqual({ centerX: -1800, centerY: -6400, width: 1420 });
+    } finally {
+      clearSavedTreeViewportCache(true);
+      if (prevStorage === undefined) {
+        Reflect.deleteProperty(globalThis, "localStorage");
+      } else {
+        Object.defineProperty(globalThis, "localStorage", { configurable: true, value: prevStorage });
+      }
+    }
   });
 });

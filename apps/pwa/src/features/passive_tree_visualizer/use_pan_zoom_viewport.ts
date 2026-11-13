@@ -17,14 +17,21 @@ export type { ViewportCamera } from "./pinch_zoom_math.js";
 export function usePanZoomViewport(
   initialBounds: TreeWorldBounds,
   onTapNode?: (nodeId: string | null) => void,
+  initialCameraOverride?: ViewportCamera | null,
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [size, setSize] = useState({ w: 1000, h: 700 });
-  const initialCamera: ViewportCamera = {
-    centerX: (initialBounds.minX + initialBounds.maxX) / 2,
-    centerY: (initialBounds.minY + initialBounds.maxY) / 2,
-    width: clampViewWidth(initialBounds.maxX - initialBounds.minX),
-  };
+  const initialCamera: ViewportCamera = initialCameraOverride
+    ? {
+        centerX: initialCameraOverride.centerX,
+        centerY: initialCameraOverride.centerY,
+        width: clampViewWidth(initialCameraOverride.width),
+      }
+    : {
+        centerX: (initialBounds.minX + initialBounds.maxX) / 2,
+        centerY: (initialBounds.minY + initialBounds.maxY) / 2,
+        width: clampViewWidth(initialBounds.maxX - initialBounds.minX),
+      };
   const [camera, setCamera] = useState<ViewportCamera>(initialCamera);
   const cameraRef = useRef<ViewportCamera>(initialCamera);
   const onTapNodeRef = useRef(onTapNode);
@@ -192,5 +199,5 @@ export function usePanZoomViewport(
     [onPointerDown, onPointerMove, finishPointer],
   );
 
-  return { containerRef, viewBox, viewWidth: camera.width, fitBounds, focusPoint, zoomBy, pointerHandlers };
+  return { containerRef, camera, viewBox, viewWidth: camera.width, fitBounds, focusPoint, zoomBy, pointerHandlers };
 }
