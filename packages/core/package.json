@@ -1,0 +1,29 @@
+{
+  "name": "@exile-hud/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@exile-hud/game-data": "workspace:*",
+    "fast-xml-parser": "^5.0.8",
+    "pako": "^2.1.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/pako": "^2.0.3"
+  }
+}

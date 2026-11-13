@@ -1,0 +1,217 @@
+import type { GameAdapter } from "@exile-hud/game-data";
+import type { HudContextMode, HudSessionSnapshot } from "../protocol/session_room_wire_protocol.js";
+import { computeNextTownCurrencyBudget } from "../route_compiler/gem_quest_and_vendor_assigner.js";
+import { buildVendorSearchRegex } from "../vendor_regex/vendor_search_regex_builder.js";
+import type { ParsedClientLogEvent } from "./zone_context_disambiguator.js";
+import { disambiguateZoneByName, isLabyrinthArea, isTownOrHideoutArea } from "./zone_context_disambiguator.js";
+
+export type TelemetryAction =
+  | { type: "client_log"; event: ParsedClientLogEvent; autoDetectCharacter: boolean; nowMs?: number }
+  | { type: "process_state"; running: boolean; nowMs?: number }
+  | { type: "toggle_checkpoint"; checkpointId: string; completed?: boolean }
+  | { type: "toggle_gem"; gemStepId: string; completed?: boolean }
+  | { type: "tick_timer"; deltaMs: number };
+
+export function computeEffectiveMode(areaId: string, poeRunning: boolean, adapter: GameAdapter): HudContextMode {
+  if (!poeRunning) return "STANDBY";
+  if (isLabyrinthArea(areaId)) return "LAB";
+  if (isTownOrHideoutArea(areaId, adapter)) return "TOWN";
+  return "FIELD";
+}
+
+function transitionToZone(
+  state: HudSessionSnapshot,
+  areaId: string,
+  areaName: string,
+  areaLevel: number,
+  areaAct: number,
+  areaSeed: string | null,
+  isTown: boolean,
+  isLab: boolean,
+  adapter: GameAdapter,
+  nowMs: number,
+): HudSessionSnapshot {
+  const prevWasTown = isTownOrHideoutArea(state.currentAreaId, adapter);
+  const nextHighestAct = isTown ? state.highestUnlockedAct : Math.max(state.highestUnlockedAct, areaAct || state.highestUnlockedAct);
+
+  const checkpoints = state.checkpoints.map((cp) => ({ ...cp }));
+  const matchedIdx = checkpoints.findIndex((cp) => cp.areaId === areaId && !cp.completed);
+  if (matchedIdx > 0) {
+    for (let i = 0; i < matchedIdx; i++) {
+      if (checkpoints[i]!.category === "MANDATORY_PATH") {
+        checkpoints[i]!.completed = true;
+      }
+    }
+  }
+  if (state.currentAreaId && state.currentAreaId !== areaId) {
+    for (const cp of checkpoints) {
+      if (cp.areaId === state.currentAreaId && (cp.category === "LAB_TRIAL" || cp.category === "SKILL_BOOK")) {
+        cp.softCompleted = true;
+      }
+    }
+  }
+
+  let gemSteps = state.gemSteps;
+  if (prevWasTown && !isTown && state.characterSyncStatus !== "ONLINE_PUBLIC" && state.characterSyncStatus !== "ONLINE_POESESSID") {
+    gemSteps = state.gemSteps.map((gs) =>
+      gs.act <= nextHighestAct && !gs.verifiedByApi && !gs.manualCompleted ? { ...gs, softAcquired: true } : gs,
+    );
+  }
+
+  const actSplitsMs = { ...state.actSplitsMs };
+  if (areaAct > state.highestUnlockedAct && state.highestUnlockedAct >= 1 && !actSplitsMs[`act_${state.highestUnlockedAct}`]) {
+    actSplitsMs[`act_${state.highestUnlockedAct}`] = state.runElapsedMs || nowMs;
+  }
+
+  let resumeZoneBanner = state.resumeZoneBanner;
+  let recentDeath = state.recentDeath;
+  if (isTown && state.recentDeath && state.lastCombatZoneId && state.lastCombatZoneName) {
+    resumeZoneBanner = { areaId: state.lastCombatZoneId, areaName: state.lastCombatZoneName };
+    recentDeath = false;
+  } else if (!isTown) {
+    resumeZoneBanner = null;
+    recentDeath = false;
+  }
+
+  const mode: HudContextMode = !state.poeRunning ? "STANDBY" : isLab ? "LAB" : isTown ? "TOWN" : "FIELD";
+  const zoneLayoutPaths = adapter.getZoneLayoutVariants(areaId);
+
+  return {
+    ...state,
+    version: state.version + 1,
+    mode,
+    currentAreaId: areaId,
+    currentAreaName: areaName,
+    currentAreaLevel: areaLevel > 0 ? areaLevel : state.currentAreaLevel,
+    currentAreaSeed: areaSeed,
+    currentAct: areaAct || state.currentAct,
+    highestUnlockedAct: nextHighestAct,
+    lastCombatZoneId: isTown ? state.lastCombatZoneId : areaId,
+    lastCombatZoneName: isTown ? state.lastCombatZoneName : areaName,
+    recentDeath,
+    resumeZoneBanner,
+    checkpoints,
+    gemSteps,
+    nextTownCurrencyBudget: computeNextTownCurrencyBudget(gemSteps, nextHighestAct),
+    activeVendorRegex: buildVendorSearchRegex({
+      gemSteps,
+      linkGroups: state.linkGroups,
+      currentAct: nextHighestAct,
+    }),
+    actSplitsMs,
+    zoneLayoutPaths,
+  };
+}
+
+export function reduceTelemetrySession(
+  state: HudSessionSnapshot,
+  action: TelemetryAction,
+  adapter: GameAdapter,
+): HudSessionSnapshot {
+  if (action.type === "tick_timer") {
+    if (!state.runTimerRunning || !state.poeRunning) return state;
+    return { ...state, runElapsedMs: state.runElapsedMs + Math.max(0, action.deltaMs) };
+  }
+
+  if (action.type === "process_state") {
+    const isTown = isTownOrHideoutArea(state.currentAreaId, adapter);
+    const isLab = isLabyrinthArea(state.currentAreaId);
+    const mode: HudContextMode = !action.running ? "STANDBY" : isLab ? "LAB" : isTown ? "TOWN" : "FIELD";
+    return {
+      ...state,
+      version: state.version + 1,
+      poeRunning: action.running,
+      runTimerRunning: action.running,
+      mode,
+    };
+  }
+
+  if (action.type === "toggle_checkpoint") {
+    const checkpoints = state.checkpoints.map((cp) =>
+      cp.id === action.checkpointId
+        ? { ...cp, completed: action.completed ?? !cp.completed, softCompleted: false }
+        : cp,
+    );
+    return { ...state, version: state.version + 1, checkpoints };
+  }
+
+  if (action.type === "toggle_gem") {
+    const gemSteps = state.gemSteps.map((gs) =>
+      gs.id === action.gemStepId ? { ...gs, manualCompleted: action.completed ?? !gs.manualCompleted } : gs,
+    );
+    return {
+      ...state,
+      version: state.version + 1,
+      gemSteps,
+      nextTownCurrencyBudget: computeNextTownCurrencyBudget(gemSteps, state.highestUnlockedAct),
+      activeVendorRegex: buildVendorSearchRegex({
+        gemSteps,
+        linkGroups: state.linkGroups,
+        currentAct: state.highestUnlockedAct,
+      }),
+    };
+  }
+
+  const nowMs = action.nowMs ?? Date.now();
+  const ev = action.event;
+
+  if (ev.type === "area_generated") {
+    const known = adapter.resolveAreaById(ev.areaId);
+    const areaName = known?.name ?? (/hideout/i.test(ev.areaId) ? "Hideout" : ev.areaId);
+    const areaAct = known?.act && known.act > 0 ? known.act : state.currentAct;
+    const isTown = isTownOrHideoutArea(ev.areaId, adapter);
+    const isLab = isLabyrinthArea(ev.areaId);
+    return transitionToZone(state, ev.areaId, areaName, ev.areaLevel, areaAct, ev.areaSeed, isTown, isLab, adapter, nowMs);
+  }
+
+  if (ev.type === "zone_entered") {
+    const resolved = disambiguateZoneByName(
+      ev.areaName,
+      {
+        highestUnlockedAct: state.highestUnlockedAct,
+        lastCombatZoneId: state.lastCombatZoneId,
+        characterLevel: state.characterLevel,
+      },
+      adapter,
+    );
+    if (!resolved) return state;
+    const isTown = resolved.is_town_area || /hideout/i.test(resolved.id);
+    const isLab = isLabyrinthArea(resolved.id);
+    return transitionToZone(
+      state,
+      resolved.id,
+      resolved.name,
+      resolved.level,
+      resolved.act || state.currentAct,
+      null,
+      isTown,
+      isLab,
+      adapter,
+      nowMs,
+    );
+  }
+
+  if (ev.type === "level_up") {
+    return {
+      ...state,
+      version: state.version + 1,
+      characterLevel: ev.level,
+      characterName: action.autoDetectCharacter ? ev.characterName : state.characterName,
+    };
+  }
+
+  if (ev.type === "player_slain") {
+    return { ...state, version: state.version + 1, recentDeath: true };
+  }
+
+  if (ev.type === "skill_points_received") {
+    const idx = state.checkpoints.findIndex(
+      (cp) => cp.category === "SKILL_BOOK" && !cp.completed && cp.sectionAct <= state.highestUnlockedAct,
+    );
+    if (idx === -1) return state;
+    const checkpoints = state.checkpoints.map((cp, i) => (i === idx ? { ...cp, completed: true } : cp));
+    return { ...state, version: state.version + 1, checkpoints };
+  }
+
+  return state;
+}
