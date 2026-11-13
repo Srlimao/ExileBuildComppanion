@@ -1,0 +1,155 @@
+import type {
+  AreaDefinition,
+  BossElementalWarning,
+  GameAdapter,
+  IzaroMechanicGuide,
+  LabTrialMeta,
+} from "./game_adapter_contract.js";
+import {
+  poe1Areas,
+  poe1AwakenedGemLookup,
+  poe1Characters,
+  poe1DefaultRoutes,
+  poe1Gems,
+  poe1KillWaypoints,
+  poe1PassiveTreeNodes,
+  poe1Quests,
+  poe1VaalGemLookup,
+  poe1ZoneLayoutManifest,
+} from "./poe1_static_dataset_loader.js";
+
+const LAB_TRIALS: LabTrialMeta[] = [
+  { difficulty: "normal", areaId: "1_1_7_1", areaName: "The Lower Prison", act: 1, hint: "Sawblades & Spike Traps" },
+  { difficulty: "normal", areaId: "1_2_5_1", areaName: "The Crypt Level 1", act: 2, hint: "Spinning Blades" },
+  { difficulty: "normal", areaId: "1_2_14_2", areaName: "The Chamber of Sins Level 2", act: 2, hint: "Wall Darts & Spikes" },
+  { difficulty: "normal", areaId: "1_3_3_1", areaName: "The Crematorium", act: 3, hint: "Furnace Tiles & Sawblades" },
+  { difficulty: "normal", areaId: "1_3_6", areaName: "The Catacombs", act: 3, hint: "Poison Darts & Lava" },
+  { difficulty: "normal", areaId: "1_3_15", areaName: "The Imperial Gardens", act: 3, hint: "Rotating Pillars & Darts" },
+  { difficulty: "cruel", areaId: "2_6_6", areaName: "The Prison", act: 6, hint: "Spike & Sawblade Gauntlet" },
+  { difficulty: "cruel", areaId: "2_7_5_1", areaName: "The Crypt", act: 7, hint: "Room-Wide Sentinel Traps" },
+  { difficulty: "cruel", areaId: "2_7_9", areaName: "The Chamber of Sins Level 2", act: 7, hint: "Sawblades + Lever Maze" },
+  { difficulty: "merciless", areaId: "2_8_10", areaName: "The Bath House", act: 8, hint: "Furnace + Spinning Saws" },
+  { difficulty: "merciless", areaId: "2_9_6", areaName: "The Tunnel", act: 9, hint: "Lava Floors & Spikes" },
+  { difficulty: "merciless", areaId: "2_10_5", areaName: "The Ossuary", act: 10, hint: "Dart Corridors + Saws" },
+];
+
+const IZARO_MECHANICS: IzaroMechanicGuide[] = [
+  { phase: "Charges", hazard: "Charges stack massive dmg/speed on Izaro", counterplay: "Click Charge Disruptors before Izaro hits 10 stacks" },
+  { phase: "Gargoyles", hazard: "Stone Gargoyles buff Izaro damage & armor", counterplay: "Kill all 3 Gargoyles before bursting Izaro" },
+  { phase: "Conduits", hazard: "Elemental Conduits grant Fire/Cold/Light dmg", counterplay: "Destroy Conduits immediately as they activate" },
+  { phase: "Fonts", hazard: "Curses apply Temp Chains / Enfeeble / Vuln", counterplay: "Destroy Fonts or keep Anti-Curse flask ready" },
+  { phase: "Portals", hazard: "Summons Skeletons & Necromancer buffs", counterplay: "Kill portals quickly to prevent Phase 3 carry-over" },
+  { phase: "Idols", hazard: "Elemental statues pulse AoE explosions", counterplay: "Do not let Izaro stay near active Idols or burst him fast" },
+];
+
+const BOSS_WARNINGS: BossElementalWarning[] = [
+  { act: 1, areaId: "1_1_11_2", bossName: "Merveil, the Siren", recommendedFire: 15, recommendedCold: 50, recommendedLightning: 10, recommendedChaos: 0, warningText: "Heavy Cold projectiles & chilled ground — Sapphire Ring recommended" },
+  { act: 2, areaId: "1_2_9", bossName: "The Vaal Oversoul", recommendedFire: 35, recommendedCold: 20, recommendedLightning: 50, recommendedChaos: 0, warningText: "Lightning beam & physical slam — Topaz Ring recommended" },
+  { act: 3, areaId: "1_3_18_2", bossName: "Dominus, High Templar", recommendedFire: 40, recommendedCold: 40, recommendedLightning: 65, recommendedChaos: 0, warningText: "Touch of God Lightning slam & Blood Rain bleed" },
+  { act: 4, areaId: "1_4_6_3", bossName: "Malachai, The Nightmare", recommendedFire: 65, recommendedCold: 55, recommendedLightning: 55, recommendedChaos: 0, warningText: "High Fire/Physical arena traps & slams" },
+  { act: 5, areaId: "1_5_8", bossName: "Kitava, the Insatiable", recommendedFire: 75, recommendedCold: 65, recommendedLightning: 65, recommendedChaos: 0, warningText: "Triggers -30% All Resistances immediately upon completion" },
+  { act: 6, areaId: "2_6_15", bossName: "Tsoagoth, The Brine King", recommendedFire: 60, recommendedCold: 75, recommendedLightning: 75, recommendedChaos: 0, warningText: "Post-Kitava Cold & Lightning bursts — aim for 75% after -30%" },
+  { act: 8, areaId: "2_8_14", bossName: "Solaris & Lunaris", recommendedFire: 75, recommendedCold: 75, recommendedLightning: 65, recommendedChaos: 0, warningText: "Heavy Fire & Cold beams; avoid crossing ground orbs" },
+  { act: 10, areaId: "2_10_2", bossName: "Kitava (Act 10)", recommendedFire: 75, recommendedCold: 75, recommendedLightning: 75, recommendedChaos: 0, warningText: "Triggers final -60% All Resistances penalty for mapping" },
+];
+
+function computeSkillBookQuestIds(): Set<string> {
+  const ids = new Set<string>();
+  for (const quest of Object.values(poe1Quests)) {
+    for (const offer of Object.values(quest.reward_offers)) {
+      if (!offer) continue;
+      if (Object.keys(offer.quest).some((itemId) => itemId.includes("SkillBooks"))) {
+        ids.add(quest.id);
+      }
+    }
+  }
+  return ids;
+}
+
+const SKILL_BOOK_IDS = computeSkillBookQuestIds();
+const AREAS_BY_LOWER_NAME = (() => {
+  const map = new Map<string, AreaDefinition[]>();
+  for (const area of Object.values(poe1Areas)) {
+    const key = area.name.trim().toLowerCase();
+    const list = map.get(key) ?? [];
+    list.push(area);
+    map.set(key, list);
+  }
+  return map;
+})();
+
+export class Poe1CampaignGameAdapter implements GameAdapter {
+  readonly gameId = "poe1" as const;
+
+  getAreas() {
+    return poe1Areas;
+  }
+
+  getGems() {
+    return poe1Gems;
+  }
+
+  getQuests() {
+    return poe1Quests;
+  }
+
+  getCharacters() {
+    return poe1Characters;
+  }
+
+  getKillWaypoints() {
+    return poe1KillWaypoints;
+  }
+
+  getAwakenedGemLookup() {
+    return poe1AwakenedGemLookup;
+  }
+
+  getVaalGemLookup() {
+    return poe1VaalGemLookup;
+  }
+
+  getDefaultRouteFiles() {
+    return poe1DefaultRoutes;
+  }
+
+  getZoneLayoutVariants(areaId: string): string[] {
+    return poe1ZoneLayoutManifest[areaId] ?? [];
+  }
+
+  getPassiveTreeNodes() {
+    return poe1PassiveTreeNodes;
+  }
+
+  resolveAreaById(areaId: string): AreaDefinition | null {
+    return poe1Areas[areaId] ?? null;
+  }
+
+  resolveAreasByName(localizedName: string): AreaDefinition[] {
+    return AREAS_BY_LOWER_NAME.get(localizedName.trim().toLowerCase()) ?? [];
+  }
+
+  getResistancePenaltyForAct(highestUnlockedAct: number, completedBossFlags: string[]): number {
+    if (highestUnlockedAct >= 11 || completedBossFlags.includes("kitava_act10")) return -60;
+    if (highestUnlockedAct >= 6 || completedBossFlags.includes("kitava_act5")) return -30;
+    return 0;
+  }
+
+  getSkillBookQuestIds(): ReadonlySet<string> {
+    return SKILL_BOOK_IDS;
+  }
+
+  getLabTrials(): LabTrialMeta[] {
+    return LAB_TRIALS;
+  }
+
+  getIzaroMechanics(): IzaroMechanicGuide[] {
+    return IZARO_MECHANICS;
+  }
+
+  getBossElementalWarnings(act: number): BossElementalWarning[] {
+    return BOSS_WARNINGS.filter((w) => w.act === act);
+  }
+}
+
+export const poe1GameAdapter = new Poe1CampaignGameAdapter();
