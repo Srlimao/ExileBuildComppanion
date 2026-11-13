@@ -108,6 +108,41 @@ export async function setTrayTelemetryStatus(
   await callInvoke("set_tray_telemetry_status", { status, tooltip });
 }
 
+export interface TauriSavedPobSetSelection {
+  passiveSpecIds: string[];
+  skillSetIds: string[];
+  itemSetIds: string[];
+}
+
+export interface TauriSavedPobProfileRecord {
+  rawInput: string;
+  cachedXml: string | null;
+  leagueStart: boolean;
+  customRouteText: string;
+  selection: TauriSavedPobSetSelection | null;
+  updatedAtMs: number;
+}
+
+export async function getPobProfileStoragePathIpc(): Promise<string | null> {
+  if (!isTauriRuntime()) return null;
+  return callInvoke<string>("get_pob_profile_storage_path");
+}
+
+export async function loadSavedPobProfileIpc(): Promise<TauriSavedPobProfileRecord | null> {
+  if (!isTauriRuntime()) return null;
+  return callInvoke<TauriSavedPobProfileRecord | null>("load_saved_pob_profile");
+}
+
+export async function savePobProfileIpc(profile: TauriSavedPobProfileRecord): Promise<string | null> {
+  if (!isTauriRuntime()) return null;
+  return callInvoke<string>("save_pob_profile", { profile });
+}
+
+export async function openAppDataFolderIpc(): Promise<string | null> {
+  if (!isTauriRuntime()) return null;
+  return callInvoke<string>("open_app_data_folder");
+}
+
 export async function subscribeTauriListeners(handlers: {
   onClientLogLines: (lines: string[]) => void;
   onPoeProcessState: (running: boolean) => void;

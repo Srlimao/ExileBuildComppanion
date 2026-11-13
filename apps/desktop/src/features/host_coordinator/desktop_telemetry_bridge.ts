@@ -3,61 +3,78 @@ import {
   auditGearAndFlaskHygiene,
   buildCheckpointGraph,
   buildInitialSessionSnapshot,
+  buildPobPreviewSummary,
   buildPreprocessorDefinitions,
   buildVendorSearchRegex,
   combineRouteActFiles,
   computePassiveTreeDiff,
   estimateEquippedResistances,
   extractPobBuild,
+  filterExtractedPobBuildBySelection,
   parsePoelabDailyJson,
   parsePreprocessedRouteLines,
   preprocessRouteConditionals,
+  reconcilePobSetSelection,
   reduceTelemetrySession,
   resolveAndDecodePobInput,
   validateAndEnrichPobBuild,
   verifySocketsAndGems,
   type GggItemModRecord,
   type HudSessionSnapshot,
+  type PobBuildPreview,
+  type PobSetSelection,
   type ValidatedPobBuild,
   type ViewerToRoomMessage,
 } from "@exile-hud/core";
 import { poe1GameAdapter } from "@exile-hud/game-data";
+import { markEquippedItemSets } from "./client_log_sync_helper.js";
+import { DEFAULT_STARTER_POB_XML } from "./pob_profile_persistence_client.js";
 import type { CharacterPollResponse } from "./tauri_ipc_adapter.js";
 
-export const DEFAULT_STARTER_POB_XML = `<PathOfBuilding>
-  <Build className="Witch" ascendClassName="Elementalist" bandit="Alira" level="42" buildName="League Start RF Elementalist"/>
-  <Skills>
-    <SkillSet title="Act 1 (Lv 1-12)">
-      <Skill enabled="true" label="Starter Clear">
-        <Gem enabled="true" nameSpec="Rolling Magma" gemId="Metadata/Items/Gems/SkillGemMagmaOrb"/>
-        <Gem enabled="true" nameSpec="Elemental Proliferation Support" gemId="Metadata/Items/Gems/SupportGemElementalProliferation"/>
-        <Gem enabled="true" nameSpec="Arcane Surge Support" gemId="Metadata/Items/Gems/SupportGemArcaneSurge"/>
-      </Skill>
-      <Skill enabled="true" label="Auras">
-        <Gem enabled="true" nameSpec="Purity of Elements" gemId="Metadata/Items/Gems/SkillGemPurityOfElements"/>
-      </Skill>
-    </SkillSet>
-  </Skills>
-  <Tree><Spec title="Campaign" treeVersion="3_29" nodes="26725,44103,14993,57226"/></Tree>
-</PathOfBuilding>`;
+export { DEFAULT_STARTER_POB_XML };
 
 export interface CompiledProfileBundle {
   build: ValidatedPobBuild;
   snapshot: HudSessionSnapshot;
+  decodedXml: string;
+  preview: PobBuildPreview;
+  selection: PobSetSelection;
+}
+
+/** Decodes raw PoB/XML/URL (or cached XML) and summarizes selectable Passive, Skill, and Item sets. */
+export async function inspectPobBuildSets(params: {
+  rawPobInput: string;
+  cachedXml?: string | null;
+  previousSelection?: PobSetSelection | null;
+}): Promise<{ decodedXml: string; preview: PobBuildPreview; selection: PobSetSelection }> {
+  const source = params.cachedXml?.trim() ? params.cachedXml : params.rawPobInput;
+  const decoded = await resolveAndDecodePobInput(source);
+  const extracted = extractPobBuild(decoded.parsedXml, poe1GameAdapter);
+  return {
+    decodedXml: decoded.xmlString,
+    preview: buildPobPreviewSummary(extracted),
+    selection: reconcilePobSetSelection(extracted, params.previousSelection),
+  };
 }
 
 export async function compilePobProfileToSnapshot(params: {
   roomId: string;
   profileId: string;
   rawPobInput: string;
+  cachedXml?: string | null;
+  selection?: PobSetSelection | null;
   customRouteText?: string;
   leagueStart: boolean;
   characterName?: string;
   previousSnapshot?: HudSessionSnapshot | null;
 }): Promise<CompiledProfileBundle> {
-  const decoded = await resolveAndDecodePobInput(params.rawPobInput);
+  const source = params.cachedXml?.trim() ? params.cachedXml : params.rawPobInput;
+  const decoded = await resolveAndDecodePobInput(source);
   const extracted = extractPobBuild(decoded.parsedXml, poe1GameAdapter);
-  const build = validateAndEnrichPobBuild(extracted, poe1GameAdapter);
+  const preview = buildPobPreviewSummary(extracted);
+  const selection = reconcilePobSetSelection(extracted, params.selection);
+  const filtered = filterExtractedPobBuildBySelection(extracted, selection);
+  const build = validateAndEnrichPobBuild(filtered, poe1GameAdapter);
 
   const defs = buildPreprocessorDefinitions({
     leagueStart: params.leagueStart,
@@ -80,11 +97,20 @@ export async function compilePobProfileToSnapshot(params: {
   });
 
   if (!params.previousSnapshot) {
-    return { build, snapshot: { ...fresh, leagueStart: params.leagueStart } };
+    return {
+      build,
+      snapshot: { ...fresh, leagueStart: params.leagueStart },
+      decodedXml: decoded.xmlString,
+      preview,
+      selection,
+    };
   }
 
   return {
     build,
+    decodedXml: decoded.xmlString,
+    preview,
+    selection,
     snapshot: {
       ...fresh,
       leagueStart: params.leagueStart,
@@ -170,6 +196,7 @@ export function applyGggCharacterResponseToSnapshot(
     lastCharacterSyncAt: Date.now(),
     gemSteps: gemVerification.updatedGemSteps,
     linkGroups: gemVerification.linkGroups,
+    itemSets: markEquippedItemSets(build.itemSets, items),
     resistances,
     gearHygiene,
     passiveTree,

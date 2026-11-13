@@ -110,6 +110,25 @@ export interface TargetLinkGroupSummary {
   missingAuraWarning: boolean;
 }
 
+export interface TargetItemSlotSummary {
+  slotName: string;
+  itemId: string;
+  itemName: string;
+  baseType: string;
+  rarity: "normal" | "magic" | "rare" | "unique" | "unknown";
+  sockets: string;
+  levelReq: number;
+  mods: string[];
+  verifiedEquipped?: boolean;
+}
+
+export interface TargetItemSetSummary {
+  id: string;
+  title: string;
+  minLevel: number;
+  slots: TargetItemSlotSummary[];
+}
+
 export interface ResistanceTelemetry {
   source: "API_VERIFIED" | "ACT_TARGET_FALLBACK";
   kitavaPenalty: number;
@@ -182,6 +201,7 @@ export interface HudSessionSnapshot {
   gemSteps: GemAcquisitionStep[];
   nextTownCurrencyBudget: CurrencyTally;
   linkGroups: TargetLinkGroupSummary[];
+  itemSets?: TargetItemSetSummary[];
   resistances: ResistanceTelemetry;
   gearHygiene: GearHygieneIssue[];
   passiveTree: PassiveTreeTelemetry;

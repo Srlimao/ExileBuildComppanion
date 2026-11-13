@@ -28,7 +28,8 @@ function groupFallbackGemsByLevel(gems: ExtractedGemRef[]): ExtractedSkillSet[] 
 
   return buckets
     .filter((b) => b.gems.length > 0)
-    .map((b) => ({
+    .map((b, idx) => ({
+      id: `fallback_${idx + 1}`,
       title: b.title,
       minLevel: b.minLevel,
       groups: [{ title: b.title, slotLabel: "Vendor Bracket", gems: b.gems }],
@@ -72,7 +73,8 @@ function checkNeedsLibraryForClass(requiredGemIds: Set<string>, characterClass: 
 export function validateAndEnrichPobBuild(extracted: ExtractedPobBuild, adapter: GameAdapter): ValidatedPobBuild {
   const hasMultipleSkillSets = extracted.skillSets.length > 1;
   const hasLevelingHint = extracted.skillSets.some((s) => LEVELING_SET_TITLE_HINT.test(s.title));
-  const isEndgameOnlyFallback = !hasMultipleSkillSets && !hasLevelingHint && extracted.buildLevel >= 68;
+  const isEndgameOnlyFallback =
+    extracted.skillSets.length > 0 && !hasMultipleSkillSets && !hasLevelingHint && extracted.buildLevel >= 68;
 
   let skillSets = extracted.skillSets;
   let fallbackNotice: string | null = null;
@@ -88,6 +90,8 @@ export function validateAndEnrichPobBuild(extracted: ExtractedPobBuild, adapter:
   return {
     ...extracted,
     skillSets: [...skillSets].sort((a, b) => a.minLevel - b.minLevel),
+    treeSpecs: [...extracted.treeSpecs].sort((a, b) => a.minLevel - b.minLevel),
+    itemSets: [...extracted.itemSets].sort((a, b) => a.minLevel - b.minLevel),
     isEndgameOnlyFallback,
     fallbackNotice,
     requiresAct3Library,

@@ -1,7 +1,7 @@
 import { XMLParser } from "fast-xml-parser";
 import { inflate } from "pako";
 
-const ARRAY_TAG_NAMES = new Set(["SkillSet", "Skill", "Gem", "Spec", "URL", "Slot", "Item"]);
+const ARRAY_TAG_NAMES = new Set(["SkillSet", "Skill", "Gem", "Spec", "URL", "Slot", "Item", "ItemSet"]);
 
 const xmlParser = new XMLParser({
   ignoreAttributes: false,

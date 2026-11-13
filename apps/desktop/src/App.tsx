@@ -55,10 +55,15 @@ export function App() {
           <PobBuildLoaderCard
             snapshot={ctl.snapshot}
             pobInput={ctl.pobInput}
+            pobPreview={ctl.pobPreview}
+            pobSelection={ctl.pobSelection}
+            pobStoragePath={ctl.pobStoragePath}
             leagueStart={ctl.leagueStart}
             customRouteText={ctl.customRouteText}
             loading={ctl.compileLoading}
             error={ctl.compileError}
+            onInspectBuild={ctl.inspectBuild}
+            onOpenStorageFolder={ctl.openStorageFolder}
             onApplyBuild={ctl.applyBuild}
           />
 

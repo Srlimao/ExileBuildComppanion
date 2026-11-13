@@ -1,5 +1,9 @@
 import type { GameAdapter, GemDefinition } from "@exile-hud/game-data";
 import { decodeBase64UrlToBytes } from "./pob_code_zlib_xml_decoder.js";
+import { extractPobItemSets, type ExtractedItemSet } from "./pob_xml_item_set_extractor.js";
+import { cleanPobColorCodes, inferLevelFromTitle } from "./pob_xml_text_helpers.js";
+
+export { cleanPobColorCodes, inferLevelFromTitle };
 
 const POB_GEM_ID_REMAP: Record<string, string> = {
   "Metadata/Items/Gems/Smite": "Metadata/Items/Gems/SkillGemSmite",
@@ -13,8 +17,6 @@ const POB_GEM_ID_REMAP: Record<string, string> = {
   "Metadata/Items/Gems/SkillGemNewPhaseRun": "Metadata/Items/Gems/SkillGemPhaseRun",
   "Metadata/Items/Gems/SkillGemNewArcticArmour": "Metadata/Items/Gems/SkillGemArcticArmour",
 };
-
-const POB_COLOUR_REGEX = /\^(x[a-zA-Z0-9]{6}|[0-9])/g;
 
 export interface ExtractedGemRef {
   gemId: string;
@@ -31,12 +33,14 @@ export interface ExtractedSkillGroup {
 }
 
 export interface ExtractedSkillSet {
+  id: string;
   title: string;
   minLevel: number;
   groups: ExtractedSkillGroup[];
 }
 
 export interface ExtractedTreeSpec {
+  id: string;
   title: string;
   treeVersion: string;
   minLevel: number;
@@ -52,22 +56,29 @@ export interface ExtractedPobBuild {
   buildLevel: number;
   skillSets: ExtractedSkillSet[];
   treeSpecs: ExtractedTreeSpec[];
+  itemSets: ExtractedItemSet[];
   uniqueRequiredGems: Array<{ id: string; note: string; count: number }>;
 }
 
-export function cleanPobColorCodes(text: string | undefined): string {
-  return (text ?? "").replace(POB_COLOUR_REGEX, "").trim();
-}
-
-export function inferLevelFromTitle(title: string, fallback = 1): number {
-  const lvlMatch = /(?:lv|lvl|level)\s*[:.]?\s*(\d+)/i.exec(title);
-  if (lvlMatch?.[1]) return Number.parseInt(lvlMatch[1], 10);
-  const actMatch = /act\s*(\d+)/i.exec(title);
-  if (actMatch?.[1]) {
-    const act = Number.parseInt(actMatch[1], 10);
-    return Math.max(1, (act - 1) * 10 + 1);
+/** Collects deduplicated required gems across the provided skill sets. */
+export function collectUniqueRequiredGems(
+  skillSets: ExtractedSkillSet[],
+): Array<{ id: string; note: string; count: number }> {
+  const uniqueMap = new Map<string, { id: string; note: string; count: number }>();
+  for (const set of skillSets) {
+    for (const group of set.groups) {
+      for (const gem of group.gems) {
+        if (!uniqueMap.has(gem.gemId)) {
+          uniqueMap.set(gem.gemId, {
+            id: gem.gemId,
+            note: group.title || set.title,
+            count: 1,
+          });
+        }
+      }
+    }
   }
-  return fallback;
+  return [...uniqueMap.values()];
 }
 
 function buildGemNameLookup(gems: Record<string, GemDefinition>): Map<string, GemDefinition> {
@@ -157,8 +168,8 @@ export function extractPobBuild(parsedXml: Record<string, any>, adapter: GameAda
       ? [{ "@_title": "Main Set", Skill: skillsContainer.Skill }]
       : [];
 
-  const uniqueMap = new Map<string, { id: string; note: string; count: number }>();
   const skillSets: ExtractedSkillSet[] = rawSkillSets.map((setEl, setIdx) => {
+    const id = String(setEl["@_id"] ?? `skillset_${setIdx + 1}`);
     const title = cleanPobColorCodes(setEl["@_title"] ?? `Set ${setIdx + 1}`) || `Set ${setIdx + 1}`;
     const rawSkills: any[] = Array.isArray(setEl.Skill) ? setEl.Skill : [];
     const groups: ExtractedSkillGroup[] = [];
@@ -179,9 +190,6 @@ export function extractPobBuild(parsedXml: Record<string, any>, adapter: GameAda
         const resolved = normalizeGemId(gm["@_gemId"], gm["@_nameSpec"], adapter, byLowerName);
         if (!resolved) continue;
         maxGemLevel = Math.max(maxGemLevel, resolved.required_level);
-        const note = recentHeader || title || label;
-        const existing = uniqueMap.get(resolved.id);
-        if (!existing) uniqueMap.set(resolved.id, { id: resolved.id, note, count: 1 });
         gems.push({
           gemId: resolved.id,
           name: resolved.name,
@@ -196,6 +204,7 @@ export function extractPobBuild(parsedXml: Record<string, any>, adapter: GameAda
     }
 
     return {
+      id,
       title,
       minLevel: inferLevelFromTitle(title, setIdx === 0 ? 1 : maxGemLevel),
       groups,
@@ -205,12 +214,14 @@ export function extractPobBuild(parsedXml: Record<string, any>, adapter: GameAda
   const treeContainer = root.Tree ?? {};
   const rawSpecs: any[] = Array.isArray(treeContainer.Spec) ? treeContainer.Spec : [];
   const treeSpecs: ExtractedTreeSpec[] = rawSpecs.map((specEl, idx) => {
+    const id = String(specEl["@_id"] ?? `spec_${idx + 1}`);
     const title = cleanPobColorCodes(specEl["@_title"] ?? `Tree ${idx + 1}`) || `Tree ${idx + 1}`;
     const csvNodes = String(specEl["@_nodes"] ?? "").split(",").map((s) => s.trim()).filter(Boolean);
     const urlText = Array.isArray(specEl.URL) ? String(specEl.URL[0] ?? "") : String(specEl.URL ?? "");
     const decodedUrl = urlText ? decodeTreeUrlNodes(urlText) : { nodeIds: [], masteries: {} };
     const nodeIds = csvNodes.length > 0 ? csvNodes : decodedUrl.nodeIds;
     return {
+      id,
       title,
       treeVersion: String(specEl["@_treeVersion"] ?? "3_29"),
       minLevel: inferLevelFromTitle(title, idx === 0 ? 1 : 50),
@@ -218,6 +229,9 @@ export function extractPobBuild(parsedXml: Record<string, any>, adapter: GameAda
       masteries: decodedUrl.masteries,
     };
   });
+
+  const itemSets = extractPobItemSets(parsedXml, buildLevel);
+  const uniqueRequiredGems = collectUniqueRequiredGems(skillSets);
 
   return {
     buildName: cleanPobColorCodes(buildNode["@_buildName"]) || buildNameFallback,
@@ -227,6 +241,7 @@ export function extractPobBuild(parsedXml: Record<string, any>, adapter: GameAda
     buildLevel,
     skillSets,
     treeSpecs,
-    uniqueRequiredGems: [...uniqueMap.values()],
+    itemSets,
+    uniqueRequiredGems,
   };
 }

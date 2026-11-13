@@ -29,6 +29,44 @@ const DEMO_XML = `<PathOfBuilding>
     </SkillSet>
   </Skills>
   <Tree><Spec title="Campaign" treeVersion="3_29" nodes="26725,44103,14993,57226"/></Tree>
+  <Items activeItemSet="1">
+    <Item id="1">
+Rarity: MAGIC
++1 Fire Driftwood Wand
+Driftwood Wand
+Sockets: B-B-G
+LevelReq: 1
+Implicits: 0
++12% increased Fire Damage
+    </Item>
+    <Item id="2">
+Rarity: UNIQUE
+Goldrim
+Leather Cap
+Sockets: R-B-B
+LevelReq: 1
+Implicits: 0
++38% to all Elemental Resistances
+    </Item>
+    <Item id="3">
+Rarity: RARE
+Brimstone Sceptre
+Karui Sceptre
+Sockets: B-B-R
+LevelReq: 24
+Implicits: 0
++1 to Level of all Fire Spell Skill Gems
+28% increased Elemental Damage
+    </Item>
+    <ItemSet id="1" title="Act 1 Starter">
+      <Slot name="Weapon 1" itemId="1"/>
+      <Slot name="Helmet" itemId="2"/>
+    </ItemSet>
+    <ItemSet id="2" title="Act 3 Transition (Lv 24)">
+      <Slot name="Weapon 1" itemId="3"/>
+      <Slot name="Helmet" itemId="2"/>
+    </ItemSet>
+  </Items>
 </PathOfBuilding>`;
 
 export function createInteractiveDemoSnapshot(): HudSessionSnapshot {

@@ -1,7 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
-use tauri::{AppHandle, Emitter, Manager, State, WindowEvent};
+use tauri::{AppHandle, Manager, State, WindowEvent};
 
 #[path = "features/system_tray/tray_icon_and_menu_controller.rs"]
 mod tray_icon_and_menu_controller;
@@ -10,10 +9,10 @@ mod tray_icon_and_menu_controller;
 mod client_txt_path_detector;
 
 #[path = "features/client_log_watcher/client_txt_byte_offset_tailer.rs"]
-mod client_txt_byte_offset_tailer;
+pub(crate) mod client_txt_byte_offset_tailer;
 
 #[path = "features/process_monitor/poe_process_heartbeat.rs"]
-mod poe_process_heartbeat;
+pub(crate) mod poe_process_heartbeat;
 
 #[path = "features/ggg_api_client/os_keychain_poesessid_store.rs"]
 mod os_keychain_poesessid_store;
@@ -23,6 +22,16 @@ mod character_window_http_poller;
 
 #[path = "features/clipboard_bridge/windows_clipboard_writer.rs"]
 mod windows_clipboard_writer;
+
+#[path = "features/pob_profile_store/local_pob_profile_disk_store.rs"]
+mod local_pob_profile_disk_store;
+
+mod background_telemetry_watchers;
+
+use local_pob_profile_disk_store::{
+    load_saved_pob_profile_from_path, resolve_profile_file_path, save_pob_profile_to_path,
+    SavedPobProfileRecord,
+};
 
 use character_window_http_poller::{
     execute_character_window_fetch, now_epoch_ms, CharacterPollResponse, CircuitBreakerState,
@@ -154,80 +163,37 @@ fn set_tray_telemetry_status(app: AppHandle, status: String, tooltip: String) ->
     tray_icon_and_menu_controller::update_tray_status(&app, &status, &tooltip)
 }
 
-fn spawn_background_watchers(app: &AppHandle, shared: &HostSharedState) {
-    let log_app = app.clone();
-    let tailer_ref = Arc::clone(&shared.tailer);
-    tauri::async_runtime::spawn(async move {
-        let mut interval = tokio::time::interval(Duration::from_millis(250));
-        loop {
-            interval.tick().await;
-            let lines = match tailer_ref.lock() {
-                Ok(mut guard) => guard.poll_new_lines().unwrap_or_default(),
-                Err(_) => Vec::new(),
-            };
-            if !lines.is_empty() {
-                let _ = log_app.emit("client-log-lines", lines);
-            }
-        }
-    });
+#[tauri::command]
+fn get_pob_profile_storage_path(app: AppHandle) -> Result<String, String> {
+    resolve_profile_file_path(&app).map(|p| p.to_string_lossy().to_string())
+}
 
-    let proc_app = app.clone();
-    let tailer_switch_ref = Arc::clone(&shared.tailer);
-    let manual_override_ref = Arc::clone(&shared.manual_log_override);
-    tauri::async_runtime::spawn(async move {
-        let mut last_state: Option<bool> = None;
-        let mut interval = tokio::time::interval(Duration::from_secs(5));
-        loop {
-            interval.tick().await;
-            let proc_info = poe_process_heartbeat::find_running_poe_process();
-            let running = proc_info.is_some();
-            if last_state != Some(running) {
-                last_state = Some(running);
-                let _ = proc_app.emit("poe-process-state", running);
-            }
-            let is_manual = manual_override_ref
-                .lock()
-                .map(|flag| *flag)
-                .unwrap_or(false);
-            if !is_manual {
-                if let Some(info) = proc_info {
-                    if let Some(active_log) = info
-                        .exe_path
-                        .as_deref()
-                        .and_then(|exe| exe.parent())
-                        .map(|dir| dir.join("logs").join("Client.txt"))
-                    {
-                        if active_log.is_file() {
-                            let switched = if let Ok(mut guard) = tailer_switch_ref.lock() {
-                                if guard.current_path() != Some(&active_log) {
-                                    guard.set_path(Some(active_log.clone()), true);
-                                    true
-                                } else {
-                                    false
-                                }
-                            } else {
-                                false
-                            };
-                            if switched {
-                                let _ = proc_app.emit(
-                                    "client-log-path-changed",
-                                    active_log.to_string_lossy().to_string(),
-                                );
-                                let boot = read_recent_bootstrap_lines(
-                                    &active_log,
-                                    Some(info.pid),
-                                    256 * 1024,
-                                );
-                                if !boot.is_empty() {
-                                    let _ = proc_app.emit("client-log-lines", boot);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    });
+#[tauri::command]
+fn load_saved_pob_profile(app: AppHandle) -> Result<Option<SavedPobProfileRecord>, String> {
+    let path = resolve_profile_file_path(&app)?;
+    load_saved_pob_profile_from_path(&path)
+}
+
+#[tauri::command]
+fn save_pob_profile(app: AppHandle, profile: SavedPobProfileRecord) -> Result<String, String> {
+    let path = resolve_profile_file_path(&app)?;
+    save_pob_profile_to_path(&path, &profile)?;
+    Ok(path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+fn open_app_data_folder(app: AppHandle) -> Result<String, String> {
+    let dir = app
+        .path()
+        .app_local_data_dir()
+        .map_err(|e| format!("Could not resolve AppData directory: {e}"))?;
+    std::fs::create_dir_all(&dir).map_err(|e| format!("Failed creating AppData folder: {e}"))?;
+    #[cfg(target_os = "windows")]
+    std::process::Command::new("explorer")
+        .arg(&dir)
+        .spawn()
+        .map_err(|e| format!("Failed opening Explorer: {e}"))?;
+    Ok(dir.to_string_lossy().to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -244,7 +210,7 @@ pub fn run() {
         .setup(|app| {
             tray_icon_and_menu_controller::setup_tray(app.handle())?;
             let state = app.state::<HostSharedState>();
-            spawn_background_watchers(app.handle(), &state);
+            background_telemetry_watchers::spawn_background_watchers(app.handle(), &state);
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -264,6 +230,10 @@ pub fn run() {
             clear_poesessid,
             poll_character_window,
             set_tray_telemetry_status,
+            get_pob_profile_storage_path,
+            load_saved_pob_profile,
+            save_pob_profile,
+            open_app_data_folder,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Exile Companion Control Center");

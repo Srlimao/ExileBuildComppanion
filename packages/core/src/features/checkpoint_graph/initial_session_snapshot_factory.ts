@@ -78,6 +78,7 @@ export function buildInitialSessionSnapshot(params: {
     gemSteps,
     nextTownCurrencyBudget: computeNextTownCurrencyBudget(gemSteps, 1),
     linkGroups,
+    itemSets: build.itemSets,
     resistances: {
       source: "ACT_TARGET_FALLBACK",
       kitavaPenalty: 0,

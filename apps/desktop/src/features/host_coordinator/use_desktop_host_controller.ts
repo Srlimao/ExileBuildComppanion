@@ -1,15 +1,23 @@
 import {
   reduceTelemetrySession,
   type HudSessionSnapshot,
+  type PobBuildPreview,
+  type PobSetSelection,
   type ValidatedPobBuild,
   type ViewerPresenceEntry,
 } from "@exile-hud/core";
 import { poe1GameAdapter } from "@exile-hud/game-data";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  generateRoomPin,
+  loadHostIdentityPrefs,
+  saveHostIdentityPrefs,
+} from "./desktop_host_settings_storage.js";
+import {
   applyLogLinesToSnapshot,
   bootstrapHostEnvironment,
   hookAndBootstrapLogPath,
+  syncBuildSetsForLevel,
 } from "./client_log_sync_helper.js";
 import {
   applyGggCharacterResponseToSnapshot,
@@ -17,7 +25,13 @@ import {
   compilePobProfileToSnapshot,
   DEFAULT_STARTER_POB_XML,
   deriveTrayIndicator,
+  inspectPobBuildSets,
 } from "./desktop_telemetry_bridge.js";
+import {
+  compileAndSavePobProfile,
+  loadInitialSavedOrDefaultProfile,
+  openPobStorageFolder,
+} from "./pob_profile_persistence_client.js";
 import { createHostRelaySession, type HostRelaySession } from "./relay_host_connection.js";
 import {
   clearPoesessid,
@@ -29,36 +43,28 @@ import {
   writeVendorRegexClipboard,
 } from "./tauri_ipc_adapter.js";
 
-function randomCode(len: number, alphabet: string): string {
-  let out = "";
-  for (let i = 0; i < len; i++) {
-    out += alphabet[Math.floor(Math.random() * alphabet.length)];
-  }
-  return out;
-}
-
-const DEFAULT_RELAY = "https://exile.dunhas.com";
-
 export function useDesktopHostController() {
-  const [roomId] = useState(() => localStorage.getItem("exile_room_id") || randomCode(6, "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"));
-  const [hostSecret] = useState(() => localStorage.getItem("exile_host_secret") || randomCode(20, "abcdefghijklmnopqrstuvwxyz0123456789"));
-  const [pin, setPin] = useState(() => localStorage.getItem("exile_room_pin") || randomCode(4, "0123456789"));
-  const [relayUrl, setRelayUrl] = useState(() => localStorage.getItem("exile_relay_url") || DEFAULT_RELAY);
+  const [initPrefs] = useState(loadHostIdentityPrefs);
+  const [roomId] = useState(initPrefs.roomId);
+  const [hostSecret] = useState(initPrefs.hostSecret);
+  const [pin, setPin] = useState(initPrefs.pin);
+  const [relayUrl, setRelayUrl] = useState(initPrefs.relayUrl);
+  const [accountName, setAccountName] = useState(initPrefs.accountName);
+  const [characterName, setCharacterName] = useState(initPrefs.characterName);
 
   const [snapshot, setSnapshot] = useState<HudSessionSnapshot | null>(null);
   const [activeBuild, setActiveBuild] = useState<ValidatedPobBuild | null>(null);
   const [pobInput, setPobInput] = useState(DEFAULT_STARTER_POB_XML);
+  const [pobPreview, setPobPreview] = useState<PobBuildPreview | null>(null);
+  const [pobSelection, setPobSelection] = useState<PobSetSelection | null>(null);
+  const [pobStoragePath, setPobStoragePath] = useState("");
   const [leagueStart, setLeagueStart] = useState(true);
   const [customRouteText, setCustomRouteText] = useState("");
   const [compileLoading, setCompileLoading] = useState(false);
   const [compileError, setCompileError] = useState<string | null>(null);
-
-  const [accountName, setAccountName] = useState(() => localStorage.getItem("exile_account") || "");
-  const [characterName, setCharacterName] = useState(() => localStorage.getItem("exile_character") || "ExileRunner");
   const [hasStoredSession, setHasStoredSession] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [simulatedOutage, setSimulatedOutage] = useState(false);
-
   const [clientLogPath, setClientLogPathState] = useState("");
   const [clientLogFound, setClientLogFound] = useState(false);
   const [relayConnected, setRelayConnected] = useState(false);
@@ -67,15 +73,12 @@ export function useDesktopHostController() {
 
   const relayRef = useRef<HostRelaySession | null>(null);
   const snapshotRef = useRef<HudSessionSnapshot | null>(null);
+  const activeBuildRef = useRef<ValidatedPobBuild | null>(null);
   snapshotRef.current = snapshot;
+  activeBuildRef.current = activeBuild;
 
   useEffect(() => {
-    localStorage.setItem("exile_room_id", roomId);
-    localStorage.setItem("exile_host_secret", hostSecret);
-    localStorage.setItem("exile_room_pin", pin);
-    localStorage.setItem("exile_relay_url", relayUrl);
-    localStorage.setItem("exile_account", accountName);
-    localStorage.setItem("exile_character", characterName);
+    saveHostIdentityPrefs({ roomId, hostSecret, pin, relayUrl, accountName, characterName });
   }, [roomId, hostSecret, pin, relayUrl, accountName, characterName]);
 
   const pushPatch = useCallback((next: HudSessionSnapshot, eventTag: string) => {
@@ -117,25 +120,27 @@ export function useDesktopHostController() {
 
   useEffect(() => {
     void (async () => {
-      const compiled = await compilePobProfileToSnapshot({
-        roomId,
-        profileId: "default-starter",
-        rawPobInput: DEFAULT_STARTER_POB_XML,
-        leagueStart: true,
-        characterName,
-      });
-      const env = await bootstrapHostEnvironment(compiled.snapshot);
+      const loaded = await loadInitialSavedOrDefaultProfile({ roomId, characterName }, compilePobProfileToSnapshot);
+      const env = await bootstrapHostEnvironment(loaded.compiled.snapshot);
+      const synced = syncBuildSetsForLevel(env.snapshot, loaded.compiled.build);
+
+      if (loaded.storagePath) setPobStoragePath(loaded.storagePath);
+      setPobInput(loaded.rawInput);
+      setLeagueStart(loaded.leagueStart);
+      setCustomRouteText(loaded.customRouteText);
+      setPobPreview(loaded.compiled.preview);
+      setPobSelection(loaded.compiled.selection);
+      setActiveBuild(loaded.compiled.build);
       setHasStoredSession(env.hasSession);
       if (env.detectedPath) setClientLogPathState(env.detectedPath);
       setClientLogFound(env.hooked);
-      if (env.snapshot.characterName && env.snapshot.characterName !== characterName) {
-        setCharacterName(env.snapshot.characterName);
+      if (synced.characterName && synced.characterName !== characterName) {
+        setCharacterName(synced.characterName);
       }
 
-      setActiveBuild(compiled.build);
-      setSnapshot(env.snapshot);
-      snapshotRef.current = env.snapshot;
-      connectRelay(env.snapshot);
+      setSnapshot(synced);
+      snapshotRef.current = synced;
+      connectRelay(synced);
     })();
     return () => relayRef.current?.close();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -151,8 +156,9 @@ export function useDesktopHostController() {
     (lines: string[]) => {
       const cur = snapshotRef.current;
       if (!cur || lines.length === 0) return;
-      const next = applyLogLinesToSnapshot(cur, lines);
-      if (next === cur) return;
+      const logged = applyLogLinesToSnapshot(cur, lines);
+      if (logged === cur) return;
+      const next = syncBuildSetsForLevel(logged, activeBuildRef.current);
       if (next.characterName !== cur.characterName) setCharacterName(next.characterName);
       if (next.mode === "TOWN" && cur.mode !== "TOWN" && next.autoClipboardEnabled && next.activeVendorRegex) {
         void writeVendorRegexClipboard(next.activeVendorRegex);
@@ -206,24 +212,22 @@ export function useDesktopHostController() {
     return () => cleanup();
   }, [handleForceSync, processLogLines, pushPatch]);
 
-  const applyBuild = async (nextCfg: { pobInput: string; leagueStart: boolean; customRouteText: string }) => {
+  const applyBuild = async (nextCfg: { pobInput: string; cachedXml?: string | null; selection?: PobSetSelection | null; leagueStart: boolean; customRouteText: string }) => {
     setCompileLoading(true);
     setCompileError(null);
     try {
-      const compiled = await compilePobProfileToSnapshot({
-        roomId,
-        profileId: "user-build",
-        rawPobInput: nextCfg.pobInput,
-        customRouteText: nextCfg.customRouteText,
-        leagueStart: nextCfg.leagueStart,
-        characterName,
-        previousSnapshot: snapshot,
-      });
+      const { compiled, syncedSnapshot } = await compileAndSavePobProfile(
+        { roomId, characterName, previousSnapshot: snapshot, ...nextCfg },
+        compilePobProfileToSnapshot,
+        syncBuildSetsForLevel,
+      );
       setPobInput(nextCfg.pobInput);
       setLeagueStart(nextCfg.leagueStart);
       setCustomRouteText(nextCfg.customRouteText);
       setActiveBuild(compiled.build);
-      pushPatch(compiled.snapshot, "build_updated");
+      setPobPreview(compiled.preview);
+      setPobSelection(compiled.selection);
+      pushPatch(syncedSnapshot, "build_updated");
     } catch (err) {
       setCompileError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -242,50 +246,24 @@ export function useDesktopHostController() {
   };
 
   return {
-    roomId, pin, relayUrl, snapshot, pobInput, leagueStart, customRouteText,
-    compileLoading, compileError, accountName, characterName, hasStoredSession,
-    syncMessage, simulatedOutage, clientLogPath, clientLogFound, relayConnected,
-    relayError, viewers, setAccountName, setCharacterName, applyBuild,
+    roomId, pin, relayUrl, snapshot, pobInput, pobPreview, pobSelection, pobStoragePath,
+    leagueStart, customRouteText, compileLoading, compileError, accountName, characterName,
+    hasStoredSession, syncMessage, simulatedOutage, clientLogPath, clientLogFound,
+    relayConnected, relayError, viewers, setAccountName, setCharacterName, applyBuild,
+    inspectBuild: (rawPobInput: string, previousSelection?: PobSetSelection | null) => inspectPobBuildSets({ rawPobInput, previousSelection }),
+    openStorageFolder: openPobStorageFolder,
     forceSync: handleForceSync,
     simulateLogLines: processLogLines,
     reconnectRelay: () => connectRelay(),
-    setRelayUrl: (u: string) => {
-      setRelayUrl(u);
-      connectRelay(undefined, undefined, u);
-    },
-    rotatePin: () => {
-      const nextPin = randomCode(4, "0123456789");
-      setPin(nextPin);
-      connectRelay(undefined, nextPin);
-    },
-    savePoesessid: async (val: string) => {
-      await savePoesessid(val);
-      setHasStoredSession(true);
-    },
-    clearPoesessid: async () => {
-      await clearPoesessid();
-      setHasStoredSession(false);
-    },
+    setRelayUrl: (u: string) => { setRelayUrl(u); connectRelay(undefined, undefined, u); },
+    rotatePin: () => { const nextPin = generateRoomPin(); setPin(nextPin); connectRelay(undefined, nextPin); },
+    savePoesessid: async (val: string) => { await savePoesessid(val); setHasStoredSession(true); },
+    clearPoesessid: async () => { await clearPoesessid(); setHasStoredSession(false); },
     setLogPath: (p: string) => applySelectedLogPath(p, true, "log_path"),
-    autoDetectPath: async () => {
-      const res = await detectClientLogPath();
-      if (res.detectedPath) await applySelectedLogPath(res.detectedPath, false, "log_auto_detect");
-    },
-    toggleAutoClipboard: () => {
-      if (snapshot) pushPatch({ ...snapshot, autoClipboardEnabled: !snapshot.autoClipboardEnabled }, "toggle_clip");
-    },
-    copyRegexNow: async () => {
-      if (snapshot?.activeVendorRegex) await writeVendorRegexClipboard(snapshot.activeVendorRegex);
-    },
-    toggleSimPoeRunning: () => {
-      const cur = snapshotRef.current;
-      if (cur) pushPatch(reduceTelemetrySession(cur, { type: "process_state", running: !cur.poeRunning }, poe1GameAdapter), "sim_poe");
-    },
-    toggleSimulatedOutage: () => {
-      const next = !simulatedOutage;
-      setSimulatedOutage(next);
-      const cur = snapshotRef.current;
-      if (cur && next) pushPatch({ ...cur, version: cur.version + 1, characterSyncStatus: "OFFLINE_FALLBACK" }, "sim_outage_on");
-    },
+    autoDetectPath: async () => { const res = await detectClientLogPath(); if (res.detectedPath) await applySelectedLogPath(res.detectedPath, false, "log_auto_detect"); },
+    toggleAutoClipboard: () => { if (snapshot) pushPatch({ ...snapshot, autoClipboardEnabled: !snapshot.autoClipboardEnabled }, "toggle_clip"); },
+    copyRegexNow: async () => { if (snapshot?.activeVendorRegex) await writeVendorRegexClipboard(snapshot.activeVendorRegex); },
+    toggleSimPoeRunning: () => { const cur = snapshotRef.current; if (cur) pushPatch(reduceTelemetrySession(cur, { type: "process_state", running: !cur.poeRunning }, poe1GameAdapter), "sim_poe"); },
+    toggleSimulatedOutage: () => { const next = !simulatedOutage; setSimulatedOutage(next); const cur = snapshotRef.current; if (cur && next) pushPatch({ ...cur, version: cur.version + 1, characterSyncStatus: "OFFLINE_FALLBACK" }, "sim_outage_on"); },
   };
 }
