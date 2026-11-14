@@ -5,6 +5,7 @@ import {
   buildVendorSearchRegex,
   computePassiveTreeDiff,
   estimateEquippedResistances,
+  parseClientLogLine,
   parsePoelabDailyJson,
   advanceLabRoomBySeed,
   verifySocketsAndGems,
@@ -141,5 +142,98 @@ describe("Character Telemetry Diffs, Vendor Regex & Lab Tracker", () => {
     lab = advanceLabRoomBySeed(lab, "1_Labyrinth_1", "777", new Map());
     expect(lab.currentRoomId).toBe("2");
     expect(lab.rooms[1]?.hasGoldenDoor).toBe(true);
+  });
+
+  it("parses GGG {description} mod objects, ignores inactive Purity of Elements gems, and matches single passive skill point logs", () => {
+    const objectModItems: GggItemModRecord[] = [
+      {
+        inventoryId: "Helm",
+        typeLine: "Siege Helmet",
+        explicitMods: [
+          { description: "+19 to Intelligence" },
+          { description: "+23% to Fire Resistance", flags: { crafted: true } },
+        ],
+      },
+      {
+        inventoryId: "Gloves",
+        typeLine: "Strapped Mitts",
+        explicitMods: [{ description: "+16% to Cold Resistance" }],
+        socketedItems: [
+          {
+            socket: 0,
+            typeLine: "Purity of Elements",
+            frameType: 4,
+            explicitMods: [{ description: "You and nearby allies gain +27% to all Elemental Resistances" }],
+          },
+        ],
+      },
+      {
+        inventoryId: "Offhand",
+        typeLine: "Layered Kite Shield",
+        properties: [{ name: "Chance to Block", values: [["24%", 0]] }],
+        implicitMods: [{ description: "+8% to all Elemental Resistances" }],
+        explicitMods: [{ description: "+5% to all Elemental Resistances" }],
+      },
+      {
+        inventoryId: "Boots",
+        typeLine: "Goliath Greaves",
+        explicitMods: [
+          { description: "+23% to Lightning Resistance" },
+          { description: "20% increased Movement Speed" },
+        ],
+      },
+      {
+        inventoryId: "Ring",
+        typeLine: "Two-Stone Ring",
+        implicitMods: [{ description: "+12% to Fire and Lightning Resistances" }],
+      },
+    ];
+
+    const res = estimateEquippedResistances({
+      items: objectModItems,
+      passiveItems: [
+        {
+          inventoryId: "PassiveJewels",
+          typeLine: "Crimson Jewel",
+          explicitMods: [{ description: "+10% to Chaos Resistance" }],
+        },
+      ],
+      wickermanItems: [
+        {
+          inventoryId: "WickermanHead",
+          typeLine: "Lesser Spectral Hood",
+          explicitMods: [{ description: "+11% to Chaos Resistance" }],
+        },
+      ],
+      allocatedNodeIds: [1593, 58218, 7023],
+      allocatedMasteries: { "7023": "38814" },
+      bandit: "None",
+      highestUnlockedAct: 7,
+      completedBossFlags: ["kitava_act5"],
+      adapter: poe1GameAdapter,
+    });
+
+    // Fire: 23 (helm) + 13 (shield) + 12 (ring) + 3 (shield node) - 30 (Cold Mastery 38814) - 30 (Kitava) = -9
+    // Cold: 16 (gloves) + 13 (shield) + 3 (shield node) - 30 (Kitava) = 2
+    // Light: 13 (shield) + 23 (boots) + 12 (ring) + 3 (shield node) - 30 (Kitava) = 21
+    // Chaos: 10 (jewel) + 11 (wickerman) + 8 (Purity of Flesh node) - 30 (Kitava) = -1
+    expect(res.kitavaPenalty).toBe(-30);
+    expect(res.fire.actual).toBe(-9);
+    expect(res.cold.actual).toBe(2);
+    expect(res.lightning.actual).toBe(21);
+    expect(res.chaos.actual).toBe(-1);
+
+    const hygiene = auditGearAndFlaskHygiene({
+      items: objectModItems,
+      characterLevel: 56,
+      highestUnlockedAct: 7,
+      isAttackBuild: false,
+    });
+    expect(hygiene.some((i) => i.id === "boots_0ms")).toBe(false);
+
+    const passiveLog = parseClientLogLine(
+      "2026/11/14 18:15:19 535003593 cffb06be [INFO Client 38840] : You have received a Passive Skill Point.",
+    );
+    expect(passiveLog).toEqual({ type: "skill_points_received", count: 1 });
   });
 });

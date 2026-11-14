@@ -176,7 +176,14 @@ export function useDesktopHostController() {
 
       setSnapshot(hydratedSnapshot);
       snapshotRef.current = hydratedSnapshot;
+      activeBuildRef.current = compiled.build;
+      syncPrefsRef.current = {
+        ...syncPrefsRef.current,
+        characterName: hydratedSnapshot.characterName || characterName,
+        hasStoredSession: env.hasSession,
+      };
       connectRelay(hydratedSnapshot);
+      runGggSync(false);
     })();
     return () => relayRef.current?.close();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -195,14 +202,17 @@ export function useDesktopHostController() {
       const logged = applyLogLinesToSnapshot(cur, lines);
       if (logged === cur) return;
       const next = syncBuildSetsForLevel(logged, activeBuildRef.current);
-      if (next.characterName !== cur.characterName) setCharacterName(next.characterName);
+      if (next.characterName !== cur.characterName) {
+        setCharacterName(next.characterName);
+        syncPrefsRef.current.characterName = next.characterName;
+      }
       if (cur.currentAreaId !== next.currentAreaId && cur.inGameTreeOpen) {
         void setInGameTreeOpenIpc(false);
       }
-      if (next.mode === "TOWN" && cur.mode !== "TOWN") {
-        if (next.autoClipboardEnabled && next.activeVendorRegex) void writeVendorRegexClipboard(next.activeVendorRegex);
-        runGggSync(false);
+      if (next.mode === "TOWN" && cur.mode !== "TOWN" && next.autoClipboardEnabled && next.activeVendorRegex) {
+        void writeVendorRegexClipboard(next.activeVendorRegex);
       }
+      if (cur.currentAreaId !== next.currentAreaId) runGggSync(false);
       pushPatch(next, "client_log_batch");
     },
     [pushPatch, runGggSync],

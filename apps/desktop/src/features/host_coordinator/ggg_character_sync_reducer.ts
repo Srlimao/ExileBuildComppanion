@@ -32,11 +32,27 @@ export function applyGggCharacterResponseToSnapshot(
   }
 
   const items = (Array.isArray(response.itemsJson.items) ? response.itemsJson.items : []) as GggItemModRecord[];
-  const charMeta = response.itemsJson.character as { level?: number; name?: string } | undefined;
+  const passiveItems = (Array.isArray(response.passivesJson?.items)
+    ? response.passivesJson.items
+    : []) as GggItemModRecord[];
+  const charMeta = response.itemsJson.character as
+    | { level?: number; name?: string; wickerman?: unknown }
+    | undefined;
+  const rawWickerman =
+    response.itemsJson.wickerman ?? charMeta?.wickerman ?? response.passivesJson?.wickerman;
+  const wickermanItems = (Array.isArray(rawWickerman) ? rawWickerman : []) as GggItemModRecord[];
   const characterLevel = typeof charMeta?.level === "number" ? charMeta.level : snapshot.characterLevel;
   const allocatedHashes = Array.isArray(response.passivesJson?.hashes)
     ? (response.passivesJson.hashes as number[])
     : [];
+  const allocatedMasteries = extractAllocatedMasteriesFromPassives(response.passivesJson);
+  const apiBandit = response.passivesJson?.bandit_choice;
+  const bandit =
+    apiBandit === "Alira" || apiBandit === "Oak" || apiBandit === "Kraityn"
+      ? apiBandit
+      : apiBandit === "Eramir"
+        ? "None"
+        : build.bandit;
 
   const completedBossFlags: string[] = [];
   if (snapshot.highestUnlockedAct >= 6) completedBossFlags.push("kitava_act5");
@@ -44,8 +60,11 @@ export function applyGggCharacterResponseToSnapshot(
 
   const resistances = estimateEquippedResistances({
     items,
+    passiveItems,
+    wickermanItems,
     allocatedNodeIds: allocatedHashes,
-    bandit: build.bandit,
+    allocatedMasteries,
+    bandit,
     highestUnlockedAct: snapshot.highestUnlockedAct,
     completedBossFlags,
     adapter: poe1GameAdapter,
@@ -61,7 +80,7 @@ export function applyGggCharacterResponseToSnapshot(
   const passiveTree = computePassiveTreeDiff({
     treeSpecs: build.treeSpecs,
     allocatedHashes,
-    allocatedMasteries: extractAllocatedMasteriesFromPassives(response.passivesJson),
+    allocatedMasteries,
     characterLevel,
     adapter: poe1GameAdapter,
   });

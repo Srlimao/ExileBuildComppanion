@@ -26,7 +26,11 @@ function ResistanceRow({
         <div className="flex items-center gap-2 font-mono tabular-nums">
           <span className={`text-base font-bold ${ok ? "text-emerald-400" : "text-red-400"}`}>{actual}%</span>
           <span className="text-xs text-neutral-500">/ {target}%</span>
-          {!ok && <span className="text-xs text-red-400">(-{deficit}%)</span>}
+          {!ok ? (
+            <span className="text-xs text-red-400">(-{deficit}%)</span>
+          ) : actual > target ? (
+            <span className="text-xs text-emerald-400/80">(+{actual - target}%)</span>
+          ) : null}
         </div>
       )}
     </div>

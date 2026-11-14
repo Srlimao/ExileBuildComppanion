@@ -1,5 +1,5 @@
 import type { GearHygieneIssue } from "../protocol/session_room_wire_protocol.js";
-import type { GggItemModRecord } from "./equipped_resistance_estimator.js";
+import { extractGggItemModLines, type GggItemModRecord } from "./equipped_resistance_estimator.js";
 
 function getRequiredLevel(item: GggItemModRecord): number {
   const req = item.requirements?.find((r) => r.name === "Level");
@@ -8,12 +8,7 @@ function getRequiredLevel(item: GggItemModRecord): number {
 }
 
 function getMovementSpeedPercent(boots: GggItemModRecord): number {
-  const mods = [
-    ...(boots.implicitMods ?? []),
-    ...(boots.explicitMods ?? []),
-    ...(boots.craftedMods ?? []),
-    ...(boots.enchantMods ?? []),
-  ];
+  const mods = extractGggItemModLines(boots);
   let total = 0;
   for (const mod of mods) {
     const match = /(\d+)%\s+increased Movement Speed/i.exec(mod);

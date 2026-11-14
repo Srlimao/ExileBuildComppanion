@@ -11,7 +11,7 @@ export type ParsedClientLogEvent =
 const GEN_LEVEL_REGEX = /Generating level (\d+) area "([^"]+)" with seed (\d+)/;
 const ENTERED_REGEX = /\[INFO Client \d+\].*?:\s+You have entered ([^.]+)\./;
 const LEVEL_UP_REGEX = /\[INFO Client \d+\].*?:\s+(.+?)\s+\(([^)]+)\)\s+is now level (\d+)/;
-const SKILL_POINTS_REGEX = /\[INFO Client \d+\].*?:\s+You have received (\d+) passive skill points?\./;
+const SKILL_POINTS_REGEX = /\[INFO Client \d+\].*?:\s+You have received (\d+|a) passive skill points?\./i;
 const SLAIN_REGEX = /\[INFO Client \d+\].*?:\s+(.+?)\s+has been slain\./;
 const PASSIVE_QUEST_CHAT_REGEX =
   /\[INFO Client \d+\]\s*:\s+(\d+)\s+(?:Passive Skill Points?\s+)?from\s+(.+?)\.?$/i;
@@ -47,7 +47,8 @@ export function parseClientLogLine(rawLine: string): ParsedClientLogEvent | null
 
   const skillMatch = SKILL_POINTS_REGEX.exec(line);
   if (skillMatch?.[1]) {
-    return { type: "skill_points_received", count: Number.parseInt(skillMatch[1], 10) };
+    const rawCount = skillMatch[1].toLowerCase();
+    return { type: "skill_points_received", count: rawCount === "a" ? 1 : Number.parseInt(rawCount, 10) };
   }
 
   const slainMatch = SLAIN_REGEX.exec(line);
