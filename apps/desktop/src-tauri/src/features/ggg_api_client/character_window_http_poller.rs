@@ -55,10 +55,11 @@ impl CircuitBreakerState {
         self.backoff_until_ms = None;
     }
 
-    pub fn record_failure(&mut self, now_ms: u64, _status_code: u16) -> u64 {
+    pub fn record_failure(&mut self, now_ms: u64, _status_code: u16, retry_after_ms: Option<u64>) -> u64 {
         self.last_attempt_at_ms = Some(now_ms);
         let idx = (self.consecutive_failures as usize).min(BACKOFF_SCHEDULE_MS.len() - 1);
-        let delay = BACKOFF_SCHEDULE_MS[idx];
+        let base_delay = BACKOFF_SCHEDULE_MS[idx];
+        let delay = retry_after_ms.unwrap_or(0).max(base_delay);
         self.consecutive_failures = self.consecutive_failures.saturating_add(1);
         self.backoff_until_ms = Some(now_ms + delay);
         delay
@@ -69,6 +70,14 @@ impl CircuitBreakerState {
         self.consecutive_failures = 0;
         self.backoff_until_ms = None;
     }
+}
+
+pub fn parse_retry_after_ms(headers: &reqwest::header::HeaderMap) -> Option<u64> {
+    headers
+        .get(reqwest::header::RETRY_AFTER)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.trim().parse::<u64>().ok())
+        .map(|secs| secs.saturating_mul(1_000))
 }
 
 #[derive(Debug, Serialize)]
@@ -142,11 +151,12 @@ pub async fn execute_character_window_fetch(
 
     let status = items_res.status().as_u16();
     if !items_res.status().is_success() {
+        let retry_ms = parse_retry_after_ms(items_res.headers());
         return CharacterPollResponse {
             ok: false,
             status_code: status,
             used_poesessid: used_sess,
-            throttled_ms: None,
+            throttled_ms: retry_ms,
             error: Some(format!("GGG API get-items HTTP {status}")),
             items_json: None,
             passives_json: None,
@@ -173,7 +183,10 @@ pub async fn execute_character_window_fetch(
 
 #[cfg(test)]
 mod tests {
-    use super::{build_character_window_url, CircuitBreakerState, DEFAULT_COOLDOWN_MS};
+    use super::{
+        build_character_window_url, parse_retry_after_ms, CircuitBreakerState, DEFAULT_COOLDOWN_MS,
+    };
+    use reqwest::header::{HeaderMap, HeaderValue, RETRY_AFTER};
 
     #[test]
     fn encodes_account_discriminator_as_percent_23() {
@@ -192,20 +205,31 @@ mod tests {
         assert!(cb.can_poll(145_000, false).is_ok());
 
         // 429 exponential backoff: 60s -> 120s -> 300s
-        let d1 = cb.record_failure(200_000, 429);
+        let d1 = cb.record_failure(200_000, 429, None);
         assert_eq!(d1, 60_000);
         assert_eq!(cb.can_poll(230_000, true), Err(30_000));
 
-        let d2 = cb.record_failure(260_000, 429);
+        let d2 = cb.record_failure(260_000, 429, None);
         assert_eq!(d2, 120_000);
 
-        let d3 = cb.record_failure(380_000, 503);
+        let d3 = cb.record_failure(380_000, 503, None);
         assert_eq!(d3, 300_000);
 
-        let d4 = cb.record_failure(680_000, 503);
+        let d4 = cb.record_failure(680_000, 503, None);
         assert_eq!(d4, 300_000);
 
         cb.record_success(985_000);
         assert!(cb.can_poll(985_000 + DEFAULT_COOLDOWN_MS, false).is_ok());
+
+        // Server Retry-After overrides base first-failure delay when larger
+        let d_retry = cb.record_failure(1_100_000, 429, Some(180_000));
+        assert_eq!(d_retry, 180_000);
+    }
+
+    #[test]
+    fn parses_retry_after_header_seconds_to_ms() {
+        let mut headers = HeaderMap::new();
+        headers.insert(RETRY_AFTER, HeaderValue::from_static("90"));
+        assert_eq!(parse_retry_after_ms(&headers), Some(90_000));
     }
 }

@@ -124,7 +124,7 @@ pub async fn poll_character_window(
         if response.ok {
             guard.record_success(after_ms);
         } else if response.status_code == 429 || response.status_code >= 500 {
-            let delay = guard.record_failure(after_ms, response.status_code);
+            let delay = guard.record_failure(after_ms, response.status_code, response.throttled_ms);
             response.throttled_ms = Some(delay);
         }
     }

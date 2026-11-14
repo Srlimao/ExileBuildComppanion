@@ -44,7 +44,7 @@ Real-time, zero-touch **second-screen & local overlay telemetry relay for Path o
 ## Privacy & ToS Safety Guarantee
 
 - **Public profiles work with zero credentials** — only your PoE Account Name (`Name#1234`) and Character Name are needed.
-- **Strict `POESESSID` Local-Only Boundary:** If you enter an optional `POESESSID` for a private profile, it is stored solely inside **Windows Credential Manager** and sent only from your PC directly to `www.pathofexile.com`. It is **never** included in snapshots or sent to Cloudflare; the edge relay actively drops WebSocket payloads containing `poesessid` with close code `1008`.
+- **Strict Local Keychain Credential Boundary (OAuth 2.1 PKCE):** Optional OAuth 2.1 tokens (`account:profile`, `account:characters` via Authorization Code + PKCE `S256`) and local credentials are stored solely inside **Windows Credential Manager** and used exclusively for direct PC-to-`pathofexile.com` requests. Credentials and OAuth tokens are **never** included in snapshots or sent to Cloudflare; the edge relay actively drops any HTTP/WebSocket payload containing auth tokens or session secrets with HTTP `400` / close code `1008`.
 - **Read-Only Telemetry Only:** No game memory reading, DLL injection, packet sniffing, or automated in-game inputs/macros — only byte-offset tailing of `Client.txt`, Win32 foreground key-state polling for `TREE` view toggling, and writing vendor regex text to your clipboard in Town.
 
 ---
@@ -54,7 +54,7 @@ Real-time, zero-touch **second-screen & local overlay telemetry relay for Path o
 ```mermaid
 flowchart LR
   POE["PathOfExile.exe + Client.txt"] -->|"Byte-offset log tail & hotkey poll"| Host["Windows Tauri v2 Host (apps/desktop)"]
-  GGG["pathofexile.com Character API"] <-->|"Town-entry JSON + local Windows Credential POESESSID"| Host
+  GGG["pathofexile.com Character API"] <-->|"Read-only JSON + Windows Credential Manager (OAuth 2.1 PKCE)"| Host
   Host <-->|"WSS JSON diffs / viewer commands"| Edge["Cloudflare Worker + SessionRoomDurableObject SQLite (apps/edge-worker)"]
   Edge <-->|"HTTPS Static PWA + WSS (Pin-paired)"| PWA["OLED Mobile / Tablet PWA (apps/pwa)"]
 ```
@@ -67,7 +67,7 @@ flowchart LR
 | [`packages/core`](packages/core/package.json) | PoB decoder & set filter, `#ifdef` route compiler, checkpoint graph, telemetry reducer, passive tree diff, vendor regex, wire protocol | TypeScript, Zod, pako, fast-xml-parser, Vitest |
 | [`apps/edge-worker`](apps/edge-worker/package.json) | HTTP/WebSocket edge router + hibernating `SessionRoomDurableObject` with `ctx.storage.sql` SQLite (`room_meta`, `room_snapshot`, `room_layouts`) | Cloudflare Workers, Durable Objects, Vitest |
 | [`apps/pwa`](apps/pwa/package.json) | OLED black companion HUD with customizable widget grids, pinch-zoom `TREE` canvas, QR/PIN pairing, and `?demo=1` offline demo | React 19, Tailwind CSS v4, Vite, Workbox PWA |
-| [`apps/desktop`](apps/desktop/package.json) | Windows System Tray host, Pairing/PoB Control Center, `Client.txt` tailer, PoE process monitor, Credential Manager `POESESSID`, and AppData persistence | Tauri v2, Rust, React 19, Tailwind CSS v4 |
+| [`apps/desktop`](apps/desktop/package.json) | Windows System Tray host, Pairing/PoB Control Center, `Client.txt` tailer, PoE process monitor, Windows Credential Manager keychain, local overlay, and AppData persistence | Tauri v2, Rust, React 19, Tailwind CSS v4 |
 | [`scripts`](scripts/verify_max_file_lines.mjs) | Asset/tree ingestion pipelines, Tauri icon generator, and `< 300`-line source file CI gate | Node.js ESM |
 
 For deep technical & UX details, see [poe_companion_hud_architecture_ux_spec.md](poe_companion_hud_architecture_ux_spec.md) and developer guardrails in [AGENTS.md](AGENTS.md).

@@ -1,5 +1,5 @@
 import { Check, Copy, ExternalLink, KeyRound, ShieldAlert, ShieldCheck } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 /** Renders GGG OAuth 2.1 callback handling and endpoint metadata on /oauth/callback. */
 export function GggOauthCallbackView() {
@@ -13,6 +13,12 @@ export function GggOauthCallbackView() {
       error: q.get("error") ?? "",
       errorDescription: q.get("error_description") ?? "",
     };
+  }, []);
+
+  useEffect(() => {
+    if (window.location.search) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, []);
 
   const handleCopyCode = () => {
@@ -58,7 +64,9 @@ export function GggOauthCallbackView() {
               host. {oauth.state ? "State parameter present." : "No state parameter supplied."}
             </p>
             <div className="flex items-center justify-between gap-2 rounded-lg bg-black border border-neutral-800 px-3 py-2">
-              <span className="text-xs font-mono text-neutral-300 truncate">{oauth.code}</span>
+              <span className="text-xs font-mono text-neutral-300 truncate">
+                {oauth.code.length > 8 ? `${oauth.code.slice(0, 4)}••••••••••••${oauth.code.slice(-4)}` : "••••••••••••"}
+              </span>
               <button
                 type="button"
                 onClick={handleCopyCode}
