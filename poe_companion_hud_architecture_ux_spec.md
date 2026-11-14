@@ -8,53 +8,49 @@ A lightweight, real-time second-screen telemetry HUD designed for Path of Exile 
 
 * **Tech Stack Target:**
 
-  * **PC Desktop Host & Tray App:** Tauri (Rust + Webview) or Electron wrapping the Node.js/TypeScript engine—provides native Windows System Tray integration, lightweight setup popover, `Client.txt` auto-discovery, `PathOfExile.exe` process heartbeat monitor, GGG Character API poller, Windows clipboard control, and an outbound WebSocket uplink to Cloudflare.
+  * **PC Desktop Host & Tray App:** Tauri v2 (`apps/desktop` — Rust backend + React/TypeScript coordinator) — provides native Windows System Tray integration, lightweight Control Center UI, `Client.txt` byte-offset discovery & tailing, `PathOfExile.exe` process heartbeat monitor, GGG Character API poller with Windows Credential Manager `POESESSID`, foreground passive-tree hotkey polling, Windows clipboard regex control, AppData disk persistence (`saved_pob_profile.json` and `saved_campaign_progress.json`), and an outbound WebSocket uplink to Cloudflare.
 
-  * **Cloudflare Edge Infrastructure:**
+  * **Cloudflare Edge Infrastructure (`wrangler.jsonc` -> `https://exile.dunhas.com`):**
 
-    * **Cloudflare Pages:** Hosts the static React + Tailwind PWA frontend over native HTTPS (`poe-hud.pages.dev` or custom domain) with a full offline-capable Service Worker cache.
+    * **Cloudflare Workers Static Assets (`./apps/pwa/dist`):** Serves the React + Tailwind OLED PWA (`apps/pwa`) over native HTTPS with a full offline-capable Workbox Service Worker cache.
 
-    * **Cloudflare Worker + Durable Objects:** Acts as the real-time WebSocket message broker pairing the PC host with connected mobile/tablet clients via a session room.
+    * **Cloudflare Worker + Hibernating Durable Objects (`SessionRoomDurableObject`):** Acts as the real-time WebSocket message broker (`/api/session/:roomId/register` & `/ws`) pairing the PC host with connected mobile/tablet clients via a session room.
 
-    * **Cloudflare KV (or R2):** Persists parsed build profiles, checkpoint progress, and device-scoped custom grid layouts across sessions.
+    * **Embedded Durable Object SQLite (`ctx.storage.sql`):** Persists room metadata (`room_meta`), latest sanitized `HudSessionSnapshot` (`room_snapshot`), and device-scoped custom grid layouts (`room_layouts`) directly inside the `SessionRoomDurableObject` SQLite backend.
 
-  * **Upstream Data Dependencies:** `HeartofPhos/exile-leveling` (route JSON, gem/vendor matching, PoB decoding), `nicolasbagatello/poe1-campaign-helper` or community assets (zone layout cheat sheets), and GGG `character-window` JSON endpoints.
+  * **Upstream Data Dependencies:** `HeartofPhos/exile-leveling` (route datasets, gem/vendor/quest metadata), `Lailloken/Exile-UI` (zone layout cheat sheets), GGG `grindinggear/skilltree-export` (`3.30.0` passive skill tree JSON), and GGG `character-window` JSON endpoints.
 
 ## 2. Cloudflare Edge & Relay Architecture
 
 ### 2.1 Why Cloudflare Edge vs. Pure LAN
 
-* **Frictionless PWA & Wake-Lock:** Mobile browsers (especially iOS Safari) restrict PWAs and `navigator.wakeLock` on insecure `http://192.168.x.x` origins. Cloudflare Pages provides instant, valid TLS/HTTPS out of the box.
+* **Frictionless PWA & Wake-Lock:** Mobile browsers (especially iOS Safari) restrict PWAs and `navigator.wakeLock` on insecure `http://192.168.x.x` origins. Cloudflare Workers Custom Domain HTTPS (`https://exile.dunhas.com`) provides instant, valid TLS/HTTPS out of the box.
 
 * **Zero Firewall / Subnet Friction:** Both the PC app and the mobile PWA make standard outbound TLS/WebSocket connections to the Worker—bypassing Windows Defender Firewall prompts, router AP isolation, or VPN split-tunneling issues.
 
 ### 2.2 Component Responsibilities
 
-1. **Cloudflare Pages (Companion PWA + Service Worker):**
+1. **Cloudflare Workers Static Assets (Companion PWA + Service Worker):**
 
-   * Serves the React + Tailwind frontend statically from the edge and pre-caches all route JSONs and zone layout assets in the browser Service Worker so mid-run Wi-Fi blips never blank out layout maps.
+   * Serves the React + Tailwind frontend statically from `./apps/pwa/dist` and pre-caches route datasets, SVG/WebP zone layout assets, and tree data in the browser Workbox Service Worker so mid-run Wi-Fi blips never blank out layout maps.
 
-   * Connects via `wss://<worker-domain>/session/<ROOM_ID>?role=viewer&pin=<PIN>` to receive real-time telemetry updates and send manual checkpoint overrides or grid layout edits.
+   * Connects via `wss://<worker-domain>/api/session/<ROOM_ID>/ws?role=viewer&pin=<PIN>` to receive real-time telemetry updates and send manual checkpoint overrides, grid layout edits, or campaign progress reset commands.
 
-2. **Cloudflare Worker + Durable Object (`SessionRoom`):**
+2. **Cloudflare Worker + Hibernating Durable Object (`SessionRoomDurableObject`):**
 
-   * Each active user/pairing session maps to a lightweight **Durable Object** instance keyed by `ROOM_ID`.
+   * Each active user/pairing session maps to a lightweight **Durable Object** instance keyed by normalized `ROOM_ID`.
 
-   * **Inbound from PC Host (`role=host`):** PC opens a persistent outbound WebSocket (with exponential backoff auto-reconnect) and pushes lightweight state diffs (`zoneChange`, `levelUp`, `playerSlain`, `processState`, `characterSync`, `checkpointToggle`, `buildLoaded`).
+   * **Inbound from PC Host (`role=host&secret=<SECRET>`):** PC registers the room (`POST /api/session/<ROOM_ID>/register`), opens a persistent outbound WebSocket (with exponential backoff auto-reconnect), and pushes live `HudSessionSnapshot` updates (`snapshot`, `zoneChange`, `levelUp`, `playerSlain`, `ggg_sync`, `passive_tree_hotkey`, etc.).
 
-   * **Outbound to Mobile Viewers (`role=viewer`):** The Durable Object fans out state updates instantly to all paired tablets/phones in that room and holds the latest snapshot in memory so a newly opened or refreshed tablet hydrates immediately without waiting for the next zone change.
+   * **Outbound to Mobile Viewers (`role=viewer&pin=<PIN>`):** The Durable Object fans out state updates instantly to all paired tablets/phones in that room and holds the latest snapshot in SQLite (`room_snapshot`) so a newly opened or refreshed tablet hydrates immediately without waiting for the next zone change.
 
-   * **Bi-Directional Commands:** Allows tapping a checkpoint, triggering a manual gear sync, or saving a custom grid layout on the tablet to relay back to the PC host and persist to storage.
+   * **Bi-Directional Commands:** Allows tapping a checkpoint/gem, sending `viewer:reset_progress`, requesting a manual gear sync (`viewer:request_sync`), or saving a custom grid layout on the tablet to relay back to the PC host and persist to SQLite.
 
-3. **Cloudflare KV / R2 (Generic Persistence):**
+3. **Durable Object SQLite Persistence (`ctx.storage.sql`) + PC Local AppData:**
 
-   * **Cloudflare KV:** Stores lightweight JSON documents keyed by `room:<ROOM_ID>`:
+   * **Durable Object SQLite (`session_room_sqlite_repository.ts`):** Stores `room_meta` (room PIN, host secret, timestamps), `room_snapshot` (latest sanitized `HudSessionSnapshot`), and `room_layouts` (per-device form-factor & per-mode customizable widget grid JSON).
 
-     * Active parsed build summary & checkpoint completion map (`< 50 KB`).
-
-     * Device-scoped custom widget grid layouts (`Tablet Landscape`, `Tablet Portrait`, `Phone`).
-
-   * **R2 (Optional):** Can host static zone layout map PNGs/WebPs if not bundled directly into Cloudflare Pages assets.
+   * **PC AppData JSON Stores (`saved_pob_profile.json`, `saved_campaign_progress.json`):** Stores the active PoB build profile, selected set filters, and semantic checkpoint/gem completions locally on Windows so restarting the desktop app preserves campaign state without relying solely on transient room memory.
 
 ## 3. PC Desktop Control Center & System Tray
 
@@ -78,7 +74,7 @@ Clicking the tray icon opens a sleek, compact (\~420×640px) setup window on the
 
    * Generates/persists a unique `ROOM_ID` and rotating 4-digit `PIN` (plus a Worker API secret stored locally on the PC).
 
-   * Displays a **dynamic QR Code** encoding `https://<pages-domain>/?room=<ROOM_ID>&pin=<PIN>` so pointing a phone/tablet camera opens the HTTPS PWA and joins the Durable Object room immediately.
+   * Displays a **dynamic QR Code** encoding `https://exile.dunhas.com/?room=<ROOM_ID>&pin=<PIN>` (or custom relay URL) so pointing a phone/tablet camera opens the HTTPS PWA and joins the Durable Object room immediately.
 
    * Displays a fallback **short URL + Room/PIN** and a live list of connected viewer sockets (`iPad Air • Connected via Edge`).
 
@@ -88,13 +84,13 @@ Clicking the tray icon opens a sleek, compact (\~420×640px) setup window on the
 
    * **Local Bundle & Cache:** Bundles Exile Leveling's route dataset and zone layouts locally inside the PC installer and PWA cache—zero external CDN dependency during league launch spikes.
 
-   * **Build Validation & Fallbacks:** Inspects the decoded XML for leveling skill sets and passive trees:
+   * **Build Validation & Set Selection:** Inspects the decoded XML for leveling skill sets, passive tree specs, and item sets (`pob_build_set_filter.ts` lets users selectively include/exclude specs/sets):
 
      * *Multi-Set PoBs:* Maps each PoB Skill Set / Tree Spec to its target level bracket automatically.
 
      * *Endgame-Only PoBs:* Flags a warning and activates **Fallback Leveling Mode** (groups gems by earliest vendor availability rather than dumping Act 10 setups in Act 1).
 
-   * **Saved Run Profiles:** Allows switching between multiple characters/builds (e.g., *League Starter RF*, *Twink Hollow Palm*) while preserving each character's checkpoint completion state in KV.
+   * **Saved Build Profile & Progress Persistence:** Persists the active PoB profile, raw XML cache, route customizer flags, and set selection to `saved_pob_profile.json` and completed checklist/gem steps to `saved_campaign_progress.json` in Windows AppData (`Reset Checks` clears saved progress across both PC and Web).
 
 3. **GGG Character Sync Settings (Public or `POESESSID`):**
 
@@ -102,7 +98,7 @@ Clicking the tray icon opens a sleek, compact (\~420×640px) setup window on the
 
    * **Optional Private-Profile Bypass (`POESESSID`):** Expandable advanced field allowing the user to paste their `POESESSID` cookie if their PoE account privacy is set to private.
 
-     * *Local-Only Security Boundary:* `POESESSID` is encrypted locally on Windows (DPAPI / OS keychain) and used solely for outbound requests from the PC host to `pathofexile.com`—it is **never** sent to Cloudflare Workers, Durable Objects, or KV.
+     * *Local-Only Security Boundary:* `POESESSID` is stored locally on Windows via Windows Credential Manager and used solely for outbound requests from the PC host to `pathofexile.com`—it is **never** sent to Cloudflare Workers or Durable Objects (the edge relay actively rejects any message or query containing `poesessid` with close code `1008`).
 
    * **Connection & Launch Outage Status Badge:** Validates credentials on save and displays `Connected (Public Profile)`, `Connected (POESESSID Authenticated)`, or `API Unavailable (Fallback Mode Active)`.
 
@@ -116,11 +112,13 @@ Clicking the tray icon opens a sleek, compact (\~420×640px) setup window on the
 
 * **Process Heartbeat (`PathOfExile.exe` / `PathOfExileSteam.exe`):** Polls Windows process list every 5 seconds. When PoE closes or crashes, the PC host transitions the tablet HUD to **Standby / Session Summary Mode** and pauses the active run timer until the client relaunches.
 
-* **Log Tailing Mechanism:** Byte-offset file tailing (`fs.statSync` + `fs.createReadStream` from `lastOffset`) triggered by `fs.watch` to avoid loading multi-hundred-MB log files into memory.
+* **Foreground Passive Tree Hotkey Sync (`foreground_poe_hotkey_poller.rs`):** While a PoE window holds Win32 foreground focus, watches configurable tree-toggle hotkeys (default `P`, with chat-input `Enter`/`Esc` guards) to automatically flip the companion PWA into `TREE` mode and back cleanly on your gaming PC.
+
+* **Log Tailing Mechanism:** Rust byte-offset file tailing (`client_txt_byte_offset_tailer.rs` tracking file offset + rotation/truncation) without loading multi-hundred-MB log files into memory.
 
 * **Tracked Log Events (Anchored after `[INFO Client \d+]`):**
 
-  * **Zone Entry:** `: You have entered (.+)\.$` -> Triggers view mode switch and zone-indexed route lookup.
+  * **Area Generation / Zone Entry:** `Generating level \d+ area "(.+?)" with seed` (primary language-independent zone ID trigger) with `: You have entered (.+)\.$` fallback -> Triggers view mode switch and zone-indexed route lookup.
 
   * **Level Up:** `: (.+) \((.+)\) is now level (\d+)$` -> Updates character level, auto-populates active character name (if auto-detect is enabled), and updates gem eligibility.
 
@@ -160,7 +158,7 @@ Clicking the tray icon opens a sleek, compact (\~420×640px) setup window on the
 
 ### 4.3 Non-Linear Progression & Checkpoint State Machine
 
-Instead of a fragile linear pointer (`currentStep++`), the engine models the campaign as a **directed graph of discrete Checkpoints** indexed by `ZoneID`.
+Instead of a fragile linear pointer (`currentStep++`), the engine models the campaign as a **directed graph of discrete Checkpoints** indexed by `ZoneID`. Quest turn-in steps resolve `{quest|...}` route fragments against `quests.json` to render human-readable quest names and turn-in NPCs (with backwards-compatible progress migration for older `"Turn in quest (<id>)"` keys).
 
 * **Checkpoint Categories:**
 
@@ -170,7 +168,7 @@ Instead of a fragile linear pointer (`currentStep++`), the engine models the cam
 
   * `LAB_TRIAL` (Ascendancy trials required for Normal/Cruel/Merciless Lab)
 
-  * `WAYPOINT` / `RECIPE` (Optional convenience or crafting unlocks)
+  * `WAYPOINT_RECIPE` (Optional convenience waypoints or crafting bench recipe unlocks)
 
 * **Quest Reward vs. Vendor Purchase Tagging:**
 
@@ -202,7 +200,7 @@ Instead of a fragile linear pointer (`currentStep++`), the engine models the cam
 
 ### 5.1 Context-Aware Modes (Auto-Switching)
 
-The HUD automatically switches between four distinct states based on live telemetry:
+The HUD automatically switches between five distinct states based on live telemetry:
 
 1. **Field / Combat Mode:** Active in wilderness and dungeon zones. Prioritizes layout navigation, immediate zone objectives, skipped skill-book awareness, and a compact footer preview of upcoming town currency/gem needs.
 
@@ -210,7 +208,9 @@ The HUD automatically switches between four distinct states based on live teleme
 
 3. **Labyrinth Mode:** Active in Aspirants' Plaza and Labyrinth zones. Prioritizes daily Lab room compass, Golden Door pathing, darkshrines, and Izaro phase notes.
 
-4. **Standby / Session Summary Mode:** Active when `PathOfExile.exe` is closed. Dims the screen, pauses the run timer, and displays Act split times and completed checkpoint progress.
+4. **Passive Tree (`TREE`) Mode:** Full-canvas read-only GGG `3.30.0` Passive Skill Tree visualizer showing level-bracket progression diffs, automatically framing the immediate next unallocated passives (`computeNextPassivesBounds`), persisting pan/zoom per profile and bracket in `exile_hud_tree_viewport_v1`, supporting two-finger touch pinch-to-zoom, and syncing automatically with in-game `P` hotkey toggles.
+
+5. **Standby / Session Summary Mode:** Active when `PathOfExile.exe` is closed. Dims the screen, pauses the run timer, and displays Act split times and completed checkpoint progress.
 
 ### 5.2 Per-Mode Custom Widget Grid Configuration
 
@@ -244,26 +244,26 @@ Instead of a single rigid layout, **each active Context Mode (*Field*, *Town*, *
 
   * **Unlocked Edit Mode:** Tapping the header `Layout Edit` icon enters grid customization for the *currently active mode* (or lets you preview/edit *Field*, *Town*, or *Lab* grids while sitting in Hideout).
 
-  * **Drag, Resize & Snap:** Powered by a responsive CSS Grid / `react-grid-layout` system—drag cards to reorder, resize between compact (`1x1`), wide (`2x1`), or hero (`2x2`) spans, and toggle unused widgets off via a quick `+ Add Widget` drawer.
+  * **Drag, Resize & Snap:** Powered by a responsive CSS Grid + React 19 native drag-to-reorder system—drag cards to reorder, cycle between compact (`1x1`), wide (`2x1`), or hero (`2x2`) spans, and toggle unused widgets off via a quick `+ Add Widget` drawer.
 
-  * **Device-Scoped & Synced Presets:** Layouts are saved per device form-factor (`Tablet Landscape`, `Tablet Portrait`, `Phone`) and persisted to Cloudflare KV (plus a local PC backup JSON) so your custom grids survive browser refreshes and device switches.
+  * **Device-Scoped & Synced Presets:** Layouts are saved per device form-factor (`Tablet Landscape`, `Tablet Portrait`, `Phone`) and persisted to Durable Object SQLite (`room_layouts`) plus browser `localStorage` (`exile_hud_widget_layouts_v1`) so your custom grids survive browser refreshes and device switches.
 
 ### 5.3 Ergonomics & Visual Standards
 
 * **OLED True-Black Palette:** `#000000` / `#09090B` surfaces with high-contrast, color-blind-safe socket badges (`#EF4444` R, `#22C55E` G, `#3B82F6` B, `#EAB308` Quest Gold).
 
-* **Typography:** Minimum `16px–18px` body text for instructions; `24px+` headers for zone names and NPC targets.
+* **Typography:** Minimum `16px–18px` body text for instructions; `24px+` headers for zone names and NPC targets, set in **DM Sans** (`--font-sans`).
 
-* **Screen Wake-Lock:** Uses browser `navigator.wakeLock` API (enabled natively over Cloudflare Pages HTTPS) to keep the mobile/tablet display awake throughout active sessions.
+* **Screen Wake-Lock:** Uses browser `navigator.wakeLock` API (enabled natively over Worker HTTPS) to keep the mobile/tablet display awake throughout active sessions.
 
 ## 6. Completed Design Decisions
 
-* \[x\] **Cloudflare Edge Stack:** Cloudflare Pages (offline-cached PWA frontend), Worker + Durable Objects (real-time WebSocket session room & state hydration), and KV (build/checkpoint/grid persistence).
+* \[x\] **Cloudflare Edge Stack:** Single Worker (`exilebuildcomppanion`) serving offline-cached Static Assets PWA (`./apps/pwa/dist`) plus Hibernating `SessionRoomDurableObject` WebSocket broker and embedded `ctx.storage.sql` SQLite persistence.
 
-* \[x\] **GGG Character Snapshot Sync & Launch-Outage Resilience:** Rate-limit-safe town-entry polling with manual Account/Character inputs, auto-character detection, local-only `POESESSID` private-profile bypass, and circuit-breaker fallback to heuristic tracking during league-launch API downtime.
+* \[x\] **GGG Character Snapshot Sync & Launch-Outage Resilience:** Rate-limit-safe town-entry polling with manual Account/Character inputs, auto-character detection, local-only Windows Credential Manager `POESESSID` private-profile bypass, and circuit-breaker fallback to heuristic tracking during league-launch API downtime.
 
-* \[x\] **Non-Linear Progression & Operational Edge Cases:** Checkpoint graph, implicit upstream completion, `FREE_QUEST_REWARD` vs. `VENDOR_BUY` tagging + currency tally, death respawn banner, `PathOfExile.exe` process heartbeat, and Act 1–5 vs. 6–10 zone disambiguation.
+* \[x\] **Non-Linear Progression & Persisted State:** Checkpoint graph with human-readable quest turn-in names & NPCs, semantic per-act completion persistence in Windows AppData (`saved_campaign_progress.json`, `saved_pob_profile.json`), 2-step `Reset Checks`, `FREE_QUEST_REWARD` vs. `VENDOR_BUY` tagging + currency tally, death respawn banner, `PathOfExile.exe` process heartbeat, and Act 1–5 vs. 6–10 zone disambiguation.
 
-* \[x\] **PC System Tray & Pairing Flow:** Tray status states, QR/PIN device pairing, raw-string/local-XML PoB ingestion (works even if `pobb.in` is down), Account/Character/`POESESSID` config, and `Client.txt` auto-detection.
+* \[x\] **PC System Tray & Pairing Flow:** Tauri v2 tray status states, QR/PIN device pairing, raw-string/local-XML/`pobb.in` ingestion with selective Passive/Skill/Item set filtering, foreground passive tree hotkey sync, and `Client.txt` byte-offset auto-detection.
 
-* \[x\] **Per-Mode Custom Widget Grid:** Independent customizable widget grids per context mode (*Field*, *Town*, *Lab*), device-scoped layouts synced to Cloudflare KV, and preview-editing from Hideout.
+* \[x\] **Per-Mode Custom Widget Grid & Read-Only `TREE` Mode:** Independent customizable widget grids per context mode (*Field*, *Town*, *Lab*), device-scoped layouts synced to Durable Object SQLite, plus dedicated read-only `TREE` mode with next-passive initial zoom, pinch-zoom, and persisted camera viewports.

@@ -3,6 +3,10 @@ import type { HudContextMode, HudSessionSnapshot } from "../protocol/session_roo
 import { computeNextTownCurrencyBudget } from "../route_compiler/gem_quest_and_vendor_assigner.js";
 import { buildVendorSearchRegex } from "../vendor_regex/vendor_search_regex_builder.js";
 import { resetSnapshotProgress } from "./campaign_progress_persistence.js";
+import {
+  evaluateZoneTransitionCheckpoints,
+  selectSkillBookCheckpointForCompletion,
+} from "./checkpoint_progression_evaluator.js";
 import type { ParsedClientLogEvent } from "./zone_context_disambiguator.js";
 import { disambiguateZoneByName, isLabyrinthArea, isTownOrHideoutArea } from "./zone_context_disambiguator.js";
 
@@ -40,22 +44,14 @@ function transitionToZone(
     ? state.highestUnlockedAct
     : Math.max(state.highestUnlockedAct, areaAct || state.highestUnlockedAct);
 
-  const checkpoints = state.checkpoints.map((cp) => ({ ...cp }));
-  const matchedIdx = checkpoints.findIndex((cp) => cp.areaId === areaId && !cp.completed);
-  if (matchedIdx > 0) {
-    for (let i = 0; i < matchedIdx; i++) {
-      if (checkpoints[i]!.category === "MANDATORY_PATH") {
-        checkpoints[i]!.completed = true;
-      }
-    }
-  }
-  if (state.currentAreaId && state.currentAreaId !== areaId) {
-    for (const cp of checkpoints) {
-      if (cp.areaId === state.currentAreaId && (cp.category === "LAB_TRIAL" || cp.category === "SKILL_BOOK")) {
-        cp.softCompleted = true;
-      }
-    }
-  }
+  const evaluation = evaluateZoneTransitionCheckpoints({
+    state,
+    enteredAreaId: areaId,
+    nextHighestAct,
+    isTownOrHideout: isTown,
+    adapter,
+  });
+  const checkpoints = evaluation.checkpoints;
 
   let gemSteps = state.gemSteps;
   if (prevWasTown && !isTown && state.characterSyncStatus !== "ONLINE_PUBLIC" && state.characterSyncStatus !== "ONLINE_POESESSID") {
@@ -95,6 +91,8 @@ function transitionToZone(
     highestUnlockedAct: nextHighestAct,
     lastCombatZoneId: isTown ? state.lastCombatZoneId : areaId,
     lastCombatZoneName: isTown ? state.lastCombatZoneName : areaName,
+    visitedAreaIds: evaluation.visitedAreaIds,
+    clearedAreaIds: evaluation.clearedAreaIds,
     recentDeath,
     resumeZoneBanner,
     checkpoints,
@@ -234,11 +232,11 @@ export function reduceTelemetrySession(
   }
 
   if (ev.type === "skill_points_received") {
-    const idx = state.checkpoints.findIndex(
-      (cp) => cp.category === "SKILL_BOOK" && !cp.completed && cp.sectionAct <= state.highestUnlockedAct,
-    );
+    const idx = selectSkillBookCheckpointForCompletion(state);
     if (idx === -1) return state;
-    const checkpoints = state.checkpoints.map((cp, i) => (i === idx ? { ...cp, completed: true } : cp));
+    const checkpoints = state.checkpoints.map((cp, i) =>
+      i === idx ? { ...cp, completed: true, softCompleted: false } : cp,
+    );
     return { ...state, version: state.version + 1, checkpoints };
   }
 

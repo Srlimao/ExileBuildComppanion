@@ -54,6 +54,8 @@ export type ModeWidgetGrids = Record<
   Partial<Record<HudContextMode, WidgetGridItemLayout[]>>
 >;
 
+export type CheckpointStepKind = "zone_entry" | "travel_lead_in" | "objective" | "quest_turn_in" | "ascend";
+
 export interface CheckpointStepItem {
   id: string;
   sectionAct: number;
@@ -64,6 +66,10 @@ export interface CheckpointStepItem {
   subNotes: string[];
   directions: number[];
   questId?: string;
+  stepKind?: CheckpointStepKind;
+  prerequisiteAreaIds?: string[];
+  expectedExitAreaId?: string;
+  isOptionalDetour?: boolean;
   completed: boolean;
   softCompleted: boolean;
 }
@@ -203,6 +209,8 @@ export interface HudSessionSnapshot {
   highestUnlockedAct: number;
   lastCombatZoneId: string | null;
   lastCombatZoneName: string | null;
+  visitedAreaIds?: string[];
+  clearedAreaIds?: string[];
   recentDeath: boolean;
   resumeZoneBanner: { areaId: string; areaName: string } | null;
   activeVendorRegex: string;

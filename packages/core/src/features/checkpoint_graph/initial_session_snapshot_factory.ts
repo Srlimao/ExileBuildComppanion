@@ -100,6 +100,8 @@ export function buildInitialSessionSnapshot(params: {
       rooms: [],
       completedTrialAreaIds: [],
     },
+    visitedAreaIds: [],
+    clearedAreaIds: [],
     zoneLayoutPaths: adapter.getZoneLayoutVariants("1_1_1"),
   };
 }

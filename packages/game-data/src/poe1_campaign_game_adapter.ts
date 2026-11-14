@@ -18,6 +18,14 @@ import {
   poe1VaalGemLookup,
   poe1ZoneLayoutManifest,
 } from "./poe1_static_dataset_loader.js";
+import {
+  computePoe1SkillBookQuestIds,
+  getPoe1QuestPrerequisiteAreaIds,
+  isPoe1PassiveSkillBookOffer,
+  POE1_ACT_ENTRY_AREA_BY_ACT,
+  POE1_ACT_FINAL_AREA_BY_ACT,
+  POE1_IGNORED_GRAPH_EDGES,
+} from "./poe1_quest_and_route_metadata.js";
 
 const LAB_TRIALS: LabTrialMeta[] = [
   { difficulty: "normal", areaId: "1_1_7_1", areaName: "The Lower Prison", act: 1, hint: "Sawblades & Spike Traps" },
@@ -54,20 +62,7 @@ const BOSS_WARNINGS: BossElementalWarning[] = [
   { act: 10, areaId: "2_10_2", bossName: "Kitava (Act 10)", recommendedFire: 75, recommendedCold: 75, recommendedLightning: 75, recommendedChaos: 0, warningText: "Triggers final -60% All Resistances penalty for mapping" },
 ];
 
-function computeSkillBookQuestIds(): Set<string> {
-  const ids = new Set<string>();
-  for (const quest of Object.values(poe1Quests)) {
-    for (const offer of Object.values(quest.reward_offers)) {
-      if (!offer) continue;
-      if (Object.keys(offer.quest).some((itemId) => itemId.includes("SkillBooks"))) {
-        ids.add(quest.id);
-      }
-    }
-  }
-  return ids;
-}
-
-const SKILL_BOOK_IDS = computeSkillBookQuestIds();
+const SKILL_BOOK_IDS = computePoe1SkillBookQuestIds(poe1Quests);
 const AREAS_BY_LOWER_NAME = (() => {
   const map = new Map<string, AreaDefinition[]>();
   for (const area of Object.values(poe1Areas)) {
@@ -142,6 +137,26 @@ export class Poe1CampaignGameAdapter implements GameAdapter {
 
   getSkillBookQuestIds(): ReadonlySet<string> {
     return SKILL_BOOK_IDS;
+  }
+
+  isSkillBookQuestOffer(questId: string, offerIds?: readonly string[]): boolean {
+    return isPoe1PassiveSkillBookOffer(poe1Quests, questId, offerIds);
+  }
+
+  getQuestPrerequisiteAreaIds(questId: string, offerIds?: readonly string[]): string[] {
+    return getPoe1QuestPrerequisiteAreaIds(questId, offerIds);
+  }
+
+  getActEntryAreaId(act: number): string | null {
+    return POE1_ACT_ENTRY_AREA_BY_ACT[act] ?? null;
+  }
+
+  getActFinalAreaId(act: number): string | null {
+    return POE1_ACT_FINAL_AREA_BY_ACT[act] ?? null;
+  }
+
+  isIgnoredGraphEdge(fromAreaId: string, toAreaId: string): boolean {
+    return POE1_IGNORED_GRAPH_EDGES.has(`${fromAreaId}->${toAreaId}`);
   }
 
   getLabTrials(): LabTrialMeta[] {

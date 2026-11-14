@@ -141,6 +141,11 @@ export interface GameAdapter {
   resolveAreasByName(localizedName: string): AreaDefinition[];
   getResistancePenaltyForAct(highestUnlockedAct: number, completedBossFlags: string[]): number;
   getSkillBookQuestIds(): ReadonlySet<string>;
+  isSkillBookQuestOffer(questId: string, offerIds?: readonly string[]): boolean;
+  getQuestPrerequisiteAreaIds(questId: string, offerIds?: readonly string[]): string[];
+  getActEntryAreaId(act: number): string | null;
+  getActFinalAreaId(act: number): string | null;
+  isIgnoredGraphEdge(fromAreaId: string, toAreaId: string): boolean;
   getLabTrials(): LabTrialMeta[];
   getIzaroMechanics(): IzaroMechanicGuide[];
   getBossElementalWarnings(act: number): BossElementalWarning[];

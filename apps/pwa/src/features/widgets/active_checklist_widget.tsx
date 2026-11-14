@@ -1,4 +1,4 @@
-import type { HudSessionSnapshot } from "@exile-hud/core";
+import type { CheckpointStepItem, HudSessionSnapshot } from "@exile-hud/core";
 import { Check, Circle, ListChecks } from "lucide-react";
 import { useState } from "react";
 
@@ -7,20 +7,113 @@ interface ActiveChecklistWidgetProps {
   onToggleCheckpoint: (checkpointId: string) => void;
 }
 
-export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveChecklistWidgetProps) {
-  const [showCompleted, setShowCompleted] = useState(false);
+export interface ChecklistWindowSelection {
+  currentActSteps: CheckpointStepItem[];
+  visibleSteps: CheckpointStepItem[];
+  doneCount: number;
+  allActDone: boolean;
+  earlierPendingCount: number;
+  anchorIdx: number;
+}
+
+function arePrereqsCleared(cp: CheckpointStepItem, cleared: ReadonlySet<string>): boolean {
+  const prereqs = cp.prerequisiteAreaIds;
+  if (!prereqs || prereqs.length === 0) return true;
+  return prereqs.every((areaId) => cleared.has(areaId));
+}
+
+/**
+ * Selects the 7-step rolling window anchored on the player's current combat zone or
+ * ready town turn-in rather than pinning on an earlier skipped optional branch.
+ */
+export function selectChecklistWindow(snapshot: HudSessionSnapshot): ChecklistWindowSelection {
   const currentActSteps = snapshot.checkpoints.filter(
     (cp) => cp.sectionAct === snapshot.currentAct || cp.areaId === snapshot.currentAreaId,
   );
   const doneCount = currentActSteps.filter((c) => c.completed).length;
   const firstPendingIdx = currentActSteps.findIndex((cp) => !cp.completed);
   const allActDone = currentActSteps.length > 0 && firstPendingIdx === -1;
-  const startIdx = Math.max(0, firstPendingIdx - 1);
-  const visible = showCompleted
-    ? currentActSteps
-    : allActDone
-      ? []
-      : currentActSteps.slice(startIdx, startIdx + 7);
+
+  if (currentActSteps.length === 0 || allActDone) {
+    return {
+      currentActSteps,
+      visibleSteps: [],
+      doneCount,
+      allActDone,
+      earlierPendingCount: 0,
+      anchorIdx: -1,
+    };
+  }
+
+  const cleared = new Set<string>(snapshot.clearedAreaIds ?? []);
+  const findPending = (predicate: (cp: CheckpointStepItem, idx: number) => boolean): number =>
+    currentActSteps.findIndex((cp, idx) => !cp.completed && predicate(cp, idx));
+
+  let afterCombatIdx = -1;
+  if (snapshot.lastCombatZoneId) {
+    afterCombatIdx = findPending(
+      (cp) => cp.areaId === snapshot.lastCombatZoneId && arePrereqsCleared(cp, cleared),
+    );
+    if (afterCombatIdx === -1) {
+      let lastCombatIdx = -1;
+      for (let i = currentActSteps.length - 1; i >= 0; i -= 1) {
+        if (currentActSteps[i]!.areaId === snapshot.lastCombatZoneId) {
+          lastCombatIdx = i;
+          break;
+        }
+      }
+      if (lastCombatIdx !== -1) {
+        afterCombatIdx = findPending(
+          (cp, idx) => idx > lastCombatIdx && !cp.isOptionalDetour && arePrereqsCleared(cp, cleared),
+        );
+      }
+    }
+  }
+
+  const candidates = [
+    findPending(
+      (cp) =>
+        cp.areaId === snapshot.currentAreaId &&
+        cp.stepKind === "quest_turn_in" &&
+        arePrereqsCleared(cp, cleared),
+    ),
+    findPending(
+      (cp) =>
+        cp.areaId === snapshot.currentAreaId &&
+        cp.stepKind !== "quest_turn_in" &&
+        cp.stepKind !== "travel_lead_in" &&
+        arePrereqsCleared(cp, cleared),
+    ),
+    findPending(
+      (cp) =>
+        cp.areaId === snapshot.currentAreaId &&
+        cp.stepKind !== "quest_turn_in" &&
+        cp.stepKind !== "travel_lead_in",
+    ),
+    afterCombatIdx,
+    findPending((cp) => !cp.isOptionalDetour && arePrereqsCleared(cp, cleared)),
+    firstPendingIdx,
+  ];
+  const anchorIdx = candidates.find((idx) => idx !== -1) ?? firstPendingIdx;
+  const startIdx = Math.max(0, anchorIdx - 1);
+  const visibleSteps = currentActSteps.slice(startIdx, startIdx + 7);
+  const earlierPendingCount = currentActSteps.slice(0, startIdx).filter((cp) => !cp.completed).length;
+
+  return {
+    currentActSteps,
+    visibleSteps,
+    doneCount,
+    allActDone,
+    earlierPendingCount,
+    anchorIdx,
+  };
+}
+
+export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveChecklistWidgetProps) {
+  const [showCompleted, setShowCompleted] = useState(false);
+  const { currentActSteps, visibleSteps, doneCount, allActDone, earlierPendingCount } =
+    selectChecklistWindow(snapshot);
+  const visible = showCompleted ? currentActSteps : visibleSteps;
 
   return (
     <div className="flex flex-col h-full gap-3">
@@ -30,14 +123,18 @@ export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveCh
           <h2 className="text-lg font-bold text-white">Act {snapshot.currentAct} Checklist</h2>
         </div>
         <div className="flex items-center gap-2">
-          {doneCount > 0 && (
+          {(doneCount > 0 || earlierPendingCount > 0) && (
             <button
               type="button"
               data-testid="toggle-completed-steps"
               onClick={() => setShowCompleted((v) => !v)}
               className="rounded-md border border-neutral-800 bg-black hover:border-neutral-700 px-2 py-0.5 text-[11px] font-mono text-neutral-300 cursor-pointer"
             >
-              {showCompleted ? "Pending only" : "Show all"}
+              {showCompleted
+                ? "Pending only"
+                : earlierPendingCount > 0
+                  ? `Show all (${earlierPendingCount} earlier)`
+                  : "Show all"}
             </button>
           )}
           <span className="text-xs font-mono text-neutral-400 tabular-nums">

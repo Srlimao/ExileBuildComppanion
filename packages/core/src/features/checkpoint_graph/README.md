@@ -1,7 +1,9 @@
-# `checkpoint_graph` Domain
+# Checkpoint Graph Domain
 
-Models PoE campaign progression as a non-linear directed sequence of zone-indexed checkpoints rather than a brittle `currentStep++` cursor:
-- **Deterministic Primary Zone Resolution:** Uses `Generating level <N> area "<areaId>" with seed <seed>` (works in every client language).
-- **Act Context Window Fallback:** Resolves localized `: You have entered <ZoneName>.` strings using `highestUnlockedAct`, `lastCombatZoneId`, and `characterLevel >= 44` Part 2 tie-breaking.
-- **Party & Carry Resilience:** Entering any downstream `MANDATORY_PATH` zone marks prior mandatory steps completed automatically.
-- **Launch Outage Safety:** When GGG Character API is offline, exiting a Town hub into a combat zone soft-checks town-eligible gems while keeping tap-to-toggle overrides enabled.
+Owns zone disambiguation, campaign DAG construction, and state reduction (`packages/core/src/features/checkpoint_graph/`):
+- `area_dominator_resolver.ts`: Computes and `WeakMap`-caches strict intra-act BFS dominators (excluding `isIgnoredGraphEdge` portals such as `2_10_town->2_10_6` and `1_4_town->1_4_6_3`) plus prior-act trunk dominators when entering a new Act or non-town zone.
+- `checkpoint_directed_graph_builder.ts`: Classifies route steps (`stepKind`, offer-scoped `isSkillBookQuestOffer`, Labyrinth `*_Labyrinth_boss_3` ascend steps) and annotates contiguous Visit Blocks with `expectedExitAreaId`, `prerequisiteAreaIds`, and `isOptionalDetour`.
+- `checkpoint_progression_evaluator.ts` & `checkpoint_progression_reducer.ts`: Tracks `visitedAreaIds` and `clearedAreaIds`, gates completion on strict dominators, Visit-Block exits, and prerequisite clearance, guards against `player_slain` town/hideout respawns, and prioritizes prerequisite-cleared `SKILL_BOOK` checkpoints on `skill_points_received`.
+- `zone_context_disambiguator.ts`: Parses PoE `Client.txt` lines and disambiguates duplicate zone names across Acts 1–5 / 6–10.
+- `campaign_progress_persistence.ts`: Extracts and restores completed/soft-completed checkpoints, `visitedAreaIds`/`clearedAreaIds`, and gem states with category-agnostic semantic key migration and explicit reset preservation.
+- `initial_session_snapshot_factory.ts`: Builds the initial PoB-backed HUD snapshot before live telemetry begins.

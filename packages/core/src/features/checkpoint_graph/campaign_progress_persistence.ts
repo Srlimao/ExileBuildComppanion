@@ -7,6 +7,8 @@ export interface SavedCampaignProgress {
   softCompletedCheckpointIds: string[];
   manualCompletedGemIds: string[];
   softAcquiredGemIds: string[];
+  visitedAreaIds?: string[];
+  clearedAreaIds?: string[];
   wasExplicitlyReset: boolean;
   updatedAtMs: number;
 }
@@ -58,11 +60,15 @@ export function extractCampaignProgress(
     }
   }
 
+  const visitedAreaIds = [...(snapshot.visitedAreaIds ?? [])];
+  const clearedAreaIds = [...(snapshot.clearedAreaIds ?? [])];
   return {
     completedCheckpointIds,
     softCompletedCheckpointIds,
     manualCompletedGemIds,
     softAcquiredGemIds,
+    ...(visitedAreaIds.length > 0 ? { visitedAreaIds } : {}),
+    ...(clearedAreaIds.length > 0 ? { clearedAreaIds } : {}),
     wasExplicitlyReset: options?.wasExplicitlyReset ?? false,
     updatedAtMs: options?.nowMs ?? Date.now(),
   };
@@ -98,6 +104,8 @@ export function resetSnapshotProgress(snapshot: HudSessionSnapshot): HudSessionS
   return {
     ...snapshot,
     version: snapshot.version + 1,
+    visitedAreaIds: [],
+    clearedAreaIds: [],
     checkpoints,
     gemSteps,
     lab: {
@@ -130,18 +138,39 @@ function extractLegacyQuestKeySet(rawKeys: readonly string[]): Set<string> {
 }
 
 /** Merges saved progress onto a freshly compiled or bootstrapped snapshot (or honors explicit reset). */
+function toCategoryAgnosticSemanticKey(key: string): string | null {
+  const p1 = key.indexOf("|");
+  const p2 = p1 === -1 ? -1 : key.indexOf("|", p1 + 1);
+  const p3 = p2 === -1 ? -1 : key.indexOf("|", p2 + 1);
+  const p4 = p3 === -1 ? -1 : key.indexOf("|", p3 + 1);
+  if (p1 === -1 || p2 === -1 || p3 === -1 || p4 === -1) return null;
+  return `${key.slice(0, p2)}|${key.slice(p3 + 1)}`;
+}
+
+function extractCategoryAgnosticKeySet(keys: readonly string[]): Set<string> {
+  const out = new Set<string>();
+  for (const key of keys) {
+    const semantic = toCategoryAgnosticSemanticKey(key);
+    if (semantic) out.add(semantic);
+  }
+  return out;
+}
+
 export function applySavedCampaignProgress(
   snapshot: HudSessionSnapshot,
   saved: SavedCampaignProgress | null | undefined,
 ): HudSessionSnapshot {
   if (!saved) return snapshot;
 
+  const hasTrackedAreas =
+    (saved.visitedAreaIds?.length ?? 0) > 0 || (saved.clearedAreaIds?.length ?? 0) > 0;
   const isEmptyReset =
     saved.wasExplicitlyReset &&
     saved.completedCheckpointIds.length === 0 &&
     saved.softCompletedCheckpointIds.length === 0 &&
     saved.manualCompletedGemIds.length === 0 &&
-    saved.softAcquiredGemIds.length === 0;
+    saved.softAcquiredGemIds.length === 0 &&
+    !hasTrackedAreas;
 
   if (isEmptyReset) {
     return {
@@ -154,10 +183,13 @@ export function applySavedCampaignProgress(
   const softSet = new Set(saved.softCompletedCheckpointIds);
   const legacyCompletedQuestSet = extractLegacyQuestKeySet(saved.completedCheckpointIds);
   const legacySoftQuestSet = extractLegacyQuestKeySet(saved.softCompletedCheckpointIds);
+  const semanticCompletedSet = extractCategoryAgnosticKeySet(saved.completedCheckpointIds);
+  const semanticSoftSet = extractCategoryAgnosticKeySet(saved.softCompletedCheckpointIds);
   const manualGemSet = new Set(saved.manualCompletedGemIds);
   const softGemSet = new Set(saved.softAcquiredGemIds);
   const keys = computeCheckpointProgressKeys(snapshot.checkpoints);
   const questCounts = new Map<string, number>();
+  const semanticCounts = new Map<string, number>();
 
   const checkpoints = snapshot.checkpoints.map((cp, idx) => {
     const key = keys[idx]!;
@@ -168,19 +200,45 @@ export function applySavedCampaignProgress(
       questCounts.set(qBase, qOcc);
       legacyQuestKey = `${qBase}#${qOcc}`;
     }
+    const semBase = `${cp.sectionAct}|${cp.areaId}|${cp.questId ?? ""}|${cp.title}`;
+    const semOcc = (semanticCounts.get(semBase) ?? 0) + 1;
+    semanticCounts.set(semBase, semOcc);
+    const semanticKey = `${semBase}#${semOcc}`;
+
     const completed =
       cp.completed ||
       completedSet.has(key) ||
       completedSet.has(cp.id) ||
+      semanticCompletedSet.has(semanticKey) ||
       (legacyQuestKey !== null && legacyCompletedQuestSet.has(legacyQuestKey));
     const softCompleted =
       !completed &&
       (cp.softCompleted ||
         softSet.has(key) ||
         softSet.has(cp.id) ||
+        semanticSoftSet.has(semanticKey) ||
         (legacyQuestKey !== null && legacySoftQuestSet.has(legacyQuestKey)));
     return { ...cp, completed, softCompleted };
   });
+
+  const visitedSet = new Set<string>(
+    hasTrackedAreas ? saved.visitedAreaIds ?? [] : snapshot.visitedAreaIds ?? [],
+  );
+  const clearedSet = new Set<string>(
+    hasTrackedAreas ? saved.clearedAreaIds ?? [] : snapshot.clearedAreaIds ?? [],
+  );
+  if (!hasTrackedAreas && !saved.wasExplicitlyReset) {
+    for (const cp of checkpoints) {
+      if (!cp.completed) continue;
+      visitedSet.add(cp.areaId);
+      if (cp.stepKind !== "quest_turn_in" && !/_town$|hideout|Labyrinth_Airlock/i.test(cp.areaId)) {
+        clearedSet.add(cp.areaId);
+      }
+    }
+  }
+  for (const clearedAreaId of clearedSet) {
+    visitedSet.add(clearedAreaId);
+  }
 
   const gemSteps = snapshot.gemSteps.map((gs) => {
     const manualCompleted = gs.manualCompleted || manualGemSet.has(gs.id);
@@ -191,6 +249,8 @@ export function applySavedCampaignProgress(
   const currentAct = snapshot.highestUnlockedAct;
   return {
     ...snapshot,
+    visitedAreaIds: [...visitedSet],
+    clearedAreaIds: [...clearedSet],
     checkpoints,
     gemSteps,
     nextTownCurrencyBudget: computeNextTownCurrencyBudget(gemSteps, currentAct),

@@ -138,6 +138,8 @@ export async function compilePobProfileToSnapshot(params: {
         currentAreaLevel: params.previousSnapshot.currentAreaLevel,
         currentAct: params.previousSnapshot.currentAct,
         highestUnlockedAct: params.previousSnapshot.highestUnlockedAct,
+        visitedAreaIds: params.previousSnapshot.visitedAreaIds ?? [],
+        clearedAreaIds: params.previousSnapshot.clearedAreaIds ?? [],
         mode: params.previousSnapshot.mode,
       },
       extractCampaignProgress(params.previousSnapshot),

@@ -8,7 +8,7 @@ Self-contained vertical slice for rendering and interacting with the GGG `3.30.0
 - **Per-Profile Viewport Persistence (`passive_tree_viewport_storage.ts`):** Saves the active camera (`centerX`, `centerY`, `width`) and `manualSpecId` per `profileId` and bracket `specKey` (`exile_hud_tree_viewport_v1` in `localStorage`), restoring pan/zoom across tab switches (`FIELD`/`TOWN`/`LAB`/`TREE`), in-game passive tree toggles, and browser reloads.
 - **Multi-Touch Pinch & Tap Delegation:** `usePanZoomViewport` tracks active touch/mouse pointers via `pointerHandlers` (`pinch_zoom_math.ts`), supporting focal-point two-finger pinch-to-zoom, midpoint panning, seamless 2-to-1 finger transition re-anchoring, trackpad `ctrl+wheel`/Safari gesture guards, and `data-tree-node-id` container-level tap delegation without swallowing multi-touch events.
 - **Bracket Progression Semantics:** Every spec in `snapshot.passiveTree.specs` is compared against its preceding level bracket via `computeBracketProgressionDiff`:
-  - Emerald: Allocated (GGG API synced + local manual overrides).
+  - Emerald: Allocated (GGG Character API / PoB telemetry — read-only).
   - Amber: New target points in the selected level bracket.
   - Cyan: Earlier-bracket points not yet allocated.
   - Rose (dashed): Nodes present in the previous bracket and dropped in the selected bracket (respec).

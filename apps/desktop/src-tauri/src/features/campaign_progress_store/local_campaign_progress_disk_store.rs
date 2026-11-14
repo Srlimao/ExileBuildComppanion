@@ -17,6 +17,10 @@ pub struct SavedCampaignProgressRecord {
     #[serde(default)]
     pub soft_acquired_gem_ids: Vec<String>,
     #[serde(default)]
+    pub visited_area_ids: Vec<String>,
+    #[serde(default)]
+    pub cleared_area_ids: Vec<String>,
+    #[serde(default)]
     pub was_explicitly_reset: bool,
     #[serde(default)]
     pub updated_at_ms: u64,
@@ -83,6 +87,8 @@ mod tests {
             soft_completed_checkpoint_ids: vec!["1|1_1_3|SKILL_BOOK||Dweller#1".to_string()],
             manual_completed_gem_ids: vec!["gem_a1q1_GemFrostblink".to_string()],
             soft_acquired_gem_ids: vec![],
+            visited_area_ids: vec!["1_1_1".to_string(), "1_1_town".to_string()],
+            cleared_area_ids: vec!["1_1_1".to_string()],
             was_explicitly_reset: false,
             updated_at_ms: 1000,
         };
@@ -97,6 +103,8 @@ mod tests {
             soft_completed_checkpoint_ids: vec![],
             manual_completed_gem_ids: vec![],
             soft_acquired_gem_ids: vec![],
+            visited_area_ids: vec![],
+            cleared_area_ids: vec![],
             was_explicitly_reset: true,
             updated_at_ms: 2000,
         };
@@ -105,5 +113,12 @@ mod tests {
             load_campaign_progress_from_path(&path).unwrap(),
             Some(reset)
         );
+
+        // Legacy JSON missing visitedAreaIds / clearedAreaIds still deserializes cleanly.
+        let legacy_json = r#"{"completedCheckpointIds":["1|1_1_1|MANDATORY_PATH||Kill Hillock#1"],"softCompletedCheckpointIds":[],"manualCompletedGemIds":[],"softAcquiredGemIds":[],"wasExplicitlyReset":false,"updatedAtMs":3000}"#;
+        std::fs::write(&path, legacy_json).unwrap();
+        let legacy_loaded = load_campaign_progress_from_path(&path).unwrap().unwrap();
+        assert!(legacy_loaded.visited_area_ids.is_empty());
+        assert!(legacy_loaded.cleared_area_ids.is_empty());
     }
 }
