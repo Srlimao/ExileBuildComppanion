@@ -124,6 +124,52 @@ export interface IzaroMechanicGuide {
   counterplay: string;
 }
 
+export type BenchCraftCategory =
+  | "fire_res"
+  | "cold_res"
+  | "lightning_res"
+  | "chaos_res"
+  | "fire_cold_res"
+  | "cold_lightning_res"
+  | "fire_lightning_res"
+  | "all_ele_res"
+  | "movement_speed"
+  | "life"
+  | "strength"
+  | "dexterity"
+  | "intelligence"
+  | "all_attributes";
+
+export type BenchEquipSlot =
+  | "Helm"
+  | "BodyArmour"
+  | "Gloves"
+  | "Boots"
+  | "Belt"
+  | "Amulet"
+  | "Ring"
+  | "Ring2"
+  | "Offhand";
+
+export interface CraftingBenchRecipe {
+  id: string;
+  category: BenchCraftCategory;
+  label: string;
+  modTextTemplate: string;
+  affixType: "prefix" | "suffix";
+  benchTier: number;
+  requiredLevel: number;
+  minVal: number;
+  maxVal: number;
+  costCurrency: string;
+  costCount: number;
+  costLabel: string;
+  compatibleSlots: BenchEquipSlot[];
+  unlockAreaId: string | null;
+  unlockRecipeName: string | null;
+  unlockAct: number;
+}
+
 export interface GameAdapter {
   readonly gameId: SupportedGameId;
   getAreas(): Record<string, AreaDefinition>;
@@ -137,6 +183,7 @@ export interface GameAdapter {
   getZoneLayoutVariants(areaId: string): string[];
   getPassiveTreeNodes(): Record<string, PassiveTreeNodeMetadata>;
   getPassiveTreeGraphMeta(): PassiveTreeGraphMetadata;
+  getCraftingBenchRecipes(): CraftingBenchRecipe[];
   resolveAreaById(areaId: string): AreaDefinition | null;
   resolveAreasByName(localizedName: string): AreaDefinition[];
   getResistancePenaltyForAct(highestUnlockedAct: number, completedBossFlags: string[]): number;

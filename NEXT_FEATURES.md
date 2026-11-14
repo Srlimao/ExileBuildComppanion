@@ -13,7 +13,7 @@ Prioritized roadmap of telemetry, QoL, and open-API improvements for **Exile Com
 | 3 | Socketed Tree Jewels | Planned | `get-passive-skills` (`items`, `jewel_data`, `hashes`) | Includes jewel resistances in caps and flags empty allocated jewel sockets |
 | 4 | 1-Click Character Dropdown & League Auto-Detect | Planned | `character-window/get-characters` | Zero-typing character selection, SSF/Ruthless/HC flags, PoB class check |
 | 5 | Daily Labyrinth Layouts | Planned | Cloudflare Worker `/api/lab/daily` + PoELab JSON | Zero-paste `LAB` room compass across sessions with `00:00 UTC` expiry |
-| 6 | Actionable Bench Craft Suggestions | Planned | RePoE `crafting_bench_options.json` + `get-items` | Exact *"Craft X Res on Gloves (1x Transmute)"* advice in `TOWN` mode |
+| 6 | Actionable Bench Craft Suggestions | Done | RePoE `crafting_bench_options.json` + `get-items` | Exact *"Craft X Res on Gloves (1x Transmute)"* advice in `TOWN` mode |
 
 ---
 

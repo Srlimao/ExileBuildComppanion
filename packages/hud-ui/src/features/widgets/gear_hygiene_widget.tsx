@@ -1,5 +1,5 @@
 import type { HudSessionSnapshot, TargetItemSetSummary, TargetItemSlotSummary } from "@exile-hud/core";
-import { AlertTriangle, CheckCircle2, ShieldCheck, Wrench } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Hammer, ShieldCheck, Wrench } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const RARITY_COLOR_CLASS: Record<TargetItemSlotSummary["rarity"], string> = {
@@ -22,6 +22,9 @@ function selectDefaultItemSet(itemSets: TargetItemSetSummary[], characterLevel: 
 /** Displays gear/flask hygiene alerts alongside imported PoB Item Sets and target slots. */
 export function GearHygieneWidget({ snapshot }: { snapshot: HudSessionSnapshot }) {
   const issues = snapshot.gearHygiene;
+  const craftSuggestions = (snapshot.benchCraftSuggestions ?? []).filter(
+    (s) => !(s.id === "bench_boots_ms" && issues.some((i) => i.id === "boots_0ms")),
+  );
   const itemSets = snapshot.itemSets ?? [];
   const defaultSet = selectDefaultItemSet(itemSets, snapshot.characterLevel);
   const [selectedSetId, setSelectedSetId] = useState<string | null>(defaultSet?.id ?? null);
@@ -44,7 +47,7 @@ export function GearHygieneWidget({ snapshot }: { snapshot: HudSessionSnapshot }
         </div>
         <span className="text-xs font-mono text-neutral-400">
           {activeSet ? `${activeSet.slots.length} slots · ` : ""}
-          {issues.length} alerts
+          {issues.length + craftSuggestions.length} alerts
         </span>
       </div>
 
@@ -63,7 +66,25 @@ export function GearHygieneWidget({ snapshot }: { snapshot: HudSessionSnapshot }
           </div>
         ))}
 
-        {issues.length === 0 && (
+        {craftSuggestions.map((s) => (
+          <div
+            key={s.id}
+            className="rounded-lg border border-indigo-500/35 bg-indigo-500/10 px-2.5 py-2 text-xs flex items-start justify-between gap-2 text-indigo-100"
+          >
+            <div className="flex items-start gap-2 min-w-0">
+              <Hammer className="h-3.5 w-3.5 text-indigo-400 shrink-0 mt-0.5" />
+              <span>
+                <span className="font-semibold text-indigo-200">Bench Craft:</span>{" "}
+                {s.problemSummary} → {s.prescription}
+              </span>
+            </div>
+            <span className="shrink-0 rounded bg-black/70 border border-indigo-500/30 px-1.5 py-0.5 font-mono text-[10px] text-amber-300">
+              {s.costLabel}
+            </span>
+          </div>
+        ))}
+
+        {issues.length === 0 && craftSuggestions.length === 0 && (
           <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-2 text-xs text-emerald-300 flex items-center gap-2">
             <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
             <span>Boots, flasks, and weapon tiers look good.</span>

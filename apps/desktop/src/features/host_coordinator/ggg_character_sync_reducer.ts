@@ -1,6 +1,7 @@
 import {
   auditGearAndFlaskHygiene,
   buildVendorSearchRegex,
+  computeBenchCraftSuggestions,
   computeNextTownCurrencyBudget,
   computePassiveTreeDiff,
   estimateEquippedResistances,
@@ -85,11 +86,22 @@ export function applyGggCharacterResponseToSnapshot(
     adapter: poe1GameAdapter,
   });
 
+  const benchCraftSuggestions = computeBenchCraftSuggestions({
+    items,
+    resistances,
+    characterLevel,
+    highestUnlockedAct: snapshot.highestUnlockedAct,
+    clearedAreaIds: snapshot.clearedAreaIds,
+    checkpoints: snapshot.checkpoints,
+    adapter: poe1GameAdapter,
+  });
+
   const gearHygiene = auditGearAndFlaskHygiene({
     items,
     characterLevel,
     highestUnlockedAct: snapshot.highestUnlockedAct,
     isAttackBuild: build.characterClass === "Ranger" || build.characterClass === "Duelist",
+    benchCraftSuggestions,
   });
 
   const activeVendorRegex = buildVendorSearchRegex({
@@ -114,6 +126,7 @@ export function applyGggCharacterResponseToSnapshot(
     itemSets: markEquippedItemSets(build.itemSets, items),
     resistances,
     gearHygiene,
+    benchCraftSuggestions,
     passiveTree,
     activeVendorRegex,
   };

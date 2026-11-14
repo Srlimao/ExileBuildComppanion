@@ -156,6 +156,18 @@ export interface GearHygieneIssue {
   message: string;
 }
 
+export interface BenchCraftSuggestion {
+  id: string;
+  priority: "high" | "medium";
+  problemSummary: string;
+  prescription: string;
+  slot: string;
+  recipeId: string;
+  recipeLabel: string;
+  costLabel: string;
+  affixType: "prefix" | "suffix";
+}
+
 export interface PassiveTreeSpecSummary {
   id: string;
   title: string;
@@ -229,6 +241,7 @@ export interface HudSessionSnapshot {
   itemSets?: TargetItemSetSummary[];
   resistances: ResistanceTelemetry;
   gearHygiene: GearHygieneIssue[];
+  benchCraftSuggestions?: BenchCraftSuggestion[];
   passiveTree: PassiveTreeTelemetry;
   lab: LabTelemetry;
   zoneLayoutPaths: string[];

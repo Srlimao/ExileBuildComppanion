@@ -91,6 +91,7 @@ export function buildInitialSessionSnapshot(params: {
       upcomingBossWarning: adapter.getBossElementalWarnings(1)[0]?.warningText ?? null,
     },
     gearHygiene: [],
+    benchCraftSuggestions: [],
     passiveTree,
     lab: {
       hasDailyLayout: false,

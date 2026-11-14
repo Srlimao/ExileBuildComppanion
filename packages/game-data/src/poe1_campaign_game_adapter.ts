@@ -1,6 +1,7 @@
 import type {
   AreaDefinition,
   BossElementalWarning,
+  CraftingBenchRecipe,
   GameAdapter,
   IzaroMechanicGuide,
   LabTrialMeta,
@@ -9,6 +10,7 @@ import {
   poe1Areas,
   poe1AwakenedGemLookup,
   poe1Characters,
+  poe1CraftingBenchRecipes,
   poe1DefaultRoutes,
   poe1Gems,
   poe1KillWaypoints,
@@ -119,6 +121,10 @@ export class Poe1CampaignGameAdapter implements GameAdapter {
 
   getPassiveTreeGraphMeta() {
     return poe1PassiveTreeGraphMeta;
+  }
+
+  getCraftingBenchRecipes(): CraftingBenchRecipe[] {
+    return poe1CraftingBenchRecipes;
   }
 
   resolveAreaById(areaId: string): AreaDefinition | null {

@@ -1,4 +1,4 @@
-import type { GearHygieneIssue } from "../protocol/session_room_wire_protocol.js";
+import type { BenchCraftSuggestion, GearHygieneIssue } from "../protocol/session_room_wire_protocol.js";
 import { extractGggItemModLines, type GggItemModRecord } from "./equipped_resistance_estimator.js";
 
 function getRequiredLevel(item: GggItemModRecord): number {
@@ -22,9 +22,11 @@ export function auditGearAndFlaskHygiene(params: {
   characterLevel: number;
   highestUnlockedAct: number;
   isAttackBuild: boolean;
+  benchCraftSuggestions?: BenchCraftSuggestion[];
 }): GearHygieneIssue[] {
-  const { items, characterLevel, highestUnlockedAct, isAttackBuild } = params;
+  const { items, characterLevel, highestUnlockedAct, isAttackBuild, benchCraftSuggestions } = params;
   const issues: GearHygieneIssue[] = [];
+  const bootsMsCraft = benchCraftSuggestions?.find((s) => s.id === "bench_boots_ms");
 
   const boots = items.find((i) => i.inventoryId === "Boots");
   if (highestUnlockedAct >= 3) {
@@ -40,7 +42,9 @@ export function auditGearAndFlaskHygiene(params: {
         id: "boots_0ms",
         severity: "warn",
         slot: "boots",
-        message: `Boots have 0% Movement Speed in Act ${highestUnlockedAct} — craft or vendor MS boots.`,
+        message: bootsMsCraft
+          ? `Boots have 0% Movement Speed in Act ${highestUnlockedAct} — ${bootsMsCraft.prescription}.`
+          : `Boots have 0% Movement Speed in Act ${highestUnlockedAct} — craft or vendor MS boots.`,
       });
     }
   }

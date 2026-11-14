@@ -126,5 +126,29 @@ export function createInteractiveDemoSnapshot(): HudSessionSnapshot {
     gearHygiene: [
       { id: "demo_ms", severity: "info", slot: "boots", message: "Check Nessa / Tarkleigh for +10% Movement Speed boots" },
     ],
+    benchCraftSuggestions: [
+      {
+        id: "bench_res_lightning_Gloves",
+        priority: "high",
+        problemSummary: "Lightning Res -17% under cap",
+        prescription: "Craft 16-20% Lightning Res on Gloves (1x Orb of Transmutation)",
+        slot: "Gloves",
+        recipeId: "HelenaMasterLightningResist1",
+        recipeLabel: "16-20% Lightning Res",
+        costLabel: "1x Orb of Transmutation",
+        affixType: "suffix",
+      },
+      {
+        id: "bench_res_fire_Boots",
+        priority: "high",
+        problemSummary: "Fire Res -7% under cap",
+        prescription: "Craft 16-20% Fire Res on Boots (1x Orb of Transmutation)",
+        slot: "Boots",
+        recipeId: "HelenaMasterFireResist1",
+        recipeLabel: "16-20% Fire Res",
+        costLabel: "1x Orb of Transmutation",
+        affixType: "suffix",
+      },
+    ],
   };
 }

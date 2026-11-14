@@ -21,5 +21,6 @@ export * from "./features/character_telemetry_diff/socket_link_and_gem_verifier.
 export * from "./features/character_telemetry_diff/passive_tree_diff_calculator.js";
 export * from "./features/character_telemetry_diff/passive_tree_bracket_differ.js";
 export * from "./features/character_telemetry_diff/gear_and_flask_hygiene_auditor.js";
+export * from "./features/character_telemetry_diff/bench_craft_suggestion_advisor.js";
 export * from "./features/vendor_regex/vendor_search_regex_builder.js";
 export * from "./features/lab_compass/poelab_daily_json_tracker.js";

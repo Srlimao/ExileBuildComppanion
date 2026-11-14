@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
 import { ingestGggPassiveTree } from "./ingest_ggg_passive_tree.mjs";
+import { ingestRepoeCraftingBench } from "./ingest_repoe_crafting_bench.mjs";
 
 const ROOT = process.cwd();
 const CACHE_EXILE_LEVELING = path.join(ROOT, ".upstream-cache", "exile-leveling");
@@ -135,6 +136,11 @@ ${exileUiLic}
 Source: https://github.com/grindinggear/skilltree-export (Tag \`3.30.0\`)
 
 Official Path of Exile Passive Skill Tree export JSON (\`data.json\`) provided publicly by Grinding Gear Games for community build planners and tools.
+
+## brather1ng/RePoE
+Source: https://github.com/brather1ng/RePoE
+
+Community-maintained JSON extractions of Path of Exile game data (\`crafting_bench_options.min.json\`, \`mods.min.json\`) used for campaign bench craft recipe suggestions.
 `;
   fs.writeFileSync(path.join(ROOT, "THIRD_PARTY_LICENSES.md"), content);
 }
@@ -143,9 +149,10 @@ async function main() {
   ensureUpstreamExists();
   copyExileLevelingData();
   const { nodeCount } = await ingestGggPassiveTree(ROOT);
+  const { recipeCount } = await ingestRepoeCraftingBench(ROOT);
   const layoutCount = await convertZoneLayoutsToWebp();
   writeThirdPartyLicenses();
-  console.log(`Ingested PoE1 assets: ${nodeCount} passive tree nodes, ${layoutCount} WebP zone layouts.`);
+  console.log(`Ingested PoE1 assets: ${nodeCount} passive tree nodes, ${recipeCount} bench recipes, ${layoutCount} WebP zone layouts.`);
 }
 
 main().catch((err) => {

@@ -1,6 +1,7 @@
 import areasJson from "../data/poe1/areas.json" with { type: "json" };
 import awakenedGemLookupJson from "../data/poe1/awakened-gem-lookup.json" with { type: "json" };
 import charactersJson from "../data/poe1/characters.json" with { type: "json" };
+import craftingBenchRecipesJson from "../data/poe1/crafting_bench_recipes.json" with { type: "json" };
 import defaultRoutesJson from "../data/poe1/default_routes.json" with { type: "json" };
 import gemColoursJson from "../data/poe1/gem-colours.json" with { type: "json" };
 import gemsJson from "../data/poe1/gems.json" with { type: "json" };
@@ -13,6 +14,7 @@ import zoneLayoutManifestJson from "../data/poe1/zone_layout_manifest.json" with
 import type {
   AreaDefinition,
   CharacterStartGems,
+  CraftingBenchRecipe,
   GemDefinition,
   PassiveTreeGraphMetadata,
   PassiveTreeNodeMetadata,
@@ -31,3 +33,4 @@ export const poe1DefaultRoutes = defaultRoutesJson as Record<string, string>;
 export const poe1ZoneLayoutManifest = zoneLayoutManifestJson as Record<string, string[]>;
 export const poe1PassiveTreeNodes = passiveTreeNodesJson as Record<string, PassiveTreeNodeMetadata>;
 export const poe1PassiveTreeGraphMeta = passiveTreeGraphMetaJson as PassiveTreeGraphMetadata;
+export const poe1CraftingBenchRecipes = craftingBenchRecipesJson as CraftingBenchRecipe[];

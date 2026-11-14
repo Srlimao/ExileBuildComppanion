@@ -1,5 +1,5 @@
 import type { HudSessionSnapshot } from "@exile-hud/core";
-import { AlertCircle, Shield } from "lucide-react";
+import { AlertCircle, Hammer, Shield } from "lucide-react";
 
 function ResistanceRow({
   label,
@@ -40,6 +40,9 @@ function ResistanceRow({
 export function ResistanceCapWidget({ snapshot }: { snapshot: HudSessionSnapshot }) {
   const r = snapshot.resistances;
   const isFallback = r.source === "ACT_TARGET_FALLBACK";
+  const resistanceSuggestions = (snapshot.benchCraftSuggestions ?? []).filter(
+    (s) => s.id.startsWith("bench_res_") || /Resist/i.test(s.recipeId) || s.problemSummary.includes("Res"),
+  );
 
   return (
     <div className="flex flex-col h-full gap-2.5">
@@ -59,6 +62,30 @@ export function ResistanceCapWidget({ snapshot }: { snapshot: HudSessionSnapshot
         <ResistanceRow label="Light" actual={r.lightning.actual} target={r.lightning.target} colorClass="text-[#EAB308]" isFallback={isFallback} />
         <ResistanceRow label="Chaos" actual={r.chaos.actual} target={r.chaos.target} colorClass="text-fuchsia-400" isFallback={isFallback} />
       </div>
+
+      {!isFallback && resistanceSuggestions.length > 0 && (
+        <div className="rounded-lg border border-indigo-500/30 bg-black px-3 py-2 space-y-1.5">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-indigo-300">
+            <Hammer className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+            <span>Bench Craft Advice</span>
+          </div>
+          <div className="space-y-1">
+            {resistanceSuggestions.map((s) => (
+              <div key={s.id} className="flex items-center justify-between gap-2 text-xs" title={s.prescription}>
+                <span className="text-neutral-200 leading-snug">
+                  <span className="text-neutral-400">{s.problemSummary} → </span>
+                  <span className="font-medium text-white">
+                    {s.prescription.replace(/\s*\([^)]+\)$/, "")}
+                  </span>
+                </span>
+                <span className="shrink-0 rounded bg-neutral-900 border border-neutral-800 px-1.5 py-0.5 font-mono text-[10px] text-amber-300">
+                  {s.costLabel}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {r.upcomingBossWarning && (
         <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200 flex items-start gap-2">
