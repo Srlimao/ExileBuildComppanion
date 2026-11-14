@@ -21,7 +21,7 @@ pub struct SavedOverlayConfigRecord {
     pub enabled: bool,
     #[serde(default)]
     pub click_through_locked: bool,
-    #[serde(default)]
+    #[serde(default = "default_pin_on_desktop")]
     pub pin_on_desktop: bool,
     #[serde(default = "default_opacity_percent")]
     pub opacity_percent: u8,
@@ -37,6 +37,10 @@ pub struct SavedOverlayConfigRecord {
     pub mode_layouts: serde_json::Value,
     #[serde(default)]
     pub updated_at_ms: u64,
+}
+
+fn default_pin_on_desktop() -> bool {
+    true
 }
 
 fn default_opacity_percent() -> u8 {
@@ -64,7 +68,7 @@ impl Default for SavedOverlayConfigRecord {
         Self {
             enabled: false,
             click_through_locked: false,
-            pin_on_desktop: false,
+            pin_on_desktop: default_pin_on_desktop(),
             opacity_percent: default_opacity_percent(),
             dock_preset: default_dock_preset(),
             bounds: None,
@@ -158,6 +162,7 @@ mod tests {
         let initial = load_overlay_config_from_path(&path).unwrap();
         assert_eq!(initial, SavedOverlayConfigRecord::default());
         assert!(!initial.enabled);
+        assert!(initial.pin_on_desktop);
         assert_eq!(initial.toggle_visibility_hotkey, "F7");
         assert_eq!(initial.toggle_lock_hotkey, "F8");
 

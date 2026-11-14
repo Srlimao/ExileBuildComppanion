@@ -9,9 +9,8 @@ use crate::overlay_monitor_docking::{
 };
 use crate::overlay_window_controller::{
     apply_window_bounds, ensure_overlay_window, persist_and_emit_overlay_config,
-    sync_overlay_window_chrome, OverlaySharedState, OVERLAY_WINDOW_LABEL,
+    resolve_overlay_poe_pid, sync_overlay_window_chrome, OverlaySharedState, OVERLAY_WINDOW_LABEL,
 };
-use crate::poe_process_heartbeat::find_running_poe_process;
 
 #[tauri::command]
 pub fn get_overlay_config(state: State<'_, OverlaySharedState>) -> SavedOverlayConfigRecord {
@@ -22,12 +21,11 @@ pub fn get_overlay_config(state: State<'_, OverlaySharedState>) -> SavedOverlayC
         .unwrap_or_default()
 }
 
-#[tauri::command]
-pub fn update_overlay_config(
-    app: AppHandle,
+fn update_overlay_config_blocking(
+    app: &AppHandle,
     config: SavedOverlayConfigRecord,
-    state: State<'_, OverlaySharedState>,
 ) -> Result<SavedOverlayConfigRecord, String> {
+    let state = app.state::<OverlaySharedState>();
     let sanitized = sanitize_overlay_config(config);
     let was_enabled = state.config.lock().map(|g| g.enabled).unwrap_or(false);
 
@@ -41,28 +39,22 @@ pub fn update_overlay_config(
         *guard = sanitized.clone();
     }
 
-    persist_and_emit_overlay_config(&app, &sanitized)?;
-    sync_overlay_window_chrome(
-        &app,
-        &state,
-        &sanitized,
-        !was_enabled && sanitized.enabled,
-    )?;
+    persist_and_emit_overlay_config(app, &sanitized)?;
+    sync_overlay_window_chrome(app, &state, &sanitized, !was_enabled && sanitized.enabled)?;
     Ok(sanitized)
 }
 
-#[tauri::command]
-pub fn apply_overlay_dock_preset(
-    app: AppHandle,
+fn apply_overlay_dock_preset_blocking(
+    app: &AppHandle,
     preset: String,
-    state: State<'_, OverlaySharedState>,
 ) -> Result<SavedOverlayConfigRecord, String> {
     if !is_valid_dock_preset(&preset) || preset == "free" {
         return Err(format!("Unsupported dock preset: {preset}"));
     }
 
-    let poe_pid = find_running_poe_process().map(|p| p.pid).unwrap_or(0);
-    let monitor = resolve_target_monitor_rect(&app, poe_pid);
+    let state = app.state::<OverlaySharedState>();
+    let poe_pid = resolve_overlay_poe_pid(&state, true);
+    let monitor = resolve_target_monitor_rect(app, poe_pid);
 
     let updated = {
         let mut guard = state
@@ -76,21 +68,20 @@ pub fn apply_overlay_dock_preset(
         guard.clone()
     };
 
-    persist_and_emit_overlay_config(&app, &updated)?;
+    persist_and_emit_overlay_config(app, &updated)?;
     if updated.enabled || app.get_webview_window(OVERLAY_WINDOW_LABEL).is_some() {
-        let win = ensure_overlay_window(&app, &updated, poe_pid)?;
+        let win = ensure_overlay_window(app, &state, &updated, poe_pid)?;
         if let Some(b) = updated.bounds {
             apply_window_bounds(&win, b);
         }
+        sync_overlay_window_chrome(app, &state, &updated, false)?;
     }
     Ok(updated)
 }
 
-#[tauri::command]
-pub fn save_overlay_free_bounds(
-    app: AppHandle,
+fn save_overlay_free_bounds_blocking(
+    app: &AppHandle,
     bounds: Option<OverlayBounds>,
-    state: State<'_, OverlaySharedState>,
 ) -> Result<SavedOverlayConfigRecord, String> {
     let raw_bounds = match bounds {
         Some(b) => b,
@@ -109,7 +100,8 @@ pub fn save_overlay_free_bounds(
         }
     };
 
-    let monitors = collect_monitor_work_rects(&app);
+    let state = app.state::<OverlaySharedState>();
+    let monitors = collect_monitor_work_rects(app);
     let clamped = clamp_bounds_to_monitors(raw_bounds, &monitors);
     let updated = {
         let mut guard = state
@@ -121,18 +113,51 @@ pub fn save_overlay_free_bounds(
         guard.clone()
     };
 
-    persist_and_emit_overlay_config(&app, &updated)?;
+    persist_and_emit_overlay_config(app, &updated)?;
     Ok(updated)
 }
 
-#[tauri::command]
-pub fn toggle_overlay_visibility(app: AppHandle) -> Result<SavedOverlayConfigRecord, String> {
-    toggle_overlay_enabled_from_backend(&app)
+async fn run_blocking_ipc<F>(task: F) -> Result<SavedOverlayConfigRecord, String>
+where
+    F: FnOnce() -> Result<SavedOverlayConfigRecord, String> + Send + 'static,
+{
+    tauri::async_runtime::spawn_blocking(task)
+        .await
+        .map_err(|e| format!("Overlay worker join failed: {e}"))?
 }
 
 #[tauri::command]
-pub fn toggle_overlay_click_through(app: AppHandle) -> Result<SavedOverlayConfigRecord, String> {
-    toggle_overlay_lock_from_backend(&app)
+pub async fn update_overlay_config(
+    app: AppHandle,
+    config: SavedOverlayConfigRecord,
+) -> Result<SavedOverlayConfigRecord, String> {
+    run_blocking_ipc(move || update_overlay_config_blocking(&app, config)).await
+}
+
+#[tauri::command]
+pub async fn apply_overlay_dock_preset(
+    app: AppHandle,
+    preset: String,
+) -> Result<SavedOverlayConfigRecord, String> {
+    run_blocking_ipc(move || apply_overlay_dock_preset_blocking(&app, preset)).await
+}
+
+#[tauri::command]
+pub async fn save_overlay_free_bounds(
+    app: AppHandle,
+    bounds: Option<OverlayBounds>,
+) -> Result<SavedOverlayConfigRecord, String> {
+    run_blocking_ipc(move || save_overlay_free_bounds_blocking(&app, bounds)).await
+}
+
+#[tauri::command]
+pub async fn toggle_overlay_visibility(app: AppHandle) -> Result<SavedOverlayConfigRecord, String> {
+    run_blocking_ipc(move || toggle_overlay_enabled_from_backend(&app)).await
+}
+
+#[tauri::command]
+pub async fn toggle_overlay_click_through(app: AppHandle) -> Result<SavedOverlayConfigRecord, String> {
+    run_blocking_ipc(move || toggle_overlay_lock_from_backend(&app)).await
 }
 
 pub fn toggle_overlay_enabled_from_backend(app: &AppHandle) -> Result<SavedOverlayConfigRecord, String> {

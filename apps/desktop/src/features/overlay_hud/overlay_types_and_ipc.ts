@@ -48,7 +48,7 @@ const FALLBACK_EVENT_NAME = "exile-local-overlay-config-updated";
 export const DEFAULT_OVERLAY_CONFIG: SavedOverlayConfig = {
   enabled: false,
   clickThroughLocked: false,
-  pinOnDesktop: false,
+  pinOnDesktop: true,
   opacityPercent: 88,
   dockPreset: "top-left",
   bounds: null,

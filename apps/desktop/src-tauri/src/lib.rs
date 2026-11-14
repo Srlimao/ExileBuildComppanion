@@ -87,11 +87,25 @@ pub fn run() {
         .manage(shared)
         .manage(auto_update_coordinator::AutoUpdaterSharedState::new())
         .setup(|app| {
-            app.manage(overlay_window_controller::OverlaySharedState::load_or_default(app.handle()));
+            let overlay_state = overlay_window_controller::OverlaySharedState::load_or_default(app.handle());
+            let initial_overlay_cfg = overlay_state.config.lock().ok().map(|g| g.clone());
+            app.manage(overlay_state);
             tray_icon_and_menu_controller::setup_tray(app.handle())?;
             let state = app.state::<HostSharedState>();
             background_telemetry_watchers::spawn_background_watchers(app.handle(), &state);
             auto_update_coordinator::spawn_auto_update_watcher(app.handle());
+            if let Some(cfg) = initial_overlay_cfg.filter(|c| c.enabled) {
+                let boot_app = app.handle().clone();
+                tauri::async_runtime::spawn_blocking(move || {
+                    let ov_state = boot_app.state::<overlay_window_controller::OverlaySharedState>();
+                    let _ = overlay_window_controller::sync_overlay_window_chrome(
+                        &boot_app,
+                        &ov_state,
+                        &cfg,
+                        true,
+                    );
+                });
+            }
             Ok(())
         })
         .on_window_event(|window, event| {

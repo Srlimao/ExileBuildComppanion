@@ -59,6 +59,7 @@ impl OverlayWatcherState {
         enabled: bool,
         pin_on_desktop: bool,
         click_through_locked: bool,
+        poe_running: bool,
         fg_is_poe: bool,
         fg_is_self: bool,
         vis_down: bool,
@@ -72,7 +73,7 @@ impl OverlayWatcherState {
             return OverlayTickOutcome {
                 toggled_enabled: None,
                 toggled_locked: None,
-                desired_visible: enabled && pin_on_desktop,
+                desired_visible: enabled && (pin_on_desktop || !poe_running),
             };
         }
 
@@ -99,7 +100,7 @@ impl OverlayWatcherState {
         OverlayTickOutcome {
             toggled_enabled,
             toggled_locked,
-            desired_visible: next_enabled && (pin_on_desktop || fg_active),
+            desired_visible: next_enabled && (pin_on_desktop || !poe_running || fg_active),
         }
     }
 }
@@ -155,33 +156,37 @@ mod tests {
     fn handles_hotkey_edges_and_alt_tab_visibility() {
         let mut watcher = OverlayWatcherState::default();
 
-        // Alt-tabbed away with pin_on_desktop = false -> hidden
-        let out_away = watcher.step(true, false, false, false, false, false, false, false);
+        // Alt-tabbed away while PoE is running with pin_on_desktop = false -> hidden
+        let out_away = watcher.step(true, false, false, true, false, false, false, false, false);
         assert!(!out_away.desired_visible);
         assert_eq!(out_away.toggled_enabled, None);
 
-        // Alt-tabbed away with pin_on_desktop = true -> stays visible
-        let out_pinned = watcher.step(true, true, false, false, false, false, false, false);
+        // PoE not running with pin_on_desktop = false -> stays visible on desktop
+        let out_no_poe = watcher.step(true, false, false, false, false, false, false, false, false);
+        assert!(out_no_poe.desired_visible);
+
+        // Alt-tabbed away while PoE is running with pin_on_desktop = true -> stays visible
+        let out_pinned = watcher.step(true, true, false, true, false, false, false, false, false);
         assert!(out_pinned.desired_visible);
 
         // Press F7 in PoE -> disables overlay
-        let out_f7 = watcher.step(true, false, false, true, false, true, false, false);
+        let out_f7 = watcher.step(true, false, false, true, true, false, true, false, false);
         assert_eq!(out_f7.toggled_enabled, Some(false));
         assert!(!out_f7.desired_visible);
 
         // Holding F7 across ticks does not double-toggle
-        let out_hold = watcher.step(false, false, false, true, false, true, false, false);
+        let out_hold = watcher.step(false, false, false, true, true, false, true, false, false);
         assert_eq!(out_hold.toggled_enabled, None);
 
         // Release and press F8 while enabled -> toggles click-through lock
-        watcher.step(true, false, false, true, false, false, false, false);
-        let out_f8 = watcher.step(true, false, false, true, false, false, true, false);
+        watcher.step(true, false, false, true, true, false, false, false, false);
+        let out_f8 = watcher.step(true, false, false, true, true, false, false, true, false);
         assert_eq!(out_f8.toggled_locked, Some(true));
         assert!(out_f8.desired_visible);
 
         // Ctrl+F8 modifier ignored
-        watcher.step(true, false, true, true, false, false, false, false);
-        let out_mod = watcher.step(true, false, true, true, false, false, true, true);
+        watcher.step(true, false, true, true, true, false, false, false, false);
+        let out_mod = watcher.step(true, false, true, true, true, false, false, true, true);
         assert_eq!(out_mod.toggled_locked, None);
     }
 }

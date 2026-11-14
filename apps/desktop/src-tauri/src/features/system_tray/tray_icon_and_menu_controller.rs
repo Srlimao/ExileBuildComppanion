@@ -130,10 +130,16 @@ pub fn setup_tray(app: &AppHandle) -> tauri::Result<()> {
             }
             "open_control_center" => show_main_window(app),
             "toggle_overlay" => {
-                let _ = crate::overlay_ipc_commands::toggle_overlay_enabled_from_backend(app);
+                let handle = app.clone();
+                tauri::async_runtime::spawn_blocking(move || {
+                    let _ = crate::overlay_ipc_commands::toggle_overlay_enabled_from_backend(&handle);
+                });
             }
             "toggle_overlay_lock" => {
-                let _ = crate::overlay_ipc_commands::toggle_overlay_lock_from_backend(app);
+                let handle = app.clone();
+                tauri::async_runtime::spawn_blocking(move || {
+                    let _ = crate::overlay_ipc_commands::toggle_overlay_lock_from_backend(&handle);
+                });
             }
             "force_sync" => {
                 let _ = app.emit("tray-action", "force-sync");
