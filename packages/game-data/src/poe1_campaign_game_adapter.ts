@@ -30,16 +30,16 @@ import {
 const LAB_TRIALS: LabTrialMeta[] = [
   { difficulty: "normal", areaId: "1_1_7_1", areaName: "The Lower Prison", act: 1, hint: "Sawblades & Spike Traps" },
   { difficulty: "normal", areaId: "1_2_5_1", areaName: "The Crypt Level 1", act: 2, hint: "Spinning Blades" },
-  { difficulty: "normal", areaId: "1_2_14_2", areaName: "The Chamber of Sins Level 2", act: 2, hint: "Wall Darts & Spikes" },
+  { difficulty: "normal", areaId: "1_2_6_2", areaName: "The Chamber of Sins Level 2", act: 2, hint: "Wall Darts & Spikes" },
   { difficulty: "normal", areaId: "1_3_3_1", areaName: "The Crematorium", act: 3, hint: "Furnace Tiles & Sawblades" },
   { difficulty: "normal", areaId: "1_3_6", areaName: "The Catacombs", act: 3, hint: "Poison Darts & Lava" },
   { difficulty: "normal", areaId: "1_3_15", areaName: "The Imperial Gardens", act: 3, hint: "Rotating Pillars & Darts" },
-  { difficulty: "cruel", areaId: "2_6_6", areaName: "The Prison", act: 6, hint: "Spike & Sawblade Gauntlet" },
-  { difficulty: "cruel", areaId: "2_7_5_1", areaName: "The Crypt", act: 7, hint: "Room-Wide Sentinel Traps" },
-  { difficulty: "cruel", areaId: "2_7_9", areaName: "The Chamber of Sins Level 2", act: 7, hint: "Sawblades + Lever Maze" },
-  { difficulty: "merciless", areaId: "2_8_10", areaName: "The Bath House", act: 8, hint: "Furnace + Spinning Saws" },
-  { difficulty: "merciless", areaId: "2_9_6", areaName: "The Tunnel", act: 9, hint: "Lava Floors & Spikes" },
-  { difficulty: "merciless", areaId: "2_10_5", areaName: "The Ossuary", act: 10, hint: "Dart Corridors + Saws" },
+  { difficulty: "cruel", areaId: "2_6_7_1", areaName: "The Lower Prison", act: 6, hint: "Spike & Sawblade Gauntlet" },
+  { difficulty: "cruel", areaId: "2_7_4", areaName: "The Crypt", act: 7, hint: "Room-Wide Sentinel Traps" },
+  { difficulty: "cruel", areaId: "2_7_5_2", areaName: "The Chamber of Sins Level 2", act: 7, hint: "Sawblades + Lever Maze" },
+  { difficulty: "merciless", areaId: "2_8_5", areaName: "The Bath House", act: 8, hint: "Furnace + Spinning Saws" },
+  { difficulty: "merciless", areaId: "2_9_7", areaName: "The Tunnel", act: 9, hint: "Lava Floors & Spikes" },
+  { difficulty: "merciless", areaId: "2_10_9", areaName: "The Ossuary", act: 10, hint: "Dart Corridors + Saws" },
 ];
 
 const IZARO_MECHANICS: IzaroMechanicGuide[] = [

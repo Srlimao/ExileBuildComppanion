@@ -15,6 +15,7 @@ export * from "./features/checkpoint_graph/zone_context_disambiguator.js";
 export * from "./features/checkpoint_graph/checkpoint_progression_reducer.js";
 export * from "./features/checkpoint_graph/campaign_progress_persistence.js";
 export * from "./features/checkpoint_graph/initial_session_snapshot_factory.js";
+export * from "./features/checkpoint_graph/lab_and_passives_reconciler.js";
 export * from "./features/character_telemetry_diff/equipped_resistance_estimator.js";
 export * from "./features/character_telemetry_diff/socket_link_and_gem_verifier.js";
 export * from "./features/character_telemetry_diff/passive_tree_diff_calculator.js";

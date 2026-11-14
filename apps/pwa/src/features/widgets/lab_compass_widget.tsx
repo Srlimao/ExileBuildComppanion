@@ -1,6 +1,6 @@
 import type { HudSessionSnapshot } from "@exile-hud/core";
 import { poe1GameAdapter } from "@exile-hud/game-data";
-import { Compass, KeyRound, ShieldAlert, Upload } from "lucide-react";
+import { CheckCircle2, Compass, KeyRound, ShieldAlert, Upload } from "lucide-react";
 import { useState, type ChangeEvent } from "react";
 
 interface LabCompassWidgetProps {
@@ -115,13 +115,31 @@ export function LabCompassWidget({ snapshot, onImportPoelabJson }: LabCompassWid
         </div>
 
         <div className="rounded-lg bg-black border border-neutral-800 p-2.5 space-y-1">
-          <div className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Campaign Trials</div>
-          {trials.slice(0, 6).map((t) => (
-            <div key={t.areaId} className="text-xs text-neutral-300 flex justify-between gap-2">
-              <span className="truncate">{t.areaName}</span>
-              <span className="text-neutral-500 shrink-0">A{t.act}</span>
-            </div>
-          ))}
+          <div className="flex items-center justify-between text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+            <span>Campaign Trials</span>
+            <span className="text-emerald-400 font-mono">
+              {trials.filter((t) => snapshot.lab.completedTrialAreaIds.includes(t.areaId)).length}/{trials.length}
+            </span>
+          </div>
+          <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
+            {trials.map((t) => {
+              const done = snapshot.lab.completedTrialAreaIds.includes(t.areaId);
+              return (
+                <div
+                  key={t.areaId}
+                  className={`text-xs flex items-center justify-between gap-2 ${done ? "text-emerald-300" : "text-neutral-300"}`}
+                >
+                  <span className="inline-flex items-center gap-1.5 truncate">
+                    <CheckCircle2
+                      className={`h-3 w-3 shrink-0 ${done ? "text-emerald-400" : "text-neutral-700"}`}
+                    />
+                    <span className={`truncate ${done ? "line-through text-emerald-400/80" : ""}`}>{t.areaName}</span>
+                  </span>
+                  <span className="text-neutral-500 shrink-0">A{t.act}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

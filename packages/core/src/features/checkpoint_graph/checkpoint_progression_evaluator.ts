@@ -1,6 +1,12 @@
 import type { GameAdapter } from "@exile-hud/game-data";
 import type { CheckpointStepItem, HudSessionSnapshot } from "../protocol/session_room_wire_protocol.js";
 import { getStrictImpliedAreaIds } from "./area_dominator_resolver.js";
+import {
+  detectEnteredLabyrinthTier,
+  getImpliedPriorLabBossAreaIds,
+  getMaxTrialActForLabyrinthTier,
+  isLabTrialCheckpointAutoCompleted,
+} from "./lab_and_passives_reconciler.js";
 import { isTownOrHideoutArea } from "./zone_context_disambiguator.js";
 
 interface CheckpointBlock {
@@ -142,6 +148,12 @@ export function evaluateZoneTransitionCheckpoints(
     visited.add(impliedId);
     cleared.add(impliedId);
   }
+  const enteredLabTier = diedOnExit ? 0 : detectEnteredLabyrinthTier(enteredAreaId);
+  for (const bossAreaId of getImpliedPriorLabBossAreaIds(enteredLabTier)) {
+    visited.add(bossAreaId);
+    cleared.add(bossAreaId);
+  }
+  const maxAutoTrialAct = getMaxTrialActForLabyrinthTier(enteredLabTier);
 
   const enteredArea = adapter.getAreas()[enteredAreaId];
   const enteredAct = Number(enteredArea?.act ?? 0) || nextHighestAct;
@@ -179,6 +191,11 @@ export function evaluateZoneTransitionCheckpoints(
       return cp;
     }
     if (cp.category === "SKILL_BOOK" || cp.category === "LAB_TRIAL") {
+      if (isLabTrialCheckpointAutoCompleted(cp, maxAutoTrialAct)) {
+        cp.completed = true;
+        cp.softCompleted = false;
+        return cp;
+      }
       if (leftCpZoneNormally && prereqsMet) cp.softCompleted = true;
       return cp;
     }

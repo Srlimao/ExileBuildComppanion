@@ -3,7 +3,6 @@ import type { QuestDefinition } from "./game_adapter_contract.js";
 /** Quests that grant passive refund points (Orb of Regret / Bandit Respec) rather than passive skill points. */
 export const POE1_RESPEC_ONLY_QUEST_IDS: ReadonlySet<string> = new Set([
   "a1q8",
-  "a2q5",
   "a6q4",
   "a9q4",
   "a10q4",

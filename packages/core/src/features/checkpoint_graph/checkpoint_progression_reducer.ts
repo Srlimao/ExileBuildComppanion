@@ -7,6 +7,10 @@ import {
   evaluateZoneTransitionCheckpoints,
   selectSkillBookCheckpointForCompletion,
 } from "./checkpoint_progression_evaluator.js";
+import {
+  reconcilePassiveQuestChatLine,
+  syncLabTelemetryWithProgress,
+} from "./lab_and_passives_reconciler.js";
 import type { ParsedClientLogEvent } from "./zone_context_disambiguator.js";
 import { disambiguateZoneByName, isLabyrinthArea, isTownOrHideoutArea } from "./zone_context_disambiguator.js";
 
@@ -77,6 +81,13 @@ function transitionToZone(
 
   const mode: HudContextMode = !state.poeRunning ? "STANDBY" : isLab ? "LAB" : isTown ? "TOWN" : "FIELD";
   const zoneLayoutPaths = adapter.getZoneLayoutVariants(areaId);
+  const lab = syncLabTelemetryWithProgress({
+    lab: state.lab,
+    checkpoints,
+    clearedAreaIds: evaluation.clearedAreaIds,
+    enteredAreaId: areaId,
+    adapter,
+  });
 
   return {
     ...state,
@@ -97,6 +108,7 @@ function transitionToZone(
     resumeZoneBanner,
     checkpoints,
     gemSteps,
+    lab,
     nextTownCurrencyBudget: computeNextTownCurrencyBudget(gemSteps, nextHighestAct),
     activeVendorRegex: buildVendorSearchRegex({
       gemSteps,
@@ -147,7 +159,14 @@ export function reduceTelemetrySession(
         ? { ...cp, completed: action.completed ?? !cp.completed, softCompleted: false }
         : cp,
     );
-    return { ...state, version: state.version + 1, checkpoints };
+    const lab = syncLabTelemetryWithProgress({
+      lab: state.lab,
+      checkpoints,
+      clearedAreaIds: state.clearedAreaIds ?? [],
+      enteredAreaId: state.currentAreaId,
+      adapter,
+    });
+    return { ...state, version: state.version + 1, checkpoints, lab };
   }
 
   if (action.type === "toggle_gem") {
@@ -238,6 +257,10 @@ export function reduceTelemetrySession(
       i === idx ? { ...cp, completed: true, softCompleted: false } : cp,
     );
     return { ...state, version: state.version + 1, checkpoints };
+  }
+
+  if (ev.type === "passive_quest_chat") {
+    return reconcilePassiveQuestChatLine(state, ev.points, ev.questName, adapter);
   }
 
   return state;

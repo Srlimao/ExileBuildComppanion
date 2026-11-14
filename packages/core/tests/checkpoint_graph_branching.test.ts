@@ -66,13 +66,13 @@ describe("checkpoint_graph branching & dominator progression", () => {
     const snap = createCampaignSnapshot();
     const byQuest = (qId: string) => snap.checkpoints.filter((cp) => cp.questId === qId);
 
-    for (const qId of ["a2q7", "a4q6", "a5q3", "a5q7", "a6q3", "a6q6", "a6q7", "a7q1", "a7q6", "a7q9", "a8q4", "a8q6", "a8q7", "a9q2", "a10q3", "a10q6"]) {
+    for (const qId of ["a2q5", "a2q7", "a4q6", "a5q3", "a5q7", "a6q3", "a6q6", "a6q7", "a7q1", "a7q6", "a7q9", "a8q4", "a8q6", "a8q7", "a9q2", "a10q3", "a10q6"]) {
       expect(byQuest(qId).some((cp) => cp.category === "SKILL_BOOK"), qId).toBe(true);
     }
-    for (const respecId of ["a1q8", "a2q5", "a6q4", "a9q4", "a10q4", "bandit_respec"]) {
+    for (const respecId of ["a1q8", "a6q4", "a9q4", "a10q4", "bandit_respec"]) {
       expect(poe1GameAdapter.isSkillBookQuestOffer(respecId)).toBe(false);
     }
-    expect(poe1GameAdapter.getSkillBookQuestIds().has("a2q5")).toBe(false);
+    expect(poe1GameAdapter.getSkillBookQuestIds().has("a2q5")).toBe(true);
     expect(poe1GameAdapter.getSkillBookQuestIds().has("a6q4")).toBe(false);
 
     const a9q5Steps = byQuest("a9q5");

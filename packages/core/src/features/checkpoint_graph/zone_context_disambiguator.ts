@@ -5,6 +5,7 @@ export type ParsedClientLogEvent =
   | { type: "zone_entered"; areaName: string }
   | { type: "level_up"; characterName: string; characterClass: string; level: number }
   | { type: "skill_points_received"; count: number }
+  | { type: "passive_quest_chat"; points: number; questName: string }
   | { type: "player_slain"; characterName: string };
 
 const GEN_LEVEL_REGEX = /Generating level (\d+) area "([^"]+)" with seed (\d+)/;
@@ -12,6 +13,8 @@ const ENTERED_REGEX = /\[INFO Client \d+\].*?:\s+You have entered ([^.]+)\./;
 const LEVEL_UP_REGEX = /\[INFO Client \d+\].*?:\s+(.+?)\s+\(([^)]+)\)\s+is now level (\d+)/;
 const SKILL_POINTS_REGEX = /\[INFO Client \d+\].*?:\s+You have received (\d+) passive skill points?\./;
 const SLAIN_REGEX = /\[INFO Client \d+\].*?:\s+(.+?)\s+has been slain\./;
+const PASSIVE_QUEST_CHAT_REGEX =
+  /\[INFO Client \d+\]\s*:\s+(\d+)\s+(?:Passive Skill Points?\s+)?from\s+(.+?)\.?$/i;
 
 export function parseClientLogLine(rawLine: string): ParsedClientLogEvent | null {
   const line = rawLine.trim();
@@ -50,6 +53,15 @@ export function parseClientLogLine(rawLine: string): ParsedClientLogEvent | null
   const slainMatch = SLAIN_REGEX.exec(line);
   if (slainMatch?.[1]) {
     return { type: "player_slain", characterName: slainMatch[1].trim() };
+  }
+
+  const passiveChatMatch = PASSIVE_QUEST_CHAT_REGEX.exec(line);
+  if (passiveChatMatch?.[1] && passiveChatMatch[2]) {
+    return {
+      type: "passive_quest_chat",
+      points: Number.parseInt(passiveChatMatch[1], 10),
+      questName: passiveChatMatch[2].trim(),
+    };
   }
 
   return null;

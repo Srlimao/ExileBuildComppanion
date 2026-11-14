@@ -4,6 +4,7 @@ import {
   computeNextTownCurrencyBudget,
   computePassiveTreeDiff,
   estimateEquippedResistances,
+  reconcileAscendancyProgressFromPassives,
   verifySocketsAndGems,
   type GggItemModRecord,
   type HudSessionSnapshot,
@@ -78,7 +79,7 @@ export function applyGggCharacterResponseToSnapshot(
     currentAct: snapshot.currentAct,
   });
 
-  return {
+  const nextSnapshot: HudSessionSnapshot = {
     ...snapshot,
     version: snapshot.version + 1,
     characterName: charMeta?.name || snapshot.characterName,
@@ -97,4 +98,6 @@ export function applyGggCharacterResponseToSnapshot(
     passiveTree,
     activeVendorRegex,
   };
+
+  return reconcileAscendancyProgressFromPassives(nextSnapshot, allocatedHashes, poe1GameAdapter);
 }
