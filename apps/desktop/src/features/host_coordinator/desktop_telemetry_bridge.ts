@@ -1,15 +1,11 @@
 import {
   applySavedCampaignProgress,
   assignGemsToCampaignRoute,
-  auditGearAndFlaskHygiene,
   buildCheckpointGraph,
   buildInitialSessionSnapshot,
   buildPobPreviewSummary,
   buildPreprocessorDefinitions,
-  buildVendorSearchRegex,
   combineRouteActFiles,
-  computePassiveTreeDiff,
-  estimateEquippedResistances,
   extractCampaignProgress,
   extractPobBuild,
   filterExtractedPobBuildBySelection,
@@ -21,8 +17,6 @@ import {
   resetSnapshotProgress,
   resolveAndDecodePobInput,
   validateAndEnrichPobBuild,
-  verifySocketsAndGems,
-  type GggItemModRecord,
   type HudSessionSnapshot,
   type PobBuildPreview,
   type PobSetSelection,
@@ -30,14 +24,10 @@ import {
   type ViewerToRoomMessage,
 } from "@exile-hud/core";
 import { poe1GameAdapter } from "@exile-hud/game-data";
-import {
-  extractAllocatedMasteriesFromPassives,
-  markEquippedItemSets,
-} from "./client_log_sync_helper.js";
 import { DEFAULT_STARTER_POB_XML } from "./pob_profile_persistence_client.js";
-import type { CharacterPollResponse } from "./tauri_ipc_adapter.js";
 
 export { DEFAULT_STARTER_POB_XML };
+export { applyGggCharacterResponseToSnapshot } from "./ggg_character_sync_reducer.js";
 
 export interface CompiledProfileBundle {
   build: ValidatedPobBuild;
@@ -113,12 +103,17 @@ export async function compilePobProfileToSnapshot(params: {
   }
 
   const prevVerifiedGems = new Map(
-    params.previousSnapshot.gemSteps.map((gs) => [gs.id, gs.verifiedByApi]),
+    params.previousSnapshot.gemSteps.map((gs) => [
+      gs.id,
+      { verifiedByApi: gs.verifiedByApi, acquiredLocation: gs.acquiredLocation },
+    ]),
   );
-  const carriedGemSteps = fresh.gemSteps.map((gs) => ({
-    ...gs,
-    verifiedByApi: prevVerifiedGems.get(gs.id) ?? gs.verifiedByApi,
-  }));
+  const carriedGemSteps = fresh.gemSteps.map((gs) => {
+    const prev = prevVerifiedGems.get(gs.id);
+    return prev
+      ? { ...gs, verifiedByApi: prev.verifiedByApi, acquiredLocation: prev.acquiredLocation }
+      : gs;
+  });
 
   return {
     build,
@@ -144,84 +139,6 @@ export async function compilePobProfileToSnapshot(params: {
       },
       extractCampaignProgress(params.previousSnapshot),
     ),
-  };
-}
-
-export function applyGggCharacterResponseToSnapshot(
-  snapshot: HudSessionSnapshot,
-  build: ValidatedPobBuild,
-  response: CharacterPollResponse,
-): HudSessionSnapshot {
-  if (!response.ok || !response.itemsJson) {
-    return {
-      ...snapshot,
-      version: snapshot.version + 1,
-      characterSyncStatus: "OFFLINE_FALLBACK",
-    };
-  }
-
-  const items = (Array.isArray(response.itemsJson.items) ? response.itemsJson.items : []) as GggItemModRecord[];
-  const charMeta = response.itemsJson.character as { level?: number; name?: string } | undefined;
-  const characterLevel = typeof charMeta?.level === "number" ? charMeta.level : snapshot.characterLevel;
-  const allocatedHashes = Array.isArray(response.passivesJson?.hashes)
-    ? (response.passivesJson.hashes as number[])
-    : [];
-
-  const completedBossFlags: string[] = [];
-  if (snapshot.highestUnlockedAct >= 6) completedBossFlags.push("kitava_act5");
-  if (snapshot.highestUnlockedAct >= 11) completedBossFlags.push("kitava_act10");
-
-  const resistances = estimateEquippedResistances({
-    items,
-    allocatedNodeIds: allocatedHashes,
-    bandit: build.bandit,
-    highestUnlockedAct: snapshot.highestUnlockedAct,
-    completedBossFlags,
-    adapter: poe1GameAdapter,
-  });
-
-  const gemVerification = verifySocketsAndGems({
-    items,
-    skillSets: build.skillSets,
-    gemSteps: snapshot.gemSteps,
-    characterLevel,
-  });
-
-  const passiveTree = computePassiveTreeDiff({
-    treeSpecs: build.treeSpecs,
-    allocatedHashes,
-    allocatedMasteries: extractAllocatedMasteriesFromPassives(response.passivesJson),
-    characterLevel,
-    adapter: poe1GameAdapter,
-  });
-
-  const gearHygiene = auditGearAndFlaskHygiene({
-    items,
-    characterLevel,
-    highestUnlockedAct: snapshot.highestUnlockedAct,
-    isAttackBuild: build.characterClass === "Ranger" || build.characterClass === "Duelist",
-  });
-
-  const activeVendorRegex = buildVendorSearchRegex({
-    gemSteps: gemVerification.updatedGemSteps,
-    linkGroups: gemVerification.linkGroups,
-    currentAct: snapshot.currentAct,
-  });
-
-  return {
-    ...snapshot,
-    version: snapshot.version + 1,
-    characterName: charMeta?.name || snapshot.characterName,
-    characterLevel,
-    characterSyncStatus: response.usedPoesessid ? "ONLINE_POESESSID" : "ONLINE_PUBLIC",
-    lastCharacterSyncAt: Date.now(),
-    gemSteps: gemVerification.updatedGemSteps,
-    linkGroups: gemVerification.linkGroups,
-    itemSets: markEquippedItemSets(build.itemSets, items),
-    resistances,
-    gearHygiene,
-    passiveTree,
-    activeVendorRegex,
   };
 }
 

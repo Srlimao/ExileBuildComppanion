@@ -88,6 +88,8 @@ export function VendorShoppingWidget({ snapshot, onToggleGem }: VendorShoppingWi
                   <div className="text-base font-semibold text-white truncate">{g.gemName}</div>
                   <div className="text-xs text-neutral-400 truncate">
                     Act {g.act} • {g.npcName} ({g.questName})
+                    {g.acquiredLocation === "backpack" && " • In Bag"}
+                    {g.acquiredLocation === "weapon_swap" && " • In Swap"}
                   </div>
                 </div>
               </div>

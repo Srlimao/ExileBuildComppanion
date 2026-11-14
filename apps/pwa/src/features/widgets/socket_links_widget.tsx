@@ -51,6 +51,11 @@ export function SocketLinksWidget({ snapshot }: { snapshot: HudSessionSnapshot }
                     </span>
                     <span>{gem.name}</span>
                     {gem.verifiedSocketed && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />}
+                    {!gem.verifiedSocketed && gem.reserveLocation && (
+                      <span className="px-1 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-[10px] font-mono font-bold text-amber-300">
+                        {gem.reserveLocation === "backpack" ? "BAG" : "SWAP"}
+                      </span>
+                    )}
                     {gem.unlinkedWarning && <AlertTriangle className="h-3.5 w-3.5 text-red-400" />}
                   </span>
                 </div>

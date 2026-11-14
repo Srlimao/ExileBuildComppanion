@@ -98,6 +98,7 @@ export function resetSnapshotProgress(snapshot: HudSessionSnapshot): HudSessionS
     manualCompleted: false,
     softAcquired: false,
     verifiedByApi: false,
+    acquiredLocation: undefined,
   }));
   const currentAct = snapshot.highestUnlockedAct;
 

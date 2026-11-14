@@ -105,7 +105,9 @@ export function syncBuildSetsForLevel(
 
   const activeSet = selectActiveSkillSet(build.skillSets, snapshot.characterLevel);
   if (activeSet && snapshot.linkGroups[0]?.minLevel !== activeSet.minLevel) {
-    const prevVerified = new Map(snapshot.gemSteps.map((s) => [s.id, s.verifiedByApi]));
+    const prevVerified = new Map(
+      snapshot.gemSteps.map((s) => [s.id, { verifiedByApi: s.verifiedByApi, acquiredLocation: s.acquiredLocation }]),
+    );
     const verified = verifySocketsAndGems({
       items: [],
       skillSets: build.skillSets,
@@ -114,10 +116,14 @@ export function syncBuildSetsForLevel(
     });
     next = {
       ...next,
-      gemSteps: verified.updatedGemSteps.map((s) => ({
-        ...s,
-        verifiedByApi: prevVerified.get(s.id) ?? false,
-      })),
+      gemSteps: verified.updatedGemSteps.map((s) => {
+        const prev = prevVerified.get(s.id);
+        return {
+          ...s,
+          verifiedByApi: prev?.verifiedByApi ?? false,
+          acquiredLocation: prev?.acquiredLocation,
+        };
+      }),
       linkGroups: verified.linkGroups,
     };
   }

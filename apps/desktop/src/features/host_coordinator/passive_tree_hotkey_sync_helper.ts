@@ -1,6 +1,6 @@
 import type { HudSessionSnapshot, ValidatedPobBuild } from "@exile-hud/core";
-import { applyGggCharacterResponseToSnapshot } from "./desktop_telemetry_bridge.js";
-import { pollCharacterWindow } from "./tauri_ipc_adapter.js";
+import { applyGggCharacterResponseToSnapshot } from "./ggg_character_sync_reducer.js";
+import { pollCharacterWindow, writeVendorRegexClipboard } from "./tauri_ipc_adapter.js";
 
 /** Executes forced or background GGG Character API sync and pushes the updated snapshot. */
 export async function executeGggCharacterSync(params: {
@@ -52,8 +52,15 @@ export async function executeGggCharacterSync(params: {
   if (!latest) return;
   const modeLabel = res.usedPoesessid ? "POESESSID" : "Public API";
   setSyncMessage(res.ok ? `${force ? "Synced" : "Auto-synced"} via ${modeLabel}` : res.error);
-  pushPatch(
-    applyGggCharacterResponseToSnapshot(latest, activeBuild, res),
-    force ? "ggg_sync" : "auto_ggg_sync",
-  );
+  const next = applyGggCharacterResponseToSnapshot(latest, activeBuild, res);
+  if (
+    res.ok &&
+    next.mode === "TOWN" &&
+    next.autoClipboardEnabled &&
+    next.activeVendorRegex &&
+    next.activeVendorRegex !== latest.activeVendorRegex
+  ) {
+    void writeVendorRegexClipboard(next.activeVendorRegex);
+  }
+  pushPatch(next, force ? "ggg_sync" : "auto_ggg_sync");
 }

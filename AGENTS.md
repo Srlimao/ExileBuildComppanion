@@ -105,3 +105,4 @@ cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml   # Required whenev
 - Modular Widget Grid Engine: [apps/pwa/src/features/widget_grid_engine/README.md](apps/pwa/src/features/widget_grid_engine/README.md)
 - Desktop Coordinator & Tauri IPC Bridge: [apps/desktop/src/features/host_coordinator/README.md](apps/desktop/src/features/host_coordinator/README.md)
 - Desktop Auto-Updater (`Portable` & `NSIS Setup`): [apps/desktop/src/features/auto_updater/README.md](apps/desktop/src/features/auto_updater/README.md)
+- Planned Next Features Roadmap: [NEXT_FEATURES.md](NEXT_FEATURES.md)

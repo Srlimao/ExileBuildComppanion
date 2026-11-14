@@ -7,6 +7,9 @@ export interface GggItemModRecord {
   baseType?: string;
   name?: string;
   ilvl?: number;
+  frameType?: number;
+  support?: boolean;
+  hybrid?: { isVaalGem?: boolean; baseTypeName?: string };
   implicitMods?: string[];
   explicitMods?: string[];
   craftedMods?: string[];
@@ -14,7 +17,15 @@ export interface GggItemModRecord {
   fracturedMods?: string[];
   requirements?: Array<{ name: string; values: Array<[string, number]> }>;
   sockets?: Array<{ group: number; attr?: string; sColour?: string }>;
-  socketedItems?: Array<{ socket: number; typeLine: string; baseType?: string; support?: boolean }>;
+  socketedItems?: Array<{
+    socket: number;
+    typeLine: string;
+    baseType?: string;
+    support?: boolean;
+    frameType?: number;
+    abyssJewel?: boolean;
+    hybrid?: { isVaalGem?: boolean; baseTypeName?: string };
+  }>;
 }
 
 const ACTIVE_EQUIP_SLOTS = new Set([

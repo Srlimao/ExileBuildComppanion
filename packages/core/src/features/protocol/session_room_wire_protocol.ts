@@ -74,6 +74,8 @@ export interface CheckpointStepItem {
   softCompleted: boolean;
 }
 
+export type GemAcquiredLocation = "equipped" | "weapon_swap" | "backpack";
+
 export interface GemAcquisitionStep {
   id: string;
   gemId: string;
@@ -90,6 +92,7 @@ export interface GemAcquisitionStep {
   count: number;
   note: string;
   verifiedByApi: boolean;
+  acquiredLocation?: GemAcquiredLocation;
   softAcquired: boolean;
   manualCompleted: boolean;
 }
@@ -111,6 +114,7 @@ export interface TargetLinkGroupSummary {
     color: "R" | "G" | "B" | "W";
     isSupport: boolean;
     verifiedSocketed: boolean;
+    reserveLocation?: "backpack" | "weapon_swap";
     unlinkedWarning: boolean;
   }>;
   missingAuraWarning: boolean;
