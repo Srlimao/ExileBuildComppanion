@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DesktopUpdateFooterBar } from "./features/auto_updater/desktop_update_footer_bar.js";
 import { ClientLogAndSimulatorCard } from "./features/environment_panel/client_log_and_simulator_card.js";
 import { CharacterSyncSettingsCard } from "./features/ggg_sync_panel/character_sync_settings_card.js";
 import { useDesktopHostController } from "./features/host_coordinator/use_desktop_host_controller.js";
@@ -108,6 +109,8 @@ export function App() {
           onToggleSimulatedOutage={ctl.toggleSimulatedOutage}
         />
       )}
+
+      <DesktopUpdateFooterBar />
     </div>
   );
 }

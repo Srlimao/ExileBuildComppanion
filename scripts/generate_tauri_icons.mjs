@@ -6,12 +6,18 @@ import sharp from "sharp";
 const THIS_DIR = path.dirname(fileURLToPath(import.meta.url));
 const ICONS_DIR = path.resolve(THIS_DIR, "../apps/desktop/src-tauri/icons");
 
-function buildBadgeSvg(accentHex, innerHex) {
+function buildBadgeSvg(accentHex, innerHex, options = {}) {
+  const updateDotMarkup = options.updateDot
+    ? `<circle cx="206" cy="50" r="44" fill="#09090B"/>
+    <circle cx="206" cy="50" r="32" fill="#3B82F6" stroke="#93C5FD" stroke-width="6"/>`
+    : "";
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
     <rect width="256" height="256" rx="52" fill="#09090B"/>
     <rect x="10" y="10" width="236" height="236" rx="44" fill="none" stroke="${accentHex}" stroke-width="14"/>
     <path d="M128 46 L194 128 L128 210 L62 128 Z" fill="none" stroke="${innerHex}" stroke-width="18" stroke-linejoin="round"/>
     <circle cx="128" cy="128" r="24" fill="${accentHex}"/>
+    ${updateDotMarkup}
   </svg>`;
 }
 
@@ -56,15 +62,22 @@ async function main() {
   const trayGraySvg = buildBadgeSvg("#71717A", "#D4D4D8");
   const trayGreenSvg = buildBadgeSvg("#22C55E", "#ECFDF5");
   const trayAmberSvg = buildBadgeSvg("#F59E0B", "#FEF3C7");
+  const trayGrayUpdateSvg = buildBadgeSvg("#71717A", "#D4D4D8", { updateDot: true });
+  const trayGreenUpdateSvg = buildBadgeSvg("#22C55E", "#ECFDF5", { updateDot: true });
+  const trayAmberUpdateSvg = buildBadgeSvg("#F59E0B", "#FEF3C7", { updateDot: true });
 
-  const [png32, png128, png256, trayGray, trayGreen, trayAmber] = await Promise.all([
-    renderRgbaPng(mainSvg, 32),
-    renderRgbaPng(mainSvg, 128),
-    renderRgbaPng(mainSvg, 256),
-    renderRgbaPng(trayGraySvg, 64),
-    renderRgbaPng(trayGreenSvg, 64),
-    renderRgbaPng(trayAmberSvg, 64),
-  ]);
+  const [png32, png128, png256, trayGray, trayGreen, trayAmber, trayGrayUpd, trayGreenUpd, trayAmberUpd] =
+    await Promise.all([
+      renderRgbaPng(mainSvg, 32),
+      renderRgbaPng(mainSvg, 128),
+      renderRgbaPng(mainSvg, 256),
+      renderRgbaPng(trayGraySvg, 64),
+      renderRgbaPng(trayGreenSvg, 64),
+      renderRgbaPng(trayAmberSvg, 64),
+      renderRgbaPng(trayGrayUpdateSvg, 64),
+      renderRgbaPng(trayGreenUpdateSvg, 64),
+      renderRgbaPng(trayAmberUpdateSvg, 64),
+    ]);
 
   fs.writeFileSync(path.join(ICONS_DIR, "32x32.png"), png32);
   fs.writeFileSync(path.join(ICONS_DIR, "128x128.png"), png128);
@@ -73,6 +86,9 @@ async function main() {
   fs.writeFileSync(path.join(ICONS_DIR, "tray-gray.png"), trayGray);
   fs.writeFileSync(path.join(ICONS_DIR, "tray-green.png"), trayGreen);
   fs.writeFileSync(path.join(ICONS_DIR, "tray-amber.png"), trayAmber);
+  fs.writeFileSync(path.join(ICONS_DIR, "tray-gray-update.png"), trayGrayUpd);
+  fs.writeFileSync(path.join(ICONS_DIR, "tray-green-update.png"), trayGreenUpd);
+  fs.writeFileSync(path.join(ICONS_DIR, "tray-amber-update.png"), trayAmberUpd);
 
   const icoBuffer = buildMultiSizeIco([
     { size: 32, png: png32 },

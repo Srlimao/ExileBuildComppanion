@@ -8,6 +8,7 @@ on:
       - "packages/core/**"
       - "packages/game-data/**"
       - "scripts/generate_tauri_icons.mjs"
+      - "scripts/stamp_desktop_release_version.mjs"
       - ".github/workflows/release-desktop.yml"
   workflow_dispatch:
     inputs:
@@ -38,14 +39,8 @@ jobs:
         with:
           workspaces: "apps/desktop/src-tauri -> target"
       - run: pnpm install --frozen-lockfile
-      - run: node scripts/generate_tauri_icons.mjs
-      - run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
-      - name: Build Tauri Portable Exe & NSIS Installer
-        run: pnpm --filter @exile-hud/desktop tauri build --bundles nsis --no-binary-patching --ci
-      - name: Stage Stable Assets & Publish Latest GitHub Release
+      - name: Compute & Stamp Release Version
         shell: pwsh
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           $ErrorActionPreference = "Stop"
           $inputTag = "${{ inputs.tag_name }}".Trim()
@@ -56,6 +51,26 @@ jobs:
           } else {
             $tag = "v0.1.$($env:GITHUB_RUN_NUMBER)"
           }
+
+          $semver = $tag -replace '^[vV]', ''
+          if ($semver -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') {
+            $semver = "0.1.$($env:GITHUB_RUN_NUMBER)"
+          }
+
+          "RELEASE_TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding UTF8 -Append
+          "RELEASE_SEMVER=$semver" | Out-File -FilePath $env:GITHUB_ENV -Encoding UTF8 -Append
+          node scripts/stamp_desktop_release_version.mjs $semver
+      - run: node scripts/generate_tauri_icons.mjs
+      - run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
+      - name: Build Tauri Portable Exe & NSIS Installer
+        run: pnpm --filter @exile-hud/desktop tauri build --bundles nsis --no-binary-patching --ci
+      - name: Stage Stable Assets & Publish Latest GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $tag = $env:RELEASE_TAG
 
           New-Item -ItemType Directory -Force -Path release-assets | Out-Null
 
