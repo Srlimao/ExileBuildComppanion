@@ -6,41 +6,42 @@
 [![CI](https://github.com/Srlimao/ExileBuildComppanion/actions/workflows/ci.yml/badge.svg)](https://github.com/Srlimao/ExileBuildComppanion/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-zinc)](LICENSE)
 
-Real-time, zero-touch **second-screen & local overlay telemetry relay for Path of Exile 1**. A lightweight Windows System Tray app watches your local `Client.txt` log, decodes your Path of Building (PoB) plan, diffs live character telemetry (equipped gear, jewels, Wickerman attachments, resistance overcaps, and allocated passives), and streams context-aware guidance to both a **local dockable PC in-game overlay** and an OLED-first **mobile or tablet PWA** via QR code over a Cloudflare Worker relay.
+An **interactive phone & tablet companion (and in-game PC overlay) connected live to your Path of Exile session**.
 
-> **Try it in your browser right now:** open the **[Interactive Demo](https://exile-relay.dunhas.com/?demo=1)** (`?demo=1`) to test Field, Town, Lab, and Passive Tree modes without running Path of Exile.
+Upload your **Path of Building (PoB)** once, scan the QR code on your phone or tablet (or press `F7` for the local overlay), and play without ever Alt-Tabbing:
+- **Automatic Campaign Guidance:** Follows you from zone to zone automatically, showing your next quest step, waypoint, trial, and zone layout compass.
+- **Real-Time Passive Tree & Item Suggestions:** Compares your live character against your PoB to highlight your next passive skill points, missing skill gems, vendor search regex, resistance gaps, and open crafting bench upgrades.
+- **Fully Modifiable UI:** Reorder, resize, or hide any widget per screen mode, and customize the look with `OLED`, `Soft Dark`, or `Light` themes and custom accent colors.
+
+> **Try it in your browser right now:** open the **[Interactive Demo](https://exile-relay.dunhas.com/?demo=1)** (`?demo=1`) to explore the Field, Town, Lab, and Passive Tree views—no download or PoE session required.
 
 ![Exile Relay — FIELD, TOWN & TREE Telemetry Showcase](apps/pwa/public/preview-modes-showcase.png)
 
 ---
 
-## Player Quick Start (3 Steps)
+## Quick Start (3 Steps)
 
-1. **Launch the Windows PC Host**
-   - Download **`ExileRelay.exe`** (portable, zero installation required) or **`ExileRelay-Setup.exe`** (NSIS installer) from **[GitHub Releases](https://github.com/Srlimao/ExileBuildComppanion/releases/latest)**.
-   - The app sits in your Windows System Tray, auto-detects Standalone and Steam `Client.txt` paths, and monitors `PathOfExile.exe` / `PathOfExileSteam.exe`.
-2. **Load Your Path of Building Plan**
-   - Paste a raw PoB export code (works **100% offline** even if `pobb.in` is down at league launch), a `pobb.in` URL, or a local `.xml` file.
-   - Optionally select which Passive Specs, Skill Sets, and Item Sets to track, and set your Bandits / Library flags. Your build profile and campaign progress persist locally on your PC.
-3. **Use Local Overlay or Pair Your Phone / Tablet**
-   - **Local In-Game Overlay:** Press `F7` to show/hide a transparent dockable HUD (`F8` click-through lock, `Ctrl+F1..F4` dock presets) directly over Path of Exile via `BroadcastChannel` (zero cloud latency).
-   - **Second Screen (Phone/Tablet):** Scan the QR code shown in the Control Center, or visit **[exile-relay.dunhas.com](https://exile-relay.dunhas.com)** and enter the 6-character **Room ID** and 4-digit **PIN**. Screen Wake-Lock keeps your display awake throughout your run, and the PWA caches assets offline via Workbox.
+1. **Run the Windows App**
+   - Download **`ExileRelay.exe`** (portable, ready to run) or **`ExileRelay-Setup.exe`** (installer) from **[GitHub Releases](https://github.com/Srlimao/ExileBuildComppanion/releases/latest)**.
+   - It runs quietly in your Windows System Tray and automatically finds your Path of Exile `Client.txt` log.
+2. **Import Your Path of Building (PoB)**
+   - Paste a PoB code, a `pobb.in` link, or a local `.xml` file.
+   - Pick which Passive Trees, Skill Sets, and Item Sets you want to follow. Your build and checklist progress save automatically.
+3. **Connect Your Phone, Tablet, or In-Game Overlay**
+   - **Phone or Tablet:** Scan the QR code in the app (or open **[exile-relay.dunhas.com](https://exile-relay.dunhas.com)** and enter the Room ID & PIN). Your screen stays awake automatically while you play.
+   - **In-Game PC Overlay:** Press `F7` to toggle a transparent, dockable overlay right on your monitor (`F8` locks click-through, `Ctrl+F1..F4` snaps to screen corners).
 
 ---
 
-## Key Features During a Campaign Run
+## What It Does While You Play
 
-- **Auto-Switching Context Modes (`FIELD`, `TOWN`, `LAB`, `TREE`, `STANDBY`):**
-  - **`FIELD`**: Zone layout cheat-sheet variants and directional exit compass, branch-aware act checklist (strict area-dominator & prerequisite auto-checking, quest names, and turn-in NPCs), skipped skill-book/trial cleanup backlog, and next-town currency prep tally.
-  - **`TOWN`**: `FREE_QUEST_REWARD` vs. `VENDOR_BUY` gem shopping list grouped by NPC, socket/link group verification, live elemental/chaos resistance caps with Act 5 (`-30%`) and Act 10 (`-60%`) Kitava penalties, gear/flask hygiene alerts, and **Auto-Clipboard Vendor Regex** (hit `Ctrl+V` directly in PoE vendor search).
-  - **`LAB`**: Daily Labyrinth room graph, Golden Door markers, and Izaro phase notes (supports pasting PoELab JSON).
-  - **`TREE`**: Read-only GGG `3.30.0` Passive Skill Tree with bracket-by-bracket diff coloring (allocated, next-bracket targets, carried-over missing nodes, and respec removals), automatic initial framing around your next unallocated passives, persisted camera viewport per profile/bracket, two-finger touch pinch-to-zoom, and **in-game hotkey sync** (pressing `P` inside PoE automatically flips your tablet to `TREE` and back).
-  - **`STANDBY`**: Automatically pauses the run timer and shows Act split times when `PathOfExile.exe` closes.
-- **Dual Delivery: Local PC In-Game Overlay & QR Second Screen:** Run a transparent dockable overlay directly on your gaming monitor (`F7` show/hide, `F8` click-through lock, `Ctrl+F1..F4` dock presets via zero-latency `BroadcastChannel`) or mirror live telemetry over WSS to your phone/tablet.
-- **Whisper Frameless UI & Theme Engine:** Switch between `OLED`, `Soft Dark`, and `Light` appearances with 6 curated PoE accent swatches (`Chalk`, `Exile Gold`, `Vaal Crimson`, `Mana Cyan`, `Viridian`, `Amethyst`) or a custom hex color via the settings drawer.
-- **Per-Mode Customizable Widget Grids:** Drag, reorder, resize (`1x1`, `2x1`, `2x2`), and toggle widgets independently for `FIELD`, `TOWN`, and `LAB` across `Tablet Landscape`, `Tablet Portrait`, and `Phone` breakpoints.
-- **Persistent Progress & Two-Step Reset:** Checklist completions (`checkpoints`) and gem acquisitions (`gemSteps`) persist to disk on PC (`saved_campaign_progress.json`) and survive conditional route edits, with 2-click **`Reset Checks`** controls on both PC and Web.
-- **League-Launch Resilient:** Automatically falls back to heuristic town soft-tracking if GGG's `character-window` API returns `429` or `5xx` errors, using an exponential-backoff circuit breaker.
+- **Switches Views Automatically Based on Where You Are:**
+  - **In Zones (`FIELD`):** Shows your active Act checklist, zone layout compass, `/passives` missed-book tracker, and currency to save for your next town visit.
+  - **In Town (`TOWN`):** Lists which gems to claim for free vs. buy, checks your socket links, tracks elemental & chaos resistances (with Act 5/10 penalties), suggests **Crafting Bench upgrades** for open prefixes/suffixes on your equipped gear, and **auto-copies your vendor search regex** so you just press `Ctrl+V` at the vendor.
+  - **In the Labyrinth (`LAB`):** Displays the daily Lab room map, Golden Doors, and Izaro phase notes.
+  - **Passive Tree (`TREE`):** Press `P` in-game and your companion automatically flips to a read-only `3.30.0` Passive Tree zoomed onto your next unallocated nodes (color-coded for Allocated, Next Bracket, and Respec).
+  - **Between Sessions (`STANDBY`):** Pauses your run timer and summarizes your Act split times when you close the game.
+- **Customize Every Screen:** Unlock the layout grid to drag, reorder, resize (`1x1`, `2x1`, `2x2`), or hide widgets separately for `FIELD`, `TOWN`, and `LAB`, and switch between `OLED`, `Soft Dark`, and `Light` themes with 6 PoE accent colors (or any custom hex color).
 
 ---
 
