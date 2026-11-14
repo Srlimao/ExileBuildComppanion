@@ -160,6 +160,20 @@ export class SessionRoomDurableObject extends DurableObject<unknown> {
     if (!attachment) return;
 
     const frameType = (payload as { type?: unknown })?.type;
+    if (frameType === "viewer:ping" && attachment.role === "viewer") {
+      const snapshot = this.repo.getSnapshot();
+      if (snapshot) {
+        this.sendJson(ws, {
+          type: "room:hydrated_state",
+          snapshot,
+          layouts: this.repo.getLayouts(),
+          viewers: this.collectViewerPresence(),
+        });
+      } else {
+        this.sendJson(ws, { type: "room:pong", ts: Date.now() });
+      }
+      return;
+    }
     if (frameType === "host:ping" || frameType === "viewer:ping") {
       this.sendJson(ws, { type: "room:pong", ts: Date.now() });
       return;

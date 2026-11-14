@@ -33,6 +33,7 @@ import {
   type ConnectionPhase,
 } from "./features/pairing_and_connection/edge_websocket_room_client.js";
 import { QrPinJoinModal } from "./features/pairing_and_connection/qr_pin_join_modal.js";
+import { saveRecentRoomId } from "./features/pairing_and_connection/recent_room_storage.js";
 import { useScreenWakeLock } from "./features/pairing_and_connection/screen_wake_lock_controller.js";
 
 const LOCAL_LAYOUT_KEY = "exile_hud_widget_layouts_v1";
@@ -82,6 +83,7 @@ export function App() {
     return m === "FIELD" || m === "TOWN" || m === "LAB" || m === "TREE" || m === "STANDBY" ? m : null;
   });
   const [connectionPhase, setConnectionPhase] = useState<ConnectionPhase>("idle");
+  const [connectEpoch, setConnectEpoch] = useState(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const clientRef = useRef<EdgeWebSocketRoomClient | null>(null);
 
@@ -94,6 +96,12 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    if (snapshot && window.location.search) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [snapshot]);
+
+  useEffect(() => {
     if (isDemo || !roomId || !pin) return;
     const client = new EdgeWebSocketRoomClient(roomId, pin, {
       onStatusChange: (phase, detail) => {
@@ -102,6 +110,7 @@ export function App() {
         else if (phase === "connected") setErrorMsg(null);
       },
       onHydrated: (snap, serverLayouts) => {
+        saveRecentRoomId(roomId);
         setSnapshot(snap);
         setLayouts((prev) => ({ ...prev, ...serverLayouts }));
       },
@@ -117,7 +126,7 @@ export function App() {
     clientRef.current = client;
     client.connect();
     return () => client.disconnect();
-  }, [isDemo, roomId, pin]);
+  }, [isDemo, roomId, pin, connectEpoch]);
 
   const handleToggleCheckpoint = useCallback(
     (checkpointId: string) => {
@@ -191,11 +200,14 @@ export function App() {
       <QrPinJoinModal
         initialRoomId={roomId}
         initialPin={pin}
+        connectionPhase={connectionPhase}
         errorMessage={errorMsg}
         onJoinRoom={(r, p) => {
+          setErrorMsg(null);
           setIsDemo(false);
           setRoomId(r);
           setPin(p);
+          setConnectEpoch((n) => n + 1);
         }}
         onStartDemo={(mode) => {
           setIsDemo(true);
@@ -227,6 +239,7 @@ export function App() {
         onTriggerManualSync={() => clientRef.current?.sendCommand({ type: "viewer:request_character_sync" })}
         onResetProgress={handleResetProgress}
         onOpenPairingModal={() => {
+          clientRef.current?.disconnect();
           setIsDemo(false);
           setSnapshot(null);
         }}

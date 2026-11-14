@@ -91,6 +91,7 @@ export class EdgeWebSocketRoomClient {
     ws.onopen = () => {
       this.retryAttempt = 0;
       this.callbacks.onStatusChange("connected");
+      ws.send(JSON.stringify({ type: "viewer:ping" }));
       this.pingTimer = window.setInterval(() => {
         if (ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({ type: "viewer:ping" }));
@@ -119,8 +120,12 @@ export class EdgeWebSocketRoomClient {
         this.pingTimer = null;
       }
       if (this.closedManually) return;
-      if (ev.code === 4001 || ev.code === 4003) {
-        this.callbacks.onStatusChange("error", "Invalid Room ID or 4-digit PIN");
+      if (ev.code === 4001) {
+        this.callbacks.onStatusChange("error", "Room not found — check Room Code or click Sync Room on PC");
+        return;
+      }
+      if (ev.code === 4003) {
+        this.callbacks.onStatusChange("error", "Invalid 4-digit PIN");
         return;
       }
       const delayMs = Math.min(15_000, 1000 * Math.pow(1.6, this.retryAttempt));

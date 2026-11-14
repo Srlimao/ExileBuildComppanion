@@ -3,13 +3,14 @@ import { ExileRelayBrandIcon } from "@exile-hud/hud-ui";
 import { Compass, History, MonitorSmartphone, Play, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { DesktopCompanionDownloadCard } from "../desktop_download/desktop_companion_download_card.js";
-import { detectDeviceFormFactor } from "./edge_websocket_room_client.js";
+import { detectDeviceFormFactor, type ConnectionPhase } from "./edge_websocket_room_client.js";
 import { LandingThemePlaygroundBar } from "./landing_theme_playground_bar.js";
 import { clearRecentRoomId, loadRecentRoomId, normalizeRoomCode, saveRecentRoomId } from "./recent_room_storage.js";
 
 interface QrPinJoinModalProps {
   initialRoomId: string;
   initialPin: string;
+  connectionPhase?: ConnectionPhase;
   errorMessage: string | null;
   onJoinRoom: (roomId: string, pin: string) => void;
   onStartDemo: (initialMode?: HudContextMode) => void;
@@ -26,6 +27,7 @@ const FEATURE_HIGHLIGHTS = [
 export function QrPinJoinModal({
   initialRoomId,
   initialPin,
+  connectionPhase = "idle",
   errorMessage,
   onJoinRoom,
   onStartDemo,
@@ -42,7 +44,8 @@ export function QrPinJoinModal({
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  const isMobileOrDeepLink = formFactor === "phone" || formFactor === "tablet-portrait" || Boolean(initialRoomId.trim());
+  const isMobileOrDeepLink = formFactor === "phone" || formFactor === "tablet-portrait";
+  const isConnecting = connectionPhase === "connecting" || connectionPhase === "reconnecting";
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -225,7 +228,7 @@ export function QrPinJoinModal({
                   className="w-full rounded-lg bg-hud-accent text-hud-accent-fg hover:opacity-90 font-semibold py-2.5 text-sm transition-opacity flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <MonitorSmartphone className="h-4 w-4 shrink-0" />
-                  <span>Connect to PC Host</span>
+                  <span>{isConnecting ? "Connecting to PC Host..." : "Connect to PC Host"}</span>
                 </button>
               </form>
             </div>
