@@ -8,6 +8,9 @@ pub(crate) mod tray_icon_and_menu_controller;
 #[path = "features/client_log_watcher/client_txt_path_detector.rs"]
 pub(crate) mod client_txt_path_detector;
 
+#[path = "features/client_log_watcher/client_txt_bootstrap_reader.rs"]
+pub(crate) mod client_txt_bootstrap_reader;
+
 #[path = "features/client_log_watcher/client_txt_byte_offset_tailer.rs"]
 pub(crate) mod client_txt_byte_offset_tailer;
 

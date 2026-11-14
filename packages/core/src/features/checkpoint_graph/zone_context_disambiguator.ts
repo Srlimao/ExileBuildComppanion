@@ -5,6 +5,9 @@ export type ParsedClientLogEvent =
   | { type: "zone_entered"; areaName: string }
   | { type: "level_up"; characterName: string; characterClass: string; level: number }
   | { type: "skill_points_received"; count: number }
+  | { type: "passive_ascendancy_summary"; points: number }
+  | { type: "passive_level_summary"; points: number }
+  | { type: "passive_quests_header"; points: number }
   | { type: "passive_quest_chat"; points: number; questName: string }
   | { type: "player_slain"; characterName: string };
 
@@ -13,8 +16,14 @@ const ENTERED_REGEX = /\[INFO Client \d+\].*?:\s+You have entered ([^.]+)\./;
 const LEVEL_UP_REGEX = /\[INFO Client \d+\].*?:\s+(.+?)\s+\(([^)]+)\)\s+is now level (\d+)/;
 const SKILL_POINTS_REGEX = /\[INFO Client \d+\].*?:\s+You have received (\d+|a) passive skill points?\./i;
 const SLAIN_REGEX = /\[INFO Client \d+\].*?:\s+(.+?)\s+has been slain\./;
+const PASSIVE_ASCENDANCY_SUMMARY_REGEX =
+  /\[INFO Client \d+\]\s*:\s+(\d+)\s+total\s+Ascendancy\s+Skill\s+Points?\b/i;
+const PASSIVE_LEVEL_SUMMARY_REGEX =
+  /\[INFO Client \d+\]\s*:\s+(\d+)\s+(?:Passive Skill Points?\s+)?from\s+character\s+level:?$/i;
+const PASSIVE_QUESTS_HEADER_REGEX =
+  /\[INFO Client \d+\]\s*:\s+(\d+)\s+(?:Passive Skill Points?\s+)?from\s+quests:?$/i;
 const PASSIVE_QUEST_CHAT_REGEX =
-  /\[INFO Client \d+\]\s*:\s+(\d+)\s+(?:Passive Skill Points?\s+)?from\s+(.+?)\.?$/i;
+  /\[INFO Client \d+\]\s*:\s+\(?(\d+)\s+(?:Passive Skill Points?\s+)?from\s+([^)]+?)\)?\.?$/i;
 
 export function parseClientLogLine(rawLine: string): ParsedClientLogEvent | null {
   const line = rawLine.trim();
@@ -54,6 +63,30 @@ export function parseClientLogLine(rawLine: string): ParsedClientLogEvent | null
   const slainMatch = SLAIN_REGEX.exec(line);
   if (slainMatch?.[1]) {
     return { type: "player_slain", characterName: slainMatch[1].trim() };
+  }
+
+  const ascendancyMatch = PASSIVE_ASCENDANCY_SUMMARY_REGEX.exec(line);
+  if (ascendancyMatch?.[1]) {
+    return {
+      type: "passive_ascendancy_summary",
+      points: Number.parseInt(ascendancyMatch[1], 10),
+    };
+  }
+
+  const levelSummaryMatch = PASSIVE_LEVEL_SUMMARY_REGEX.exec(line);
+  if (levelSummaryMatch?.[1]) {
+    return {
+      type: "passive_level_summary",
+      points: Number.parseInt(levelSummaryMatch[1], 10),
+    };
+  }
+
+  const questsHeaderMatch = PASSIVE_QUESTS_HEADER_REGEX.exec(line);
+  if (questsHeaderMatch?.[1]) {
+    return {
+      type: "passive_quests_header",
+      points: Number.parseInt(questsHeaderMatch[1], 10),
+    };
   }
 
   const passiveChatMatch = PASSIVE_QUEST_CHAT_REGEX.exec(line);

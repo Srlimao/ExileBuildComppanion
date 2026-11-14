@@ -113,7 +113,19 @@ export function syncLabTelemetryWithProgress(params: {
   return { ...lab, difficultyLabel, completedTrialAreaIds };
 }
 
-/** Reconciles `/passives` chat output (`N from <Quest>`) against campaign `SKILL_BOOK` checkpoints. */
+/** Clears completion on campaign `SKILL_BOOK` checkpoints (`sectionAct <= 10`) before `/passives` quest lines apply. */
+export function resetCampaignSkillBookCheckpoints(state: HudSessionSnapshot): HudSessionSnapshot {
+  let changed = false;
+  const checkpoints = state.checkpoints.map((cp) => {
+    if (cp.category !== "SKILL_BOOK" || cp.sectionAct > 10) return cp;
+    if (!cp.completed && !cp.softCompleted) return cp;
+    changed = true;
+    return { ...cp, completed: false, softCompleted: false };
+  });
+  return changed ? { ...state, version: state.version + 1, checkpoints } : state;
+}
+
+/** Reconciles `/passives` chat output (`N from <Quest>` or `(N from <Quest>)`) against campaign `SKILL_BOOK` checkpoints. */
 export function reconcilePassiveQuestChatLine(
   state: HudSessionSnapshot,
   points: number,
@@ -145,21 +157,13 @@ export function reconcilePassiveQuestChatLine(
   return changed ? { ...state, version: state.version + 1, checkpoints } : state;
 }
 
-/** Marks implied Labyrinth tiers and campaign trials complete based on allocated Ascendancy nodes. */
-export function reconcileAscendancyProgressFromPassives(
+/** Marks implied Labyrinth tiers, trials, and ascend steps complete from an Ascendancy point total. */
+export function reconcileAscendancyProgressFromPoints(
   state: HudSessionSnapshot,
-  allocatedHashes: readonly number[],
+  ascendancyPoints: number,
   adapter: GameAdapter,
 ): HudSessionSnapshot {
-  if (allocatedHashes.length === 0) return state;
-  const nodes = adapter.getPassiveTreeNodes();
-  let ascendancyPoints = 0;
-  for (const hash of allocatedHashes) {
-    const node = nodes[String(hash)];
-    if (node?.ascendancyName && !node.isAscendancyStart) ascendancyPoints += 1;
-  }
-
-  const completedTier = Math.min(4, Math.floor(ascendancyPoints / 2)) as LabyrinthTier;
+  const completedTier = Math.min(4, Math.floor(Math.max(0, ascendancyPoints) / 2)) as LabyrinthTier;
   if (completedTier === 0) return state;
 
   const visitedSet = new Set(state.visitedAreaIds ?? []);
@@ -202,8 +206,25 @@ export function reconcileAscendancyProgressFromPassives(
   if (!areasChanged && !checkpointsChanged && nextLab === state.lab) return state;
   return {
     ...state,
+    version: state.version + 1,
     ...(areasChanged ? { visitedAreaIds: [...visitedSet], clearedAreaIds: nextCleared } : {}),
     ...(checkpointsChanged ? { checkpoints } : {}),
     lab: nextLab,
   };
+}
+
+/** Marks implied Labyrinth tiers and campaign trials complete based on allocated Ascendancy nodes. */
+export function reconcileAscendancyProgressFromPassives(
+  state: HudSessionSnapshot,
+  allocatedHashes: readonly number[],
+  adapter: GameAdapter,
+): HudSessionSnapshot {
+  if (allocatedHashes.length === 0) return state;
+  const nodes = adapter.getPassiveTreeNodes();
+  let ascendancyPoints = 0;
+  for (const hash of allocatedHashes) {
+    const node = nodes[String(hash)];
+    if (node?.ascendancyName && !node.isAscendancyStart) ascendancyPoints += 1;
+  }
+  return reconcileAscendancyProgressFromPoints(state, ascendancyPoints, adapter);
 }

@@ -177,4 +177,84 @@ describe("lab tier trial auto-completion & /passives chat sync", () => {
     expect(updated.checkpoints.find((cp) => cp.sectionAct === 10 && cp.stepKind === "ascend")!.completed).toBe(false);
     expect(updated.lab.completedTrialAreaIds).toHaveLength(9);
   });
+
+  it("reconciles verbatim PoE /passives output (parentheses, pre-Kitava resets, Ascendancy, level, post-Kitava)", () => {
+    let snap = createTestSnapshot();
+    const puppetIdx = snap.checkpoints.findIndex((cp) => cp.questId === "a6q6");
+    const yugulIdx = snap.checkpoints.findIndex((cp) => cp.questId === "a8q4");
+    snap = {
+      ...snap,
+      checkpoints: snap.checkpoints.map((cp, i) => {
+        if (i === puppetIdx) return { ...cp, completed: true, softCompleted: false };
+        if (i === yugulIdx) return { ...cp, completed: false, softCompleted: true };
+        return cp;
+      }),
+    };
+
+    const lines = [
+      "2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] : 76 total Passive Skill Points (75 allocated)",
+      "2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] : 4 total Ascendancy Skill Points (4 allocated)",
+      "2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] : 59 Passive Skill Points from character level",
+      "2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] : 17 Passive Skill Points from quests:",
+      "2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] : (1 from The Dweller of the Deep)",
+      "2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] : (1 from The Marooned Mariner)",
+      "2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] : (1 from The Way Forward)",
+      "2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] : (1 from Through Sacred Ground)",
+      "2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] : (1 from Deal with the Bandits)",
+      "2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] : (1 from Victario's Secrets)",
+      "2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] : (1 from Piety's Pets)",
+      "2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] : (1 from An Indomitable Spirit)",
+      "2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] : (1 from In Service to Science)",
+      "2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] : (1 from Kitava's Torments)",
+      "2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] : (1 from The Father of War)",
+      "2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] : (1 from The Cloven One)",
+      "2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] : (1 from The Master of a Million Faces)",
+      "2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] : (1 from Queen of Despair)",
+      "2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] : (1 from Kishara's Star)",
+      "2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] : (1 from Love is Dead)",
+      "2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] : (1 from The Gemling Legion)",
+    ];
+    for (const raw of lines) {
+      const event = parseClientLogLine(raw);
+      if (event) snap = reduceTelemetrySession(snap, { type: "client_log", event, autoDetectCharacter: false }, poe1GameAdapter);
+    }
+
+    const expectedCompletedQuestIds = [
+      "a1q7", "a1q6", "a1q9", "a2q5", "a2q7", "a3q11", "a3q9", "a4q6",
+      "a5q3", "a5q7", "a6q3", "a6q7", "a7q1", "a7q9", "a7q6", "a8q6", "a8q7",
+    ];
+    for (const qid of expectedCompletedQuestIds) {
+      const cp = snap.checkpoints.find((c) => c.questId === qid && c.category === "SKILL_BOOK")!;
+      expect(cp.completed, qid).toBe(true);
+      expect(cp.softCompleted, qid).toBe(false);
+    }
+
+    expect(snap.checkpoints[puppetIdx]!.completed).toBe(false);
+    expect(snap.checkpoints[puppetIdx]!.softCompleted).toBe(false);
+    expect(snap.checkpoints[yugulIdx]!.completed).toBe(false);
+    expect(snap.checkpoints[yugulIdx]!.softCompleted).toBe(false);
+    expect(snap.characterLevel).toBe(60);
+    expect(
+      snap.checkpoints
+        .filter((cp) => cp.category === "LAB_TRIAL" && cp.stepKind !== "ascend" && cp.sectionAct <= 7)
+        .every((cp) => cp.completed),
+    ).toBe(true);
+    expect(snap.checkpoints.find((cp) => cp.sectionAct === 4 && cp.stepKind === "ascend")!.completed).toBe(true);
+    expect(snap.checkpoints.find((cp) => cp.sectionAct === 7 && cp.stepKind === "ascend")!.completed).toBe(true);
+
+    snap = {
+      ...snap,
+      checkpoints: snap.checkpoints.map((cp) => (cp.questId === "a10q3" ? { ...cp, completed: true } : cp)),
+    };
+    const zeroKitava = parseClientLogLine("2026/03/07 01:58:16 566635078 cffb06dd [INFO Client 62480] : (0 from An End to Hunger)")!;
+    snap = reduceTelemetrySession(snap, { type: "client_log", event: zeroKitava, autoDetectCharacter: false }, poe1GameAdapter);
+    expect(snap.checkpoints.find((cp) => cp.questId === "a10q3")!.completed).toBe(false);
+
+    const twoKitava = parseClientLogLine("2026/03/07 01:58:40 566659390 cffb06dd [INFO Client 62480] : (2 from An End to Hunger)")!;
+    snap = reduceTelemetrySession(snap, { type: "client_log", event: twoKitava, autoDetectCharacter: false }, poe1GameAdapter);
+    expect(snap.checkpoints.find((cp) => cp.questId === "a10q3")!.completed).toBe(true);
+
+    expect(parseClientLogLine("2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] #GlobalPlayer: (1 from The Dweller of the Deep)")).toBeNull();
+    expect(parseClientLogLine("2026/11/14 21:10:40 545524453 cffb06be [INFO Client 38840] LocalPlayer: (1 from The Dweller of the Deep)")).toBeNull();
+  });
 });

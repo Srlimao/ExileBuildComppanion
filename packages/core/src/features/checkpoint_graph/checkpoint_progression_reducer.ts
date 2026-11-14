@@ -8,7 +8,9 @@ import {
   selectSkillBookCheckpointForCompletion,
 } from "./checkpoint_progression_evaluator.js";
 import {
+  reconcileAscendancyProgressFromPoints,
   reconcilePassiveQuestChatLine,
+  resetCampaignSkillBookCheckpoints,
   syncLabTelemetryWithProgress,
 } from "./lab_and_passives_reconciler.js";
 import type { ParsedClientLogEvent } from "./zone_context_disambiguator.js";
@@ -257,6 +259,21 @@ export function reduceTelemetrySession(
       i === idx ? { ...cp, completed: true, softCompleted: false } : cp,
     );
     return { ...state, version: state.version + 1, checkpoints };
+  }
+
+  if (ev.type === "passive_ascendancy_summary") {
+    return reconcileAscendancyProgressFromPoints(state, ev.points, adapter);
+  }
+
+  if (ev.type === "passive_level_summary") {
+    const nextLevel = Math.min(100, Math.max(1, ev.points + 1));
+    return nextLevel === state.characterLevel
+      ? state
+      : { ...state, version: state.version + 1, characterLevel: nextLevel };
+  }
+
+  if (ev.type === "passive_quests_header") {
+    return resetCampaignSkillBookCheckpoints(state);
   }
 
   if (ev.type === "passive_quest_chat") {
