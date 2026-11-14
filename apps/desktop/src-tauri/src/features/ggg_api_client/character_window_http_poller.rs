@@ -92,7 +92,7 @@ pub async fn execute_character_window_fetch(
     let passives_url = build_character_window_url("get-passive-skills", account_name, character_name);
 
     let client = match reqwest::Client::builder()
-        .user_agent("ExileBuildCompanion/0.1 (Windows Desktop Tray Host)")
+        .user_agent("ExileRelay/0.1 (Windows Desktop Tray Host; contact: W.back93@gmail.com)")
         .timeout(std::time::Duration::from_secs(12))
         .build()
     {

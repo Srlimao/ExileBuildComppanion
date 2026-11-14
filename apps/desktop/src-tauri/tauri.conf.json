@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Exile Companion HUD",
+  "productName": "Exile Relay",
   "version": "0.1.0",
   "identifier": "com.dunhas.exilecompanion",
   "build": {
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Exile Companion Control Center",
+        "title": "Exile Relay Control Center",
         "width": 420,
         "height": 660,
         "resizable": true,
@@ -22,7 +22,7 @@
       },
       {
         "label": "overlay",
-        "title": "Exile Companion Overlay",
+        "title": "Exile Relay Overlay",
         "url": "index.html?window=overlay",
         "width": 380,
         "height": 520,

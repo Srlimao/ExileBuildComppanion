@@ -33,9 +33,9 @@ function withCors(response: Response): Response {
 
 const SESSION_ROUTE_REGEX = /^\/api\/session\/([A-Za-z0-9_-]{3,32})\/(register|ws)$/;
 const PORTABLE_RELEASE_URL =
-  "https://github.com/Srlimao/ExileBuildComppanion/releases/latest/download/ExileCompanionHUD.exe";
+  "https://github.com/Srlimao/ExileBuildComppanion/releases/latest/download/ExileRelay.exe";
 const SETUP_RELEASE_URL =
-  "https://github.com/Srlimao/ExileBuildComppanion/releases/latest/download/ExileCompanionHUD-Setup.exe";
+  "https://github.com/Srlimao/ExileBuildComppanion/releases/latest/download/ExileRelay-Setup.exe";
 
 export default {
   async fetch(request: Request, env: WorkerEnv): Promise<Response> {
@@ -58,6 +58,10 @@ export default {
     if (url.pathname === "/api/download/desktop") {
       const targetUrl = url.searchParams.get("variant") === "setup" ? SETUP_RELEASE_URL : PORTABLE_RELEASE_URL;
       return withCors(Response.redirect(targetUrl, 302));
+    }
+
+    if (url.pathname === "/api/oauth/callback") {
+      return Response.redirect(`${url.origin}/oauth/callback${url.search}`, 302);
     }
 
     const match = SESSION_ROUTE_REGEX.exec(url.pathname);

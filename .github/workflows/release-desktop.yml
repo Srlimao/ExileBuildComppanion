@@ -80,12 +80,14 @@ jobs:
           if (-not (Test-Path $portableSrc)) {
             throw "Missing portable executable at $portableSrc"
           }
+          Copy-Item $portableSrc "release-assets/ExileRelay.exe" -Force
           Copy-Item $portableSrc "release-assets/ExileCompanionHUD.exe" -Force
 
           $nsisInstaller = Get-ChildItem "apps/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe" | Select-Object -First 1
           if (-not $nsisInstaller) {
             throw "Missing NSIS setup installer in apps/desktop/src-tauri/target/release/bundle/nsis/"
           }
+          Copy-Item $nsisInstaller.FullName "release-assets/ExileRelay-Setup.exe" -Force
           Copy-Item $nsisInstaller.FullName "release-assets/ExileCompanionHUD-Setup.exe" -Force
 
           $hashes = Get-ChildItem "release-assets/*.exe" | ForEach-Object {
@@ -96,10 +98,10 @@ jobs:
 
           $shortSha = $env:GITHUB_SHA.Substring(0, 7)
           $notes = @(
-            "## Exile Companion HUD ($tag)",
+            "## Exile Relay ($tag)",
             "",
-            '- **Ready-to-Run Portable App (Recommended):** `ExileCompanionHUD.exe` — standalone Windows x64 executable, zero installation required. Pre-configured for `https://exile.dunhas.com`.',
-            '- **Windows Setup Installer:** `ExileCompanionHUD-Setup.exe` — NSIS installer with Start Menu shortcut & WebView2 runtime check.',
+            '- **Ready-to-Run Portable App (Recommended):** `ExileRelay.exe` — standalone Windows x64 executable, zero installation required. Pre-configured for `https://exile-relay.dunhas.com`.',
+            '- **Windows Setup Installer:** `ExileRelay-Setup.exe` — NSIS installer with Start Menu shortcut & WebView2 runtime check.',
             ('- **Source Commit:** `' + $shortSha + '`'),
             "",
             "### SHA-256 Checksums",
@@ -115,8 +117,8 @@ jobs:
           $PSNativeCommandUseErrorActionPreference = $true
 
           if ($exists) {
-            gh release upload $tag release-assets/ExileCompanionHUD.exe release-assets/ExileCompanionHUD-Setup.exe release-assets/SHA256SUMS.txt --clobber
-            gh release edit $tag --title "Exile Companion HUD $tag" --notes-file release-notes.md --draft=false --prerelease=false --latest
+            gh release upload $tag release-assets/ExileRelay.exe release-assets/ExileRelay-Setup.exe release-assets/ExileCompanionHUD.exe release-assets/ExileCompanionHUD-Setup.exe release-assets/SHA256SUMS.txt --clobber
+            gh release edit $tag --title "Exile Relay $tag" --notes-file release-notes.md --draft=false --prerelease=false --latest
           } else {
-            gh release create $tag release-assets/ExileCompanionHUD.exe release-assets/ExileCompanionHUD-Setup.exe release-assets/SHA256SUMS.txt --target $env:GITHUB_SHA --title "Exile Companion HUD $tag" --notes-file release-notes.md --latest
+            gh release create $tag release-assets/ExileRelay.exe release-assets/ExileRelay-Setup.exe release-assets/ExileCompanionHUD.exe release-assets/ExileCompanionHUD-Setup.exe release-assets/SHA256SUMS.txt --target $env:GITHUB_SHA --title "Exile Relay $tag" --notes-file release-notes.md --latest
           }

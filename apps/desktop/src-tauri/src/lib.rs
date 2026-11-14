@@ -155,5 +155,5 @@ pub fn run() {
             auto_update_coordinator::install_app_update,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running Exile Companion Control Center");
+        .expect("error while running Exile Relay Control Center");
 }

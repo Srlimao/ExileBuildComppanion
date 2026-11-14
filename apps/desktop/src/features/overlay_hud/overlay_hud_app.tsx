@@ -163,7 +163,7 @@ export function OverlayHudApp() {
       <div className={`flex-1 min-h-0 overflow-y-auto ${config.clickThroughLocked ? "pointer-events-none" : ""}`}>
         {!snapshot ? (
           <div className="p-4 text-xs text-neutral-400">
-            Waiting for local telemetry snapshot from Exile Companion Control Center...
+            Waiting for local telemetry snapshot from Exile Relay Control Center...
           </div>
         ) : (
           <>

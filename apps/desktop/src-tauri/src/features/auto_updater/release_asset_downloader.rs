@@ -31,11 +31,11 @@ pub fn choose_staging_path(variant: InstallVariant, current_exe: &Path, tag: &st
     let slug = sanitize_tag_slug(tag);
     match variant {
         InstallVariant::NsisSetup => {
-            std::env::temp_dir().join(format!("ExileCompanionHUD-Setup-{slug}.exe"))
+            std::env::temp_dir().join(format!("ExileRelay-Setup-{slug}.exe"))
         }
         InstallVariant::PortableStandalone => {
             if let Some(exe_dir) = current_exe.parent() {
-                let candidate = exe_dir.join(format!("ExileCompanionHUD-{slug}.update.tmp"));
+                let candidate = exe_dir.join(format!("ExileRelay-{slug}.update.tmp"));
                 if OpenOptions::new()
                     .write(true)
                     .create(true)
@@ -47,7 +47,7 @@ pub fn choose_staging_path(variant: InstallVariant, current_exe: &Path, tag: &st
                     return candidate;
                 }
             }
-            std::env::temp_dir().join(format!("ExileCompanionHUD-{slug}.update.tmp"))
+            std::env::temp_dir().join(format!("ExileRelay-{slug}.update.tmp"))
         }
     }
 }
@@ -100,7 +100,7 @@ where
         .build()
         .map_err(|e| format!("Failed initializing download HTTP client: {e}"))?;
 
-    let ua = format!("ExileCompanionHUD/{}", env!("CARGO_PKG_VERSION"));
+    let ua = format!("ExileRelay/{}", env!("CARGO_PKG_VERSION"));
     let expected_sha256 = match checksums_url {
         Some(url) => Some(fetch_expected_sha256(&client, &ua, url, asset_name).await?),
         None => None,
@@ -169,7 +169,7 @@ mod tests {
     #[test]
     fn chooses_writable_dir_for_portable_and_temp_for_nsis() {
         let dir = tempdir().expect("tempdir");
-        let exe_path = dir.path().join("ExileCompanionHUD.exe");
+        let exe_path = dir.path().join("ExileRelay.exe");
 
         let portable_stage = choose_staging_path(
             InstallVariant::PortableStandalone,
@@ -178,13 +178,13 @@ mod tests {
         );
         assert_eq!(
             portable_stage,
-            dir.path().join("ExileCompanionHUD-v0.1.45.update.tmp")
+            dir.path().join("ExileRelay-v0.1.45.update.tmp")
         );
 
         let setup_stage = choose_staging_path(InstallVariant::NsisSetup, &exe_path, "v0.1.45");
         assert_eq!(
             setup_stage,
-            std::env::temp_dir().join("ExileCompanionHUD-Setup-v0.1.45.exe")
+            std::env::temp_dir().join("ExileRelay-Setup-v0.1.45.exe")
         );
     }
 

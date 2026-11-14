@@ -78,7 +78,7 @@ pub fn ensure_overlay_window(
         OVERLAY_WINDOW_LABEL,
         WebviewUrl::App("index.html?window=overlay".into()),
     )
-    .title("Exile Companion Overlay")
+    .title("Exile Relay Overlay")
     .decorations(false)
     .transparent(true)
     .always_on_top(true)

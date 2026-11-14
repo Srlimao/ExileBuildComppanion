@@ -43,7 +43,7 @@ export function App() {
     <div className="min-h-screen bg-black text-neutral-100 p-3 flex flex-col gap-3">
       <header className="flex items-center justify-between gap-2 border-b border-neutral-800 pb-2">
         <div className="min-w-0">
-          <h1 className="text-base font-bold tracking-tight text-white truncate">Exile Control Center</h1>
+          <h1 className="text-base font-bold tracking-tight text-white truncate">Exile Relay</h1>
           <p className="text-[11px] font-mono text-neutral-400 truncate">
             {ctl.snapshot ? `${ctl.snapshot.mode} · ${ctl.snapshot.currentAreaName}` : "Initializing..."}
           </p>

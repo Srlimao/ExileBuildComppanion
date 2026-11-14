@@ -10,9 +10,9 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
-        name: "Exile Companion HUD",
-        short_name: "ExileHUD",
-        description: "Real-time second-screen Path of Exile campaign leveling HUD",
+        name: "Exile Relay",
+        short_name: "ExileRelay",
+        description: "Real-time second-screen & overlay telemetry relay for Path of Exile",
         theme_color: "#000000",
         background_color: "#000000",
         display: "standalone",

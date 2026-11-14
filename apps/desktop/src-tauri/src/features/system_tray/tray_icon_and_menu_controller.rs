@@ -30,7 +30,7 @@ impl Default for TrayVisualState {
     fn default() -> Self {
         Self {
             status: "gray".to_string(),
-            tooltip: "Exile Companion HUD — Standby".to_string(),
+            tooltip: "Exile Relay — Standby".to_string(),
             update_tag: None,
             update_menu_label: None,
             update_menu_enabled: false,
@@ -79,7 +79,7 @@ fn build_tray_menu(
     let copy_item =
         MenuItem::with_id(app, "copy_regex", "Copy Active Vendor Regex", true, None::<&str>)?;
     let sep = PredefinedMenuItem::separator(app)?;
-    let quit_item = MenuItem::with_id(app, "quit", "Quit Exile Companion", true, None::<&str>)?;
+    let quit_item = MenuItem::with_id(app, "quit", "Quit Exile Relay", true, None::<&str>)?;
 
     if let Some(label) = update_label {
         let update_item =
@@ -121,7 +121,7 @@ pub fn setup_tray(app: &AppHandle) -> tauri::Result<()> {
 
     TrayIconBuilder::with_id(TRAY_ID)
         .icon(initial_icon)
-        .tooltip("Exile Companion HUD — Standby")
+        .tooltip("Exile Relay — Standby")
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id.as_ref() {

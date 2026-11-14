@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 
 export const GITHUB_REPO_SLUG = "Srlimao/ExileBuildComppanion";
-export const LATEST_PORTABLE_EXE_URL = `https://github.com/${GITHUB_REPO_SLUG}/releases/latest/download/ExileCompanionHUD.exe`;
-export const LATEST_SETUP_EXE_URL = `https://github.com/${GITHUB_REPO_SLUG}/releases/latest/download/ExileCompanionHUD-Setup.exe`;
+export const LATEST_PORTABLE_EXE_URL = `https://github.com/${GITHUB_REPO_SLUG}/releases/latest/download/ExileRelay.exe`;
+export const LATEST_SETUP_EXE_URL = `https://github.com/${GITHUB_REPO_SLUG}/releases/latest/download/ExileRelay-Setup.exe`;
 export const LATEST_RELEASE_PAGE_URL = `https://github.com/${GITHUB_REPO_SLUG}/releases/latest`;
 
 export interface LatestDesktopReleaseInfo {
@@ -66,8 +66,12 @@ export function useLatestDesktopReleaseInfo(): LatestDesktopReleaseInfo {
       .then((res) => (res.ok ? (res.json() as Promise<GitHubReleaseResponse>) : null))
       .then((data) => {
         if (!active || !data) return;
-        const portableAsset = data.assets?.find((a) => a.name === "ExileCompanionHUD.exe");
-        const setupAsset = data.assets?.find((a) => a.name === "ExileCompanionHUD-Setup.exe");
+        const portableAsset =
+          data.assets?.find((a) => a.name === "ExileRelay.exe") ??
+          data.assets?.find((a) => a.name === "ExileCompanionHUD.exe");
+        const setupAsset =
+          data.assets?.find((a) => a.name === "ExileRelay-Setup.exe") ??
+          data.assets?.find((a) => a.name === "ExileCompanionHUD-Setup.exe");
         const nextInfo: LatestDesktopReleaseInfo = {
           tagName: data.tag_name ?? null,
           portableUrl: portableAsset?.browser_download_url ?? LATEST_PORTABLE_EXE_URL,

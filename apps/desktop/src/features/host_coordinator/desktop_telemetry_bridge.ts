@@ -147,17 +147,17 @@ export function deriveTrayIndicator(snapshot: HudSessionSnapshot, relayConnected
   tooltip: string;
 } {
   if (!snapshot.poeRunning) {
-    return { status: "gray", tooltip: "Exile Companion HUD — PoE Standby" };
+    return { status: "gray", tooltip: "Exile Relay — PoE Standby" };
   }
   if (!relayConnected || snapshot.characterSyncStatus === "OFFLINE_FALLBACK") {
     return {
       status: "amber",
-      tooltip: `Exile Companion HUD — Degraded (${relayConnected ? "API Fallback" : "Relay Disconnected"})`,
+      tooltip: `Exile Relay — Degraded (${relayConnected ? "API Fallback" : "Relay Disconnected"})`,
     };
   }
   return {
     status: "green",
-    tooltip: `Exile Companion HUD — Live (${snapshot.currentAreaName})`,
+    tooltip: `Exile Relay — Live (${snapshot.currentAreaName})`,
   };
 }
 

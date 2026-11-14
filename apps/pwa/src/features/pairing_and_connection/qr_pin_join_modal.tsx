@@ -34,7 +34,7 @@ export function QrPinJoinModal({
             <QrCode className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-white">Exile Companion HUD</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-white">Exile Relay</h1>
             <p className="text-sm text-neutral-400">Pair with your PC Control Center via Room ID & PIN</p>
           </div>
         </div>
@@ -91,6 +91,10 @@ export function QrPinJoinModal({
             Preview Interactive Demo HUD
           </button>
         </div>
+
+        <p className="text-[11px] text-center text-neutral-500 pt-1">
+          This product isn&apos;t affiliated with or endorsed by Grinding Gear Games in any way.
+        </p>
       </div>
     </div>
   );

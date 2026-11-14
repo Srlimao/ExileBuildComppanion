@@ -7,8 +7,8 @@ use std::time::Duration;
 
 pub const GITHUB_LATEST_RELEASE_API_URL: &str =
     "https://api.github.com/repos/Srlimao/ExileBuildComppanion/releases/latest";
-pub const PORTABLE_ASSET_NAME: &str = "ExileCompanionHUD.exe";
-pub const SETUP_ASSET_NAME: &str = "ExileCompanionHUD-Setup.exe";
+pub const PORTABLE_ASSET_NAME: &str = "ExileRelay.exe";
+pub const SETUP_ASSET_NAME: &str = "ExileRelay-Setup.exe";
 pub const CHECKSUMS_ASSET_NAME: &str = "SHA256SUMS.txt";
 const LATEST_DOWNLOAD_BASE: &str =
     "https://github.com/Srlimao/ExileBuildComppanion/releases/latest/download";
@@ -172,7 +172,7 @@ pub async fn fetch_github_release_check(
 
     let mut req = client
         .get(GITHUB_LATEST_RELEASE_API_URL)
-        .header(USER_AGENT, format!("ExileCompanionHUD/{current_version}"))
+        .header(USER_AGENT, format!("ExileRelay/{current_version}"))
         .header(ACCEPT, "application/vnd.github+json");
 
     if let Some(etag) = cached_etag {
@@ -238,7 +238,7 @@ mod tests {
     #[test]
     fn detects_nsis_vs_portable_from_sibling_uninstaller() {
         let dir = tempdir().expect("tempdir");
-        let exe_path = dir.path().join("ExileCompanionHUD.exe");
+        let exe_path = dir.path().join("ExileRelay.exe");
         fs::write(&exe_path, b"exe").expect("write exe");
         assert_eq!(
             InstallVariant::detect_for_exe(&exe_path),
@@ -263,13 +263,13 @@ mod tests {
 
     #[test]
     fn parses_sha256sums_with_and_without_bom() {
-        let text = "\u{feff}AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA  ExileCompanionHUD.exe\r\nbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb *ExileCompanionHUD-Setup.exe\n";
+        let text = "\u{feff}AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA  ExileRelay.exe\r\nbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb *ExileRelay-Setup.exe\n";
         assert_eq!(
-            parse_sha256_for_asset(text, "ExileCompanionHUD.exe").as_deref(),
+            parse_sha256_for_asset(text, "ExileRelay.exe").as_deref(),
             Some("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
         );
         assert_eq!(
-            parse_sha256_for_asset(text, "ExileCompanionHUD-Setup.exe").as_deref(),
+            parse_sha256_for_asset(text, "ExileRelay-Setup.exe").as_deref(),
             Some("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
         );
         assert_eq!(parse_sha256_for_asset(text, "missing.exe"), None);

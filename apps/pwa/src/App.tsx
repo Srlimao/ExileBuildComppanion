@@ -25,6 +25,7 @@ import {
 } from "@exile-hud/hud-ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { HudTopTelemetryBar } from "./features/hud_shell/hud_top_telemetry_bar.js";
+import { GggOauthCallbackView } from "./features/oauth_callback/ggg_oauth_callback_view.js";
 import { createInteractiveDemoSnapshot } from "./features/pairing_and_connection/demo_campaign_snapshot_factory.js";
 import {
   detectDeviceFormFactor,
@@ -178,6 +179,10 @@ export function App() {
     }
   }, []);
 
+  if (window.location.pathname.startsWith("/oauth/callback")) {
+    return <GggOauthCallbackView />;
+  }
+
   if (!snapshot) {
     return (
       <QrPinJoinModal
@@ -261,6 +266,10 @@ export function App() {
           onResetDefaults={() => handleUpdateLayout(effectiveMode, getDefaultLayoutForMode(formFactor, effectiveMode))}
         />
       )}
+
+      <footer className="max-w-7xl mx-auto px-4 pt-6 pb-2 text-center text-[11px] text-neutral-600">
+        Exile Relay — This product isn&apos;t affiliated with or endorsed by Grinding Gear Games in any way.
+      </footer>
     </div>
   );
 }

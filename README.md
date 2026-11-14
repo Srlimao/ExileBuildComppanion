@@ -1,28 +1,28 @@
-# Exile Companion HUD
+# Exile Relay
 
-[![Live Web HUD](https://img.shields.io/badge/Live_HUD-exile.dunhas.com-6366f1)](https://exile.dunhas.com)
-[![Interactive Demo](https://img.shields.io/badge/Interactive_Demo-Try_%3Fdemo%3D1-10b981)](https://exile.dunhas.com/?demo=1)
+[![Live Web HUD](https://img.shields.io/badge/Live_HUD-exile--relay.dunhas.com-6366f1)](https://exile-relay.dunhas.com)
+[![Interactive Demo](https://img.shields.io/badge/Interactive_Demo-Try_%3Fdemo%3D1-10b981)](https://exile-relay.dunhas.com/?demo=1)
 [![Windows Release](https://img.shields.io/github/v/release/Srlimao/ExileBuildComppanion?label=Windows%20App)](https://github.com/Srlimao/ExileBuildComppanion/releases/latest)
 [![CI](https://github.com/Srlimao/ExileBuildComppanion/actions/workflows/ci.yml/badge.svg)](https://github.com/Srlimao/ExileBuildComppanion/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-zinc)](LICENSE)
 
-Real-time, zero-touch **second-screen campaign leveling companion for Path of Exile 1**. A lightweight Windows System Tray app watches your local `Client.txt` log, decodes your Path of Building (PoB) plan, syncs character telemetry, and streams context-aware guidance over a Cloudflare Worker relay to an OLED-first mobile or tablet PWA.
+Real-time, zero-touch **second-screen & local overlay telemetry relay for Path of Exile 1**. A lightweight Windows System Tray app watches your local `Client.txt` log, decodes your Path of Building (PoB) plan, diffs live character telemetry (equipped gear, jewels, Wickerman attachments, resistance overcaps, and allocated passives), and streams context-aware guidance to both a **local dockable PC in-game overlay** and an OLED-first **mobile or tablet PWA** via QR code over a Cloudflare Worker relay.
 
-> **Try it in your browser right now:** open the **[Interactive Demo](https://exile.dunhas.com/?demo=1)** (`?demo=1`) to test Field, Town, Lab, and Passive Tree modes without running Path of Exile.
+> **Try it in your browser right now:** open the **[Interactive Demo](https://exile-relay.dunhas.com/?demo=1)** (`?demo=1`) to test Field, Town, Lab, and Passive Tree modes without running Path of Exile.
 
 ---
 
 ## Player Quick Start (3 Steps)
 
 1. **Launch the Windows PC Host**
-   - Download **`ExileCompanionHUD.exe`** (portable, zero installation required) or **`ExileCompanionHUD-Setup.exe`** (NSIS installer) from **[GitHub Releases](https://github.com/Srlimao/ExileBuildComppanion/releases/latest)**.
+   - Download **`ExileRelay.exe`** (portable, zero installation required) or **`ExileRelay-Setup.exe`** (NSIS installer) from **[GitHub Releases](https://github.com/Srlimao/ExileBuildComppanion/releases/latest)**.
    - The app sits in your Windows System Tray, auto-detects Standalone and Steam `Client.txt` paths, and monitors `PathOfExile.exe` / `PathOfExileSteam.exe`.
 2. **Load Your Path of Building Plan**
    - Paste a raw PoB export code (works **100% offline** even if `pobb.in` is down at league launch), a `pobb.in` URL, or a local `.xml` file.
    - Optionally select which Passive Specs, Skill Sets, and Item Sets to track, and set your Bandits / Library flags. Your build profile and campaign progress persist locally on your PC.
-3. **Pair Your Phone or Tablet**
-   - Scan the QR code shown in the PC Control Center, or visit **[exile.dunhas.com](https://exile.dunhas.com)** and enter the 6-character **Room ID** and 4-digit **PIN**.
-   - On HTTPS mobile browsers, Screen Wake-Lock keeps your display awake throughout your run, and the PWA caches assets offline via a Workbox Service Worker.
+3. **Use Local Overlay or Pair Your Phone / Tablet**
+   - **Local In-Game Overlay:** Press `F7` to show/hide a transparent dockable HUD (`F8` click-through lock, `Ctrl+F1..F4` dock presets) directly over Path of Exile via `BroadcastChannel` (zero cloud latency).
+   - **Second Screen (Phone/Tablet):** Scan the QR code shown in the Control Center, or visit **[exile-relay.dunhas.com](https://exile-relay.dunhas.com)** and enter the 6-character **Room ID** and 4-digit **PIN**. Screen Wake-Lock keeps your display awake throughout your run, and the PWA caches assets offline via Workbox.
 
 ---
 
@@ -34,6 +34,7 @@ Real-time, zero-touch **second-screen campaign leveling companion for Path of Ex
   - **`LAB`**: Daily Labyrinth room graph, Golden Door markers, and Izaro phase notes (supports pasting PoELab JSON).
   - **`TREE`**: Read-only GGG `3.30.0` Passive Skill Tree with bracket-by-bracket diff coloring (allocated, next-bracket targets, carried-over missing nodes, and respec removals), automatic initial framing around your next unallocated passives, persisted camera viewport per profile/bracket, two-finger touch pinch-to-zoom, and **in-game hotkey sync** (pressing `P` inside PoE automatically flips your tablet to `TREE` and back).
   - **`STANDBY`**: Automatically pauses the run timer and shows Act split times when `PathOfExile.exe` closes.
+- **Dual Delivery: Local PC In-Game Overlay & QR Second Screen:** Run a transparent dockable overlay directly on your gaming monitor (`F7` show/hide, `F8` click-through lock, `Ctrl+F1..F4` dock presets via zero-latency `BroadcastChannel`) or mirror live telemetry over WSS to your phone/tablet.
 - **Per-Mode Customizable Widget Grids:** Drag, reorder, resize (`1x1`, `2x1`, `2x2`), and toggle widgets independently for `FIELD`, `TOWN`, and `LAB` across `Tablet Landscape`, `Tablet Portrait`, and `Phone` breakpoints.
 - **Persistent Progress & Two-Step Reset:** Checklist completions (`checkpoints`) and gem acquisitions (`gemSteps`) persist to disk on PC (`saved_campaign_progress.json`) and survive conditional route edits, with 2-click **`Reset Checks`** controls on both PC and Web.
 - **League-Launch Resilient:** Automatically falls back to heuristic town soft-tracking if GGG's `character-window` API returns `429` or `5xx` errors, using an exponential-backoff circuit breaker.
@@ -109,4 +110,4 @@ pnpm run ingest:tree
 
 - **License:** Released under the [MIT License](LICENSE).
 - **Third-Party Game Data & Assets:** Built on MIT-licensed routes, icons, and zone layouts from `HeartofPhos/exile-leveling` and `Lailloken/Exile-UI`, plus GGG's official `3.30.0` `grindinggear/skilltree-export` dataset. Full license texts are preserved in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
-- **Disclaimer:** This project is an independent open-source community tool and is not affiliated with or endorsed by Grinding Gear Games in any way.
+- **Disclaimer:** This product isn't affiliated with or endorsed by Grinding Gear Games in any way. (Independent MIT open-source community tool.)

@@ -24,7 +24,10 @@
     }
   ],
   "workers_dev": true,
-  "routes": [{ "pattern": "exile.dunhas.com", "custom_domain": true }],
+  "routes": [
+    { "pattern": "exile-relay.dunhas.com", "custom_domain": true },
+    { "pattern": "exile.dunhas.com", "custom_domain": true }
+  ],
   "observability": {
     "enabled": true
   }

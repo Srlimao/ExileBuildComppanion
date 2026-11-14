@@ -195,13 +195,13 @@ describe("Cloudflare Worker + SessionRoomDurableObject E2E", () => {
     const portableRedirect = await fetch(`${BASE_HTTP}/api/download/desktop`, { redirect: "manual" });
     expect(portableRedirect.status).toBe(302);
     expect(portableRedirect.headers.get("location")).toBe(
-      "https://github.com/Srlimao/ExileBuildComppanion/releases/latest/download/ExileCompanionHUD.exe",
+      "https://github.com/Srlimao/ExileBuildComppanion/releases/latest/download/ExileRelay.exe",
     );
 
     const setupRedirect = await fetch(`${BASE_HTTP}/api/download/desktop?variant=setup`, { redirect: "manual" });
     expect(setupRedirect.status).toBe(302);
     expect(setupRedirect.headers.get("location")).toBe(
-      "https://github.com/Srlimao/ExileBuildComppanion/releases/latest/download/ExileCompanionHUD-Setup.exe",
+      "https://github.com/Srlimao/ExileBuildComppanion/releases/latest/download/ExileRelay-Setup.exe",
     );
 
     const queryLeak = await fetch(`${BASE_HTTP}/api/session/LEAK01/register?poesessid=secret`);
