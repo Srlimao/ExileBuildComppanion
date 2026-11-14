@@ -77,7 +77,10 @@ export function App() {
   const [layouts, setLayouts] = useState<ModeWidgetGrids>(loadCachedLayouts);
   const [formFactor, setFormFactor] = useState<DeviceFormFactor>(detectDeviceFormFactor);
   const [editMode, setEditMode] = useState(false);
-  const [previewModeOverride, setPreviewModeOverride] = useState<HudContextMode | null>(null);
+  const [previewModeOverride, setPreviewModeOverride] = useState<HudContextMode | null>(() => {
+    const m = params.get("mode")?.toUpperCase();
+    return m === "FIELD" || m === "TOWN" || m === "LAB" || m === "TREE" || m === "STANDBY" ? m : null;
+  });
   const [connectionPhase, setConnectionPhase] = useState<ConnectionPhase>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const clientRef = useRef<EdgeWebSocketRoomClient | null>(null);

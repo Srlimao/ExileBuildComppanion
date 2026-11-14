@@ -10,6 +10,8 @@ Real-time, zero-touch **second-screen & local overlay telemetry relay for Path o
 
 > **Try it in your browser right now:** open the **[Interactive Demo](https://exile-relay.dunhas.com/?demo=1)** (`?demo=1`) to test Field, Town, Lab, and Passive Tree modes without running Path of Exile.
 
+![Exile Relay — FIELD, TOWN & TREE Telemetry Showcase](apps/pwa/public/preview-modes-showcase.png)
+
 ---
 
 ## Player Quick Start (3 Steps)
@@ -35,6 +37,7 @@ Real-time, zero-touch **second-screen & local overlay telemetry relay for Path o
   - **`TREE`**: Read-only GGG `3.30.0` Passive Skill Tree with bracket-by-bracket diff coloring (allocated, next-bracket targets, carried-over missing nodes, and respec removals), automatic initial framing around your next unallocated passives, persisted camera viewport per profile/bracket, two-finger touch pinch-to-zoom, and **in-game hotkey sync** (pressing `P` inside PoE automatically flips your tablet to `TREE` and back).
   - **`STANDBY`**: Automatically pauses the run timer and shows Act split times when `PathOfExile.exe` closes.
 - **Dual Delivery: Local PC In-Game Overlay & QR Second Screen:** Run a transparent dockable overlay directly on your gaming monitor (`F7` show/hide, `F8` click-through lock, `Ctrl+F1..F4` dock presets via zero-latency `BroadcastChannel`) or mirror live telemetry over WSS to your phone/tablet.
+- **Whisper Frameless UI & Theme Engine:** Switch between `OLED`, `Soft Dark`, and `Light` appearances with 6 curated PoE accent swatches (`Chalk`, `Exile Gold`, `Vaal Crimson`, `Mana Cyan`, `Viridian`, `Amethyst`) or a custom hex color via the settings drawer.
 - **Per-Mode Customizable Widget Grids:** Drag, reorder, resize (`1x1`, `2x1`, `2x2`), and toggle widgets independently for `FIELD`, `TOWN`, and `LAB` across `Tablet Landscape`, `Tablet Portrait`, and `Phone` breakpoints.
 - **Persistent Progress & Two-Step Reset:** Checklist completions (`checkpoints`) and gem acquisitions (`gemSteps`) persist to disk on PC (`saved_campaign_progress.json`) and survive conditional route edits, with 2-click **`Reset Checks`** controls on both PC and Web.
 - **League-Launch Resilient:** Automatically falls back to heuristic town soft-tracking if GGG's `character-window` API returns `429` or `5xx` errors, using an exponential-backoff circuit breaker.
