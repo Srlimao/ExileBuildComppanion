@@ -2,15 +2,19 @@ import type { PassiveTreeBracketDiff } from "@exile-hud/core";
 import type { PassiveTreeNodeMetadata } from "@exile-hud/game-data";
 import type React from "react";
 import { memo } from "react";
+import { useHudTheme } from "../theme/hud_theme_provider.js";
+import type { PassiveTreeThemePalette } from "../theme/theme_tokens_and_palettes.js";
 import type { BuiltPoe1TreeGeometry, BuiltTreeEdge } from "./passive_tree_geometry_builder.js";
 import { PassiveTreeCanvasOverlays } from "./passive_tree_node_tooltip.js";
 
 const StaticWireframeLayer = memo(function StaticWireframeLayer({
   edges,
   nodes,
+  palette,
 }: {
   edges: BuiltTreeEdge[];
   nodes: PassiveTreeNodeMetadata[];
+  palette: PassiveTreeThemePalette;
 }) {
   return (
     <g>
@@ -19,7 +23,7 @@ const StaticWireframeLayer = memo(function StaticWireframeLayer({
           key={edge.key}
           d={edge.svgPath}
           fill="none"
-          stroke="#1e293b"
+          stroke={palette.wireframeEdge}
           strokeWidth={14}
           strokeLinecap="round"
         />
@@ -30,8 +34,8 @@ const StaticWireframeLayer = memo(function StaticWireframeLayer({
           cx={node.x}
           cy={node.y}
           r={node.isKeystone ? 42 : node.isNotable ? 32 : node.isMastery ? 30 : 18}
-          fill={node.isMastery ? "#090f1d" : "#0f172a"}
-          stroke="#334155"
+          fill={node.isMastery ? palette.masteryFill : palette.nodeFill}
+          stroke={palette.nodeStroke}
           strokeWidth={node.isNotable || node.isKeystone ? 8 : 5}
         />
       ))}
@@ -77,6 +81,7 @@ export function PassiveTreeCanvasSvg({
   onZoomOut,
   pointerHandlers,
 }: PassiveTreeCanvasSvgProps) {
+  const { treePalette } = useHudTheme();
   const addedSet = new Set(diff.addedInBracketIds);
   const missedSet = new Set(diff.earlierMissedIds);
   const respecSet = new Set([...diff.respecFromPrevIds, ...diff.offSpecAllocatedIds]);
@@ -86,17 +91,17 @@ export function PassiveTreeCanvasSvg({
   const activeEdgeStyle = (e: BuiltTreeEdge): { stroke: string; width: number; dash?: string } | null => {
     const aAlloc = allocatedIds.has(e.fromId);
     const bAlloc = allocatedIds.has(e.toId);
-    if (aAlloc && bAlloc) return { stroke: "#10b981", width: 28 };
+    if (aAlloc && bAlloc) return { stroke: treePalette.allocated, width: 28 };
     const bothInTarget = diff.targetSet.has(e.fromId) && diff.targetSet.has(e.toId);
     if (bothInTarget) {
-      if (addedSet.has(e.fromId) || addedSet.has(e.toId)) return { stroke: "#f59e0b", width: 24 };
-      return { stroke: "#06b6d4", width: 22 };
+      if (addedSet.has(e.fromId) || addedSet.has(e.toId)) return { stroke: treePalette.newBracket, width: 24 };
+      return { stroke: treePalette.earlier, width: 22 };
     }
     if (respecSet.has(e.fromId) || respecSet.has(e.toId)) {
-      return { stroke: "#f43f5e", width: 22, dash: "32 20" };
+      return { stroke: treePalette.respec, width: 22, dash: "32 20" };
     }
     if (showFuture && (futureSet.has(e.fromId) || futureSet.has(e.toId))) {
-      return { stroke: "#7c3aed", width: 16 };
+      return { stroke: treePalette.future, width: 16 };
     }
     return null;
   };
@@ -114,10 +119,12 @@ export function PassiveTreeCanvasSvg({
     <div
       ref={containerRef}
       {...pointerHandlers}
-      className="relative flex-1 min-h-[430px] lg:min-h-[600px] rounded-xl border border-neutral-800 bg-[#020813] overflow-hidden select-none touch-none cursor-grab active:cursor-grabbing"
+      data-testid="passive-tree-canvas"
+      style={{ backgroundColor: treePalette.canvasBg }}
+      className="relative flex-1 min-h-[430px] lg:min-h-[600px] rounded-lg border border-hud-hairline overflow-hidden select-none touch-none cursor-grab active:cursor-grabbing"
     >
       <svg viewBox={viewBox} className="w-full h-full block touch-none">
-        <StaticWireframeLayer edges={visibleEdges} nodes={visibleNodes} />
+        <StaticWireframeLayer edges={visibleEdges} nodes={visibleNodes} palette={treePalette} />
 
         <g>
           {visibleEdges.map((edge) => {
@@ -152,30 +159,30 @@ export function PassiveTreeCanvasSvg({
 
             const r = node.isKeystone ? 48 : node.isNotable || hasPobMastery ? 36 : node.isJewelSocket ? 32 : 23;
             const fill = isAlloc
-              ? "#10b981"
+              ? treePalette.allocated
               : isAdded && isTarget
-                ? "#f59e0b"
+                ? treePalette.newBracket
                 : isMissed
-                  ? "#06b6d4"
+                  ? treePalette.earlier
                   : isRespec
-                    ? "#f43f5e"
+                    ? treePalette.respec
                     : hasPobMastery
-                      ? "#6366f1"
-                      : "#4c1d95";
+                      ? treePalette.masteryActive
+                      : treePalette.future;
 
             return (
-              <g
-                key={`n_${node.id}`}
-                data-tree-node-id={node.id}
-                className="cursor-pointer"
-              >
-                {isSearch && <circle cx={node.x} cy={node.y} r={r + 36} fill="none" stroke="#818cf8" strokeWidth={14} opacity={0.9} />}
-                {isSel && <circle cx={node.x} cy={node.y} r={r + 22} fill="none" stroke="#ffffff" strokeWidth={10} />}
+              <g key={`n_${node.id}`} data-tree-node-id={node.id} className="cursor-pointer">
+                {isSearch && (
+                  <circle cx={node.x} cy={node.y} r={r + 36} fill="none" stroke={treePalette.searchRing} strokeWidth={14} opacity={0.9} />
+                )}
+                {isSel && (
+                  <circle cx={node.x} cy={node.y} r={r + 22} fill="none" stroke={treePalette.selectedRing} strokeWidth={10} />
+                )}
                 {node.isKeystone ? (
                   <polygon
                     points={`${node.x},${node.y - r} ${node.x + r},${node.y} ${node.x},${node.y + r} ${node.x - r},${node.y}`}
                     fill={fill}
-                    stroke="#020617"
+                    stroke={treePalette.nodeRim}
                     strokeWidth={8}
                   />
                 ) : node.isJewelSocket ? (
@@ -186,7 +193,7 @@ export function PassiveTreeCanvasSvg({
                     height={r * 2}
                     rx={8}
                     fill={fill}
-                    stroke="#020617"
+                    stroke={treePalette.nodeRim}
                     strokeWidth={8}
                   />
                 ) : (
@@ -195,7 +202,7 @@ export function PassiveTreeCanvasSvg({
                     cy={node.y}
                     r={r}
                     fill={fill}
-                    stroke={node.isNotable ? "#fef3c7" : "#020617"}
+                    stroke={node.isNotable ? treePalette.notableRim : treePalette.nodeRim}
                     strokeWidth={node.isNotable ? 9 : 6}
                     strokeDasharray={isRespec ? "16 10" : undefined}
                   />

@@ -19,9 +19,9 @@ export function DesktopUpdateFooterBar() {
   if (state.updateAvailable) {
     const versionTag = state.latestVersion ?? "New Release";
     return (
-      <footer className="mt-auto pt-2 space-y-1.5">
+      <footer className="mt-auto pt-3 border-t border-hud-hairline space-y-2">
         {state.error && (
-          <div className="flex items-start gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] text-amber-300">
+          <div className="flex items-start gap-1.5 border-l-2 border-hud-warn pl-2.5 py-0.5 text-[11px] text-hud-warn">
             <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
             <span className="leading-snug">{state.error}</span>
           </div>
@@ -31,11 +31,11 @@ export function DesktopUpdateFooterBar() {
           type="button"
           disabled={isBusy}
           onClick={() => void installNow()}
-          className="w-full relative overflow-hidden rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:bg-blue-900/70 border border-blue-400/30 text-white px-3.5 py-2.5 text-xs font-semibold transition-colors cursor-pointer disabled:cursor-wait flex items-center justify-between gap-2"
+          className="w-full relative overflow-hidden rounded-md bg-hud-accent text-hud-accent-fg hover:opacity-90 disabled:opacity-60 px-3.5 py-2.5 text-xs font-semibold transition-opacity cursor-pointer disabled:cursor-wait flex items-center justify-between gap-2"
         >
           {isBusy && (
             <span
-              className="absolute inset-y-0 left-0 bg-blue-400/25 transition-all duration-150"
+              className="absolute inset-y-0 left-0 bg-black/15 transition-all duration-150"
               style={{ width: `${isInstalling ? 100 : pct}%` }}
             />
           )}
@@ -53,7 +53,7 @@ export function DesktopUpdateFooterBar() {
             )}
           </span>
 
-          <span className="relative z-10 shrink-0 rounded-md bg-black/25 border border-white/15 px-1.5 py-0.5 text-[10px] font-mono tabular-nums text-blue-100">
+          <span className="relative z-10 shrink-0 text-[10px] font-mono tabular-nums opacity-80">
             {variantLabel}
             {sizeLabel ? ` · ${sizeLabel}` : ""}
           </span>
@@ -63,18 +63,18 @@ export function DesktopUpdateFooterBar() {
   }
 
   return (
-    <footer className="mt-auto pt-2 border-t border-neutral-800/80 space-y-1.5">
+    <footer className="mt-auto pt-2.5 border-t border-hud-hairline space-y-1.5">
       {state.error && (
-        <div className="flex items-start gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] text-amber-300">
+        <div className="flex items-start gap-1.5 border-l-2 border-hud-warn pl-2.5 py-0.5 text-[11px] text-hud-warn">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
           <span className="leading-snug">{state.error}</span>
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-2 text-[11px] text-neutral-400">
+      <div className="flex items-center justify-between gap-2 text-[11px] text-hud-muted">
         <span className="inline-flex items-center gap-1.5 min-w-0 truncate">
-          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500/80 shrink-0" />
-          <span className="font-mono tabular-nums text-neutral-300">v{state.currentVersion}</span>
+          <CheckCircle2 className="h-3.5 w-3.5 text-hud-ok shrink-0" />
+          <span className="font-mono tabular-nums text-hud-text">v{state.currentVersion}</span>
           <span>· {variantLabel} ·</span>
           <span>{isChecking ? "Checking…" : "Up to date"}</span>
         </span>
@@ -83,7 +83,7 @@ export function DesktopUpdateFooterBar() {
           type="button"
           disabled={isChecking}
           onClick={() => void checkNow()}
-          className="inline-flex items-center gap-1 rounded-lg border border-neutral-800 bg-neutral-950 hover:bg-neutral-900 hover:text-neutral-200 px-2 py-1 text-[11px] text-neutral-300 cursor-pointer disabled:opacity-60 disabled:cursor-wait shrink-0"
+          className="inline-flex items-center gap-1 rounded-md hover:bg-hud-subtle hover:text-hud-text px-2 py-1 text-[11px] text-hud-muted cursor-pointer disabled:opacity-60 disabled:cursor-wait shrink-0"
         >
           <RefreshCw className={`h-3 w-3 ${isChecking ? "animate-spin" : ""}`} />
           <span>Check</span>

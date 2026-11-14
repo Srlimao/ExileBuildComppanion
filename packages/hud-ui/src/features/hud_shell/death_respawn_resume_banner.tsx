@@ -7,17 +7,15 @@ interface DeathRespawnResumeBannerProps {
 
 export function DeathRespawnResumeBanner({ areaName, onDismiss }: DeathRespawnResumeBannerProps) {
   return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-5 pt-3">
-      <div className="rounded-xl border border-red-500/50 bg-red-950/30 px-4 py-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-lg bg-red-500/20 flex items-center justify-center text-red-400 shrink-0">
-            <Skull className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-base font-bold text-red-200">
-              Slain — Take Portal Back to <span className="text-white underline">{areaName}</span>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-3">
+      <div className="border-l-2 border-hud-danger pl-3.5 py-2 bg-hud-subtle flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <Skull className="h-4 w-4 text-hud-danger shrink-0" />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-hud-danger">
+              Slain — Take Portal Back to <span className="text-hud-text underline">{areaName}</span>
             </p>
-            <p className="text-xs text-red-300/80">
+            <p className="text-xs text-hud-muted truncate">
               Town entered via Resurrect in Town; combat progression anchored to {areaName}.
             </p>
           </div>
@@ -26,7 +24,7 @@ export function DeathRespawnResumeBanner({ areaName, onDismiss }: DeathRespawnRe
         <button
           type="button"
           onClick={onDismiss}
-          className="px-3 py-1.5 rounded-lg border border-red-400/40 bg-red-500/15 text-xs font-semibold text-red-200 hover:bg-red-500/25 inline-flex items-center gap-1.5 cursor-pointer shrink-0"
+          className="px-2.5 py-1 rounded-md text-xs font-medium text-hud-muted hover:text-hud-text hover:bg-hud-subtle inline-flex items-center gap-1.5 cursor-pointer shrink-0"
         >
           <RotateCcw className="h-3.5 w-3.5" />
           Dismiss

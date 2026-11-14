@@ -1,4 +1,4 @@
-import { ClipboardCopy, Cpu, FileSearch, FlaskConical, GitBranch, Skull } from "lucide-react";
+import { ClipboardCopy, Cpu, GitBranch, Skull } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface ClientLogAndSimulatorCardProps {
@@ -47,16 +47,13 @@ export function ClientLogAndSimulatorCard({
   }, [clientLogPath]);
 
   return (
-    <div className="space-y-3">
-      <section className="bg-neutral-950 border border-neutral-800 rounded-xl p-3.5 space-y-2.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FileSearch className="h-4 w-4 text-indigo-400" />
-            <h2 className="text-sm font-semibold text-white">Client.txt & Clipboard</h2>
-          </div>
-          <span
-            className={`text-[11px] font-medium ${clientLogFound ? "text-emerald-400" : "text-amber-400"}`}
-          >
+    <div className="space-y-6">
+      <section className="space-y-3">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
+            Client.txt &amp; Clipboard
+          </h2>
+          <span className={`text-[11px] font-medium ${clientLogFound ? "text-hud-ok" : "text-hud-warn"}`}>
             {clientLogFound ? "Hooked" : "Path not verified"}
           </span>
         </div>
@@ -66,57 +63,57 @@ export function ClientLogAndSimulatorCard({
             type="text"
             value={draftPath}
             onChange={(e) => setDraftPath(e.target.value)}
-            className="flex-1 rounded-lg bg-black border border-neutral-800 px-2.5 py-1 text-xs font-mono text-neutral-200 focus:outline-none focus:border-indigo-500"
+            className="flex-1 rounded-md bg-hud-subtle border-b border-hud-hairline px-2.5 py-1.5 text-xs font-mono text-hud-text focus:outline-none focus:border-hud-accent"
           />
           <button
             type="button"
             onClick={() => void onSetLogPath(draftPath)}
-            className="rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 px-2.5 py-1 text-xs text-neutral-200 cursor-pointer"
+            className="rounded-md hover:bg-hud-subtle px-2.5 py-1.5 text-xs text-hud-text cursor-pointer"
           >
             Set
           </button>
           <button
             type="button"
             onClick={() => void onAutoDetectPath()}
-            className="rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 px-2 py-1 text-xs text-indigo-300 cursor-pointer"
+            className="rounded-md hover:bg-hud-subtle px-2 py-1.5 text-xs text-hud-accent font-medium cursor-pointer"
           >
             Find
           </button>
         </div>
 
-        <div className="flex items-center justify-between pt-1 border-t border-neutral-800/70">
-          <label className="inline-flex items-center gap-2 text-xs text-neutral-300 cursor-pointer">
+        <div className="flex items-center justify-between pt-1">
+          <label className="inline-flex items-center gap-2 text-xs text-hud-text cursor-pointer">
             <input
               type="checkbox"
               checked={autoClipboard}
               onChange={onToggleAutoClipboard}
-              className="accent-indigo-500"
+              style={{ accentColor: "var(--hud-accent)" }}
             />
             Auto-copy vendor regex on Town entry
           </label>
           <button
             type="button"
             onClick={() => void onCopyRegexNow()}
-            className="rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 px-2 py-1 text-[11px] font-mono text-neutral-200 inline-flex items-center gap-1 cursor-pointer"
+            className="rounded-md hover:bg-hud-subtle px-2 py-1 text-[11px] font-mono text-hud-muted hover:text-hud-text inline-flex items-center gap-1 cursor-pointer"
           >
             <ClipboardCopy className="h-3 w-3" />
             {activeVendorRegex || "Copy"}
           </button>
         </div>
 
-        <div className="flex items-center justify-between pt-1.5 border-t border-neutral-800/70 text-xs">
-          <div className="flex items-center gap-1.5 text-neutral-300">
-            <GitBranch className="h-3.5 w-3.5 text-indigo-400" />
+        <div className="flex items-center justify-between pt-2 border-t border-hud-hairline text-xs">
+          <div className="flex items-center gap-1.5 text-hud-text">
+            <GitBranch className="h-3.5 w-3.5 text-hud-accent" />
             <span>Passive Tree Hotkey (PoE Active)</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className={`text-[10px] font-mono ${inGameTreeOpen ? "text-emerald-400" : "text-neutral-500"}`}>
+          <div className="flex items-center gap-2">
+            <span className={`text-[10px] font-mono ${inGameTreeOpen ? "text-hud-ok" : "text-hud-muted"}`}>
               {inGameTreeOpen ? "OPEN" : "CLOSED"}
             </span>
             <select
               value={passiveTreeHotkey}
               onChange={(e) => onChangePassiveTreeHotkey(e.target.value)}
-              className="rounded-lg bg-black border border-neutral-700 px-2 py-0.5 text-xs font-mono text-neutral-100 focus:outline-none focus:border-indigo-500"
+              className="rounded-md bg-hud-surface border border-hud-hairline px-2 py-0.5 text-xs font-mono text-hud-text focus:outline-none focus:border-hud-accent"
             >
               {["P", "T", "K", "Tab", "F1", "F2", "F3", "F4", "Off"].map((k) => (
                 <option key={k} value={k}>
@@ -128,22 +125,17 @@ export function ClientLogAndSimulatorCard({
         </div>
       </section>
 
-      <section className="bg-neutral-950 border border-neutral-800 rounded-xl p-3.5 space-y-2.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FlaskConical className="h-4 w-4 text-amber-400" />
-            <h2 className="text-sm font-semibold text-white">Campaign & Outage Replay Simulator</h2>
-          </div>
-        </div>
+      <section className="space-y-3 border-t border-hud-hairline pt-5">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
+          Campaign &amp; Outage Replay Simulator
+        </h2>
 
         <div className="grid grid-cols-2 gap-1.5 text-xs">
           <button
             type="button"
             onClick={onToggleSimPoeRunning}
-            className={`rounded-lg border px-2.5 py-1.5 text-left inline-flex items-center gap-1.5 cursor-pointer ${
-              poeRunning
-                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
-                : "border-neutral-700 bg-black text-neutral-300"
+            className={`rounded-md bg-hud-subtle px-2.5 py-1.5 text-left inline-flex items-center gap-1.5 cursor-pointer ${
+              poeRunning ? "text-hud-ok font-semibold" : "text-hud-muted hover:text-hud-text"
             }`}
           >
             <Cpu className="h-3.5 w-3.5" />
@@ -153,10 +145,8 @@ export function ClientLogAndSimulatorCard({
           <button
             type="button"
             onClick={onToggleSimulatedOutage}
-            className={`rounded-lg border px-2.5 py-1.5 text-left inline-flex items-center gap-1.5 cursor-pointer ${
-              simulatedOutage
-                ? "border-amber-500/40 bg-amber-500/10 text-amber-300"
-                : "border-neutral-700 bg-black text-neutral-300"
+            className={`rounded-md bg-hud-subtle px-2.5 py-1.5 text-left inline-flex items-center gap-1.5 cursor-pointer ${
+              simulatedOutage ? "text-hud-warn font-semibold" : "text-hud-muted hover:text-hud-text"
             }`}
           >
             Sim 429 API Outage: {simulatedOutage ? "ON" : "OFF"}
@@ -169,7 +159,7 @@ export function ClientLogAndSimulatorCard({
                 '2026/11/13 18:01:02 [INFO Client 1] Generating level 1 area "1_1_1" with seed 1001',
               ])
             }
-            className="rounded-lg bg-black hover:bg-neutral-900 border border-neutral-800 px-2.5 py-1.5 text-left text-neutral-200 cursor-pointer"
+            className="rounded-md bg-hud-subtle hover:opacity-80 px-2.5 py-1.5 text-left text-hud-text cursor-pointer"
           >
             1. Twilight Strand
           </button>
@@ -182,7 +172,7 @@ export function ClientLogAndSimulatorCard({
                 "2026/11/13 18:02:11 [INFO Client 1] You have entered Lioneye's Watch.",
               ])
             }
-            className="rounded-lg bg-black hover:bg-neutral-900 border border-neutral-800 px-2.5 py-1.5 text-left text-neutral-200 cursor-pointer"
+            className="rounded-md bg-hud-subtle hover:opacity-80 px-2.5 py-1.5 text-left text-hud-text cursor-pointer"
           >
             2. Lioneye&apos;s Watch (Town)
           </button>
@@ -194,7 +184,7 @@ export function ClientLogAndSimulatorCard({
                 '2026/11/13 18:03:05 [INFO Client 1] Generating level 2 area "1_1_2" with seed 3003',
               ])
             }
-            className="rounded-lg bg-black hover:bg-neutral-900 border border-neutral-800 px-2.5 py-1.5 text-left text-neutral-200 cursor-pointer"
+            className="rounded-md bg-hud-subtle hover:opacity-80 px-2.5 py-1.5 text-left text-hud-text cursor-pointer"
           >
             3. The Coast
           </button>
@@ -206,7 +196,7 @@ export function ClientLogAndSimulatorCard({
                 '2026/11/13 18:05:30 [INFO Client 1] Generating level 6 area "1_1_6" with seed 4004',
               ])
             }
-            className="rounded-lg bg-black hover:bg-neutral-900 border border-neutral-800 px-2.5 py-1.5 text-left text-neutral-200 cursor-pointer"
+            className="rounded-md bg-hud-subtle hover:opacity-80 px-2.5 py-1.5 text-left text-hud-text cursor-pointer"
           >
             4. Skip Dweller -&gt; Ledge
           </button>
@@ -220,7 +210,7 @@ export function ClientLogAndSimulatorCard({
                 '2026/11/13 18:08:30 [INFO Client 1] Generating level 1 area "1_1_town" with seed 2002',
               ])
             }
-            className="rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 px-2.5 py-1.5 text-left text-red-200 inline-flex items-center gap-1 cursor-pointer"
+            className="rounded-md bg-hud-subtle hover:opacity-80 px-2.5 py-1.5 text-left text-hud-danger inline-flex items-center gap-1 cursor-pointer"
           >
             <Skull className="h-3.5 w-3.5" />
             5. Death at Brutus -&gt; Town
@@ -233,7 +223,7 @@ export function ClientLogAndSimulatorCard({
                 '2026/11/13 18:10:00 [INFO Client 1] Generating level 33 area "1_Labyrinth_1_1" with seed 8888',
               ])
             }
-            className="rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2.5 py-1.5 text-left text-amber-200 cursor-pointer"
+            className="rounded-md bg-hud-subtle hover:opacity-80 px-2.5 py-1.5 text-left text-hud-warn cursor-pointer"
           >
             6. Enter Labyrinth
           </button>
@@ -241,10 +231,8 @@ export function ClientLogAndSimulatorCard({
           <button
             type="button"
             onClick={onToggleSimInGameTree}
-            className={`col-span-2 rounded-lg border px-2.5 py-1.5 text-left inline-flex items-center justify-between cursor-pointer ${
-              inGameTreeOpen
-                ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-200"
-                : "border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-200"
+            className={`col-span-2 rounded-md bg-hud-subtle px-2.5 py-1.5 text-left inline-flex items-center justify-between cursor-pointer ${
+              inGameTreeOpen ? "text-hud-ok font-semibold" : "text-hud-accent"
             }`}
           >
             <span className="inline-flex items-center gap-1.5">

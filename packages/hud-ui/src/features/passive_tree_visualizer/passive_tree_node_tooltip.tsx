@@ -47,23 +47,20 @@ export function PassiveTreeCanvasOverlays({
     <>
       <div
         data-tree-overlay-ui="true"
-        className="absolute bottom-3 left-3 flex flex-wrap gap-1.5 rounded-lg bg-black/85 border border-neutral-800 px-2.5 py-1.5 text-[11px] text-neutral-300 backdrop-blur"
+        className="absolute bottom-3 left-3 flex flex-wrap gap-2.5 rounded-lg bg-hud-surface/90 border border-hud-hairline px-3 py-1.5 text-[11px] text-hud-muted backdrop-blur"
       >
-        <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />Allocated</span>
-        <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-amber-500" />New Bracket</span>
-        <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-cyan-500" />Earlier</span>
-        <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-rose-500" />Respec</span>
-        <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-indigo-500" />Mastery</span>
+        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" />Allocated</span>
+        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" />New Bracket</span>
+        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-cyan-500" />Earlier</span>
+        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-500" />Respec</span>
+        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-indigo-500" />Mastery</span>
       </div>
 
-      <div
-        data-tree-overlay-ui="true"
-        className="absolute bottom-3 right-3 flex flex-col gap-1"
-      >
+      <div data-tree-overlay-ui="true" className="absolute bottom-3 right-3 flex flex-col gap-1">
         <button
           type="button"
           onClick={onZoomIn}
-          className="p-2 rounded-lg bg-neutral-950/90 border border-neutral-800 hover:border-neutral-600 text-neutral-200 cursor-pointer"
+          className="p-2 rounded-lg bg-hud-surface/90 border border-hud-hairline hover:bg-hud-subtle text-hud-text cursor-pointer"
           title="Zoom In"
         >
           <Plus className="h-4 w-4" />
@@ -71,7 +68,7 @@ export function PassiveTreeCanvasOverlays({
         <button
           type="button"
           onClick={onZoomOut}
-          className="p-2 rounded-lg bg-neutral-950/90 border border-neutral-800 hover:border-neutral-600 text-neutral-200 cursor-pointer"
+          className="p-2 rounded-lg bg-hud-surface/90 border border-hud-hairline hover:bg-hud-subtle text-hud-text cursor-pointer"
           title="Zoom Out"
         >
           <Minus className="h-4 w-4" />
@@ -81,20 +78,28 @@ export function PassiveTreeCanvasOverlays({
       {inspectedNode && (
         <div
           data-tree-overlay-ui="true"
-          className="absolute top-3 left-3 max-w-xs sm:max-w-sm rounded-xl bg-neutral-950/95 border border-neutral-700 p-3 shadow-2xl space-y-2 backdrop-blur"
+          className="absolute top-3 left-3 max-w-xs sm:max-w-sm rounded-xl bg-hud-surface/95 border border-hud-hairline p-3.5 shadow-2xl space-y-2 backdrop-blur"
         >
           <div className="flex items-start justify-between gap-2">
             <div>
-              <div className="text-sm font-bold text-white leading-tight">{inspectedNode.name}</div>
-              <div className="text-[11px] font-mono text-neutral-400">
+              <div className="text-sm font-bold text-hud-text leading-tight">{inspectedNode.name}</div>
+              <div className="text-[11px] font-mono text-hud-muted">
                 {inspectedNode.ascendancyName ? `${inspectedNode.ascendancyName} · ` : ""}
-                {inspectedNode.isKeystone ? "Keystone" : inspectedNode.isMastery ? "Mastery" : inspectedNode.isNotable ? "Notable" : inspectedNode.isJewelSocket ? "Jewel Socket" : "Passive"}
+                {inspectedNode.isKeystone
+                  ? "Keystone"
+                  : inspectedNode.isMastery
+                    ? "Mastery"
+                    : inspectedNode.isNotable
+                      ? "Notable"
+                      : inspectedNode.isJewelSocket
+                        ? "Jewel Socket"
+                        : "Passive"}
               </div>
             </div>
             <button
               type="button"
               onClick={() => onSelectNode(null)}
-              className="text-neutral-400 hover:text-white cursor-pointer"
+              className="text-hud-muted hover:text-hud-text cursor-pointer"
               title="Close Inspector"
             >
               <X className="h-4 w-4" />
@@ -102,8 +107,10 @@ export function PassiveTreeCanvasOverlays({
           </div>
 
           {inspectedMasteryStats && (
-            <div className="rounded-lg bg-indigo-500/15 border border-indigo-500/40 p-2 text-xs text-indigo-100 space-y-0.5">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-indigo-300">PoB Chosen Mastery</div>
+            <div className="border-l-2 border-hud-accent pl-2.5 py-0.5 text-xs text-hud-text space-y-0.5">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-hud-accent">
+                PoB Chosen Mastery
+              </div>
               {inspectedMasteryStats.map((st, idx) => (
                 <div key={idx}>{st}</div>
               ))}
@@ -111,9 +118,9 @@ export function PassiveTreeCanvasOverlays({
           )}
 
           {inspectedNode.stats.length > 0 && (
-            <ul className="space-y-0.5 text-xs text-neutral-200">
+            <ul className="space-y-0.5 text-xs text-hud-text/90">
               {inspectedNode.stats.map((st, idx) => (
-                <li key={idx}>• {st}</li>
+                <li key={idx}>· {st}</li>
               ))}
             </ul>
           )}
@@ -122,25 +129,15 @@ export function PassiveTreeCanvasOverlays({
             diff.targetSet.has(inspectedNode.id) ||
             diff.respecFromPrevIds.includes(inspectedNode.id) ||
             diff.offSpecAllocatedIds.includes(inspectedNode.id)) && (
-            <div className="flex flex-wrap gap-1.5 pt-1 border-t border-neutral-800">
+            <div className="pt-1.5 border-t border-hud-hairline text-xs font-semibold">
               {inspectedAllocated ? (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-200 text-xs font-semibold">
-                  Allocated
-                </span>
+                <span className="text-hud-ok">Allocated</span>
               ) : diff.targetSet.has(inspectedNode.id) ? (
-                <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded-lg border text-xs font-semibold ${
-                    diff.addedInBracketIds.includes(inspectedNode.id)
-                      ? "bg-amber-500/15 border-amber-500/40 text-amber-200"
-                      : "bg-cyan-500/15 border-cyan-500/40 text-cyan-200"
-                  }`}
-                >
+                <span className={diff.addedInBracketIds.includes(inspectedNode.id) ? "text-hud-warn" : "text-hud-cold"}>
                   Unallocated · {inspectedPath.length} pt{inspectedPath.length === 1 ? "" : "s"} away
                 </span>
               ) : (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-rose-500/15 border border-rose-500/40 text-rose-200 text-xs font-semibold">
-                  Respec Target
-                </span>
+                <span className="text-hud-danger">Respec Target</span>
               )}
             </div>
           )}

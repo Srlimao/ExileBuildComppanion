@@ -1,4 +1,5 @@
 import type { HudContextMode, HudSessionSnapshot } from "@exile-hud/core";
+import { ThemeSelectorPopover } from "@exile-hud/hud-ui";
 import { GripHorizontal, Lock, Maximize2, Minimize2, Pencil, Pin, Unlock, X } from "lucide-react";
 import { useState } from "react";
 import {
@@ -32,7 +33,7 @@ interface OverlayTopDockBarProps {
   onHideOverlay: () => void;
 }
 
-/** Compact overlay header: slim status pill when click-through locked; full dock/drag controls when unlocked. */
+/** Compact overlay header: slim status strip when click-through locked; full dock/drag controls when unlocked. */
 export function OverlayTopDockBar({
   snapshot,
   config,
@@ -50,17 +51,15 @@ export function OverlayTopDockBar({
 
   if (config.clickThroughLocked) {
     return (
-      <div className="px-2.5 py-1 border-b border-neutral-800/80 bg-black/75 flex items-center justify-between gap-2 text-[11px] select-none pointer-events-none">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <span className="px-1.5 py-0.5 rounded bg-indigo-500/20 border border-indigo-500/40 text-indigo-200 font-semibold">
-            {activeDisplayMode}
-          </span>
-          <span className="text-neutral-300 truncate font-medium">
+      <div className="px-3 py-1.5 border-b border-hud-hairline flex items-center justify-between gap-2 text-[11px] select-none pointer-events-none">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-hud-accent font-semibold tracking-wide">{activeDisplayMode}</span>
+          <span className="text-hud-text/90 truncate font-medium">
             {snapshot ? `${snapshot.currentAreaName} (Lv ${snapshot.currentAreaLevel})` : "Waiting for PC host..."}
           </span>
         </div>
-        <span className="inline-flex items-center gap-1 text-neutral-400 font-mono shrink-0">
-          <Lock className="h-3 w-3 text-amber-400" />
+        <span className="inline-flex items-center gap-1 text-hud-muted font-mono shrink-0">
+          <Lock className="h-3 w-3 text-hud-warn" />
           {config.toggleLockHotkey !== "OFF" ? `${config.toggleLockHotkey} unlock` : "Locked"}
         </span>
       </div>
@@ -75,19 +74,19 @@ export function OverlayTopDockBar({
   };
 
   return (
-    <div className="border-b border-neutral-800 bg-black/90 select-none">
-      <div className="px-2 py-1.5 flex items-center justify-between gap-1.5 flex-wrap">
+    <div className="border-b border-hud-hairline select-none">
+      <div className="px-2.5 py-1.5 flex items-center justify-between gap-1.5 flex-wrap">
         <button
           type="button"
           onMouseDown={handleDragStart}
           title="Drag overlay window"
-          className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-[11px] text-neutral-300 hover:text-white cursor-move shrink-0"
+          className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded hover:bg-hud-subtle text-[11px] text-hud-muted hover:text-hud-text cursor-move shrink-0"
         >
-          <GripHorizontal className="h-3.5 w-3.5 text-indigo-400" />
-          <span className="font-semibold text-white">{activeDisplayMode}</span>
+          <GripHorizontal className="h-3.5 w-3.5 text-hud-accent" />
+          <span className="font-semibold text-hud-text">{activeDisplayMode}</span>
         </button>
 
-        <div className="flex items-center gap-0.5 bg-neutral-950 border border-neutral-800 rounded-md p-0.5 text-[10px]">
+        <div className="flex items-center gap-2 text-[11px]">
           {(["AUTO", "FIELD", "TOWN", "LAB", "TREE"] as const).map((m) => {
             const active = m === "AUTO" ? previewModeOverride === null : previewModeOverride === m;
             return (
@@ -95,8 +94,10 @@ export function OverlayTopDockBar({
                 key={m}
                 type="button"
                 onClick={() => onSelectPreviewMode(m === "AUTO" ? null : m)}
-                className={`px-1.5 py-0.5 rounded cursor-pointer ${
-                  active ? "bg-indigo-600 text-white font-semibold" : "text-neutral-400 hover:text-white"
+                className={`pb-0.5 border-b-2 cursor-pointer transition-colors ${
+                  active
+                    ? "border-hud-accent text-hud-accent font-semibold"
+                    : "border-transparent text-hud-muted hover:text-hud-text"
                 }`}
               >
                 {m}
@@ -110,24 +111,24 @@ export function OverlayTopDockBar({
             <button
               type="button"
               onClick={onToggleFullTree}
-              className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border inline-flex items-center gap-1 cursor-pointer ${
+              className={`px-1.5 py-0.5 rounded text-[10px] font-semibold inline-flex items-center gap-1 cursor-pointer ${
                 fullTreeExpanded
-                  ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-200"
-                  : "bg-neutral-900 border-neutral-700 text-neutral-200 hover:border-neutral-500"
+                  ? "text-hud-ok bg-hud-subtle"
+                  : "text-hud-muted hover:text-hud-text hover:bg-hud-subtle"
               }`}
             >
               {fullTreeExpanded ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
-              {fullTreeExpanded ? "Compact" : "Expand Tree"}
+              {fullTreeExpanded ? "Compact" : "Expand"}
             </button>
           )}
 
           <button
             type="button"
             onClick={() => setShowPositionMenu((v) => !v)}
-            className={`px-1.5 py-0.5 rounded text-[10px] border cursor-pointer ${
+            className={`px-1.5 py-0.5 rounded text-[10px] cursor-pointer ${
               showPositionMenu
-                ? "bg-indigo-600/25 border-indigo-500/50 text-indigo-200"
-                : "bg-neutral-900 border-neutral-800 text-neutral-300 hover:text-white"
+                ? "text-hud-accent bg-hud-subtle font-semibold"
+                : "text-hud-muted hover:text-hud-text hover:bg-hud-subtle"
             }`}
           >
             Dock
@@ -137,10 +138,10 @@ export function OverlayTopDockBar({
             type="button"
             onClick={onToggleEditMode}
             title="Edit overlay widgets"
-            className={`p-1 rounded border cursor-pointer ${
+            className={`p-1 rounded cursor-pointer ${
               editMode
-                ? "bg-indigo-600 border-indigo-500 text-white"
-                : "bg-neutral-900 border-neutral-800 text-neutral-300 hover:text-white"
+                ? "bg-hud-accent text-hud-accent-fg"
+                : "text-hud-muted hover:text-hud-text hover:bg-hud-subtle"
             }`}
           >
             <Pencil className="h-3 w-3" />
@@ -150,20 +151,20 @@ export function OverlayTopDockBar({
             type="button"
             onClick={() => onUpdateConfig({ ...config, pinOnDesktop: !config.pinOnDesktop })}
             title={config.pinOnDesktop ? "Pinned across Alt-Tab" : "Auto-hides on Alt-Tab"}
-            className={`p-1 rounded border cursor-pointer ${
-              config.pinOnDesktop
-                ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300"
-                : "bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-white"
+            className={`p-1 rounded cursor-pointer ${
+              config.pinOnDesktop ? "text-hud-ok bg-hud-subtle" : "text-hud-muted hover:text-hud-text hover:bg-hud-subtle"
             }`}
           >
             <Pin className="h-3 w-3" />
           </button>
 
+          <ThemeSelectorPopover compact />
+
           <button
             type="button"
             onClick={() => onUpdateConfig({ ...config, clickThroughLocked: true })}
             title={`Lock click-through (${config.toggleLockHotkey})`}
-            className="px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-500/40 text-amber-200 hover:bg-amber-500/25 text-[10px] font-semibold inline-flex items-center gap-1 cursor-pointer"
+            className="px-1.5 py-0.5 rounded text-hud-warn hover:bg-hud-subtle text-[10px] font-semibold inline-flex items-center gap-1 cursor-pointer"
           >
             <Unlock className="h-3 w-3" /> Lock
           </button>
@@ -172,7 +173,7 @@ export function OverlayTopDockBar({
             type="button"
             onClick={onHideOverlay}
             title={`Hide overlay (${config.toggleVisibilityHotkey})`}
-            className="p-1 rounded bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white cursor-pointer"
+            className="p-1 rounded text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
           >
             <X className="h-3 w-3" />
           </button>
@@ -180,24 +181,24 @@ export function OverlayTopDockBar({
       </div>
 
       {showPositionMenu && (
-        <div className="px-2 py-1.5 border-t border-neutral-800/80 bg-neutral-950/90 flex items-center justify-between gap-2 flex-wrap text-[11px]">
+        <div className="px-2.5 py-1.5 border-t border-hud-hairline flex items-center justify-between gap-2 flex-wrap text-[11px]">
           <div className="flex items-center gap-1">
             {DOCK_PILLS.map((pill) => (
               <button
                 key={pill.id}
                 type="button"
                 onClick={() => void applyOverlayDockPresetIpc(pill.id)}
-                className={`px-1.5 py-0.5 rounded font-mono border cursor-pointer ${
+                className={`px-1.5 py-0.5 rounded font-mono cursor-pointer ${
                   config.dockPreset === pill.id
-                    ? "bg-indigo-600 border-indigo-500 text-white"
-                    : "bg-black border-neutral-800 text-neutral-400 hover:text-white"
+                    ? "bg-hud-accent text-hud-accent-fg font-semibold"
+                    : "text-hud-muted hover:text-hud-text hover:bg-hud-subtle"
                 }`}
               >
                 {pill.label}
               </button>
             ))}
           </div>
-          <label className="flex items-center gap-1.5 text-neutral-400 font-mono">
+          <label className="flex items-center gap-1.5 text-hud-muted font-mono">
             <span>{config.opacityPercent}%</span>
             <input
               type="range"
@@ -205,7 +206,8 @@ export function OverlayTopDockBar({
               max={100}
               value={config.opacityPercent}
               onChange={(e) => onUpdateConfig({ ...config, opacityPercent: Number(e.target.value) })}
-              className="w-20 accent-indigo-500 cursor-pointer"
+              className="w-20 cursor-pointer"
+              style={{ accentColor: "var(--hud-accent)" }}
             />
           </label>
         </div>

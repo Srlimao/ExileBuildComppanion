@@ -1,5 +1,5 @@
 import type { ViewerPresenceEntry } from "@exile-hud/core";
-import { Check, Copy, Link2, RefreshCw, Users, Wifi, WifiOff } from "lucide-react";
+import { Check, Copy, RefreshCw, Users, Wifi, WifiOff } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
 
@@ -43,17 +43,14 @@ export function QrRoomPairingCard({
   };
 
   return (
-    <section className="bg-neutral-950 border border-neutral-800 rounded-xl p-3.5 space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Link2 className="h-4 w-4 text-indigo-400" />
-          <h2 className="text-sm font-semibold text-white">Second-Screen Pairing</h2>
-        </div>
+    <section className="space-y-4">
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
+          Second-Screen Pairing
+        </h2>
         <span
-          className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium ${
-            relayConnected
-              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-              : "border-amber-500/30 bg-amber-500/10 text-amber-300"
+          className={`inline-flex items-center gap-1 text-xs font-medium ${
+            relayConnected ? "text-hud-ok" : "text-hud-warn"
           }`}
         >
           {relayConnected ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
@@ -61,46 +58,46 @@ export function QrRoomPairingCard({
         </span>
       </div>
 
-      <div className="flex items-center gap-3.5">
-        <div className="bg-white p-2 rounded-lg shrink-0">
+      <div className="flex items-start gap-4">
+        <div className="bg-white p-2 rounded-lg border border-hud-hairline shrink-0">
           <QRCodeSVG value={pairUrl} size={92} level="M" includeMargin={false} />
         </div>
 
-        <div className="flex-1 min-w-0 space-y-2">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-lg bg-black border border-neutral-800 px-2.5 py-1.5">
-              <div className="text-[10px] uppercase tracking-wider text-neutral-400">Room ID</div>
-              <div className="font-mono text-sm font-semibold tracking-wider text-white">{roomId}</div>
+        <div className="flex-1 min-w-0 space-y-3">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.12em] text-hud-muted">Room ID</div>
+              <div className="font-mono text-base font-semibold tracking-wider text-hud-text">{roomId}</div>
             </div>
-            <div className="rounded-lg bg-black border border-neutral-800 px-2.5 py-1.5 flex items-center justify-between">
+            <div className="flex items-start justify-between">
               <div>
-                <div className="text-[10px] uppercase tracking-wider text-neutral-400">PIN</div>
-                <div className="font-mono text-sm font-semibold tracking-widest text-amber-300">{pin}</div>
+                <div className="text-[10px] uppercase tracking-[0.12em] text-hud-muted">PIN</div>
+                <div className="font-mono text-base font-semibold tracking-widest text-hud-quest">{pin}</div>
               </div>
               <button
                 type="button"
                 onClick={onRotatePin}
                 title="Rotate 4-digit PIN"
-                className="text-neutral-400 hover:text-white p-1 cursor-pointer"
+                className="text-hud-muted hover:text-hud-text p-1 rounded hover:bg-hud-subtle cursor-pointer"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
               </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handleCopyUrl}
-              className="flex-1 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 px-2.5 py-1.5 text-xs font-medium text-neutral-200 flex items-center justify-center gap-1.5 cursor-pointer"
+              className="flex-1 rounded-md bg-hud-accent text-hud-accent-fg hover:opacity-90 px-2.5 py-1.5 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              {copiedUrl ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+              {copiedUrl ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
               {copiedUrl ? "Copied URL" : "Copy Pair Link"}
             </button>
             <button
               type="button"
               onClick={onReconnectRelay}
-              className="rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 px-2.5 py-1.5 text-xs font-medium text-indigo-300 cursor-pointer"
+              className="rounded-md px-2.5 py-1.5 text-xs font-medium text-hud-accent hover:bg-hud-subtle cursor-pointer"
             >
               Sync Room
             </button>
@@ -109,13 +106,11 @@ export function QrRoomPairingCard({
       </div>
 
       {relayError && (
-        <div className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-lg px-2.5 py-1.5">
-          {relayError}
-        </div>
+        <p className="border-l-2 border-hud-warn pl-2.5 py-0.5 text-xs text-hud-warn">{relayError}</p>
       )}
 
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between text-[11px] text-neutral-400">
+      <div className="space-y-1.5 pt-2 border-t border-hud-hairline">
+        <div className="flex items-center justify-between text-[11px] text-hud-muted">
           <span>Cloudflare Relay URL</span>
           <button
             type="button"
@@ -123,7 +118,7 @@ export function QrRoomPairingCard({
               setDraftRelay("http://127.0.0.1:8787");
               onChangeRelayUrl("http://127.0.0.1:8787");
             }}
-            className="text-indigo-400 hover:text-indigo-300 cursor-pointer"
+            className="text-hud-accent hover:underline cursor-pointer"
           >
             Use local :8787
           </button>
@@ -133,24 +128,24 @@ export function QrRoomPairingCard({
             type="url"
             value={draftRelay}
             onChange={(e) => setDraftRelay(e.target.value)}
-            className="flex-1 rounded-lg bg-black border border-neutral-800 px-2.5 py-1 text-xs font-mono text-neutral-200 focus:outline-none focus:border-indigo-500"
+            className="flex-1 rounded-md bg-hud-subtle border-b border-hud-hairline px-2.5 py-1.5 text-xs font-mono text-hud-text focus:outline-none focus:border-hud-accent"
           />
           <button
             type="button"
             onClick={() => onChangeRelayUrl(draftRelay.trim())}
-            className="rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 px-2.5 py-1 text-xs text-neutral-200 cursor-pointer"
+            className="rounded-md px-2.5 py-1.5 text-xs font-medium text-hud-text hover:bg-hud-subtle cursor-pointer"
           >
             Set
           </button>
         </div>
       </div>
 
-      <div className="flex items-center justify-between text-[11px] text-neutral-400 pt-1 border-t border-neutral-800/70">
-        <span className="inline-flex items-center gap-1">
+      <div className="flex items-center justify-between text-[11px] text-hud-muted pt-2 border-t border-hud-hairline">
+        <span className="inline-flex items-center gap-1.5">
           <Users className="h-3.5 w-3.5" />
           Connected screens: {viewers.length}
         </span>
-        <span className="truncate max-w-[200px] text-neutral-300">
+        <span className="truncate max-w-[200px] text-hud-text">
           {viewers.length > 0 ? viewers.map((v) => v.deviceLabel).join(", ") : "None yet"}
         </span>
       </div>

@@ -1,4 +1,4 @@
-import { Eye, EyeOff, Lock, Monitor, Pin, RotateCcw, Unlock } from "lucide-react";
+import { Eye, EyeOff, Lock, Pin, RotateCcw, Unlock } from "lucide-react";
 import {
   applyOverlayDockPresetIpc,
   type OverlayDockPreset,
@@ -31,36 +31,29 @@ export function OverlayControlCenterCard({
   onResetOverlayLayouts,
 }: OverlayControlCenterCardProps) {
   return (
-    <div className="rounded-xl bg-neutral-950 border border-neutral-800 p-4 space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Monitor className="h-4 w-4 text-indigo-400" />
-          <div>
-            <h2 className="text-sm font-bold text-white">Local PC Game Overlay</h2>
-            <p className="text-[11px] text-neutral-400">
-              Floating HUD over Path of Exile — saved locally on PC, zero Cloudflare sync.
-            </p>
-          </div>
+    <div className="space-y-4">
+      <div className="flex items-baseline justify-between gap-2">
+        <div>
+          <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
+            Local PC Game Overlay
+          </h2>
+          <p className="text-xs text-hud-muted mt-0.5">
+            Floating HUD over Path of Exile — saved locally on PC, zero Cloudflare sync.
+          </p>
         </div>
-        <span
-          className={`px-2 py-0.5 rounded text-[11px] font-mono border ${
-            config.enabled
-              ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300"
-              : "bg-neutral-900 border-neutral-800 text-neutral-400"
-          }`}
-        >
+        <span className={`text-xs font-mono shrink-0 ${config.enabled ? "text-hud-ok" : "text-hud-muted"}`}>
           {config.enabled ? "ACTIVE" : "HIDDEN"}
         </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={onToggleVisibility}
-          className={`px-3 py-2 rounded-lg text-xs font-semibold border inline-flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`flex-1 px-3 py-2 rounded-md text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer ${
             config.enabled
-              ? "bg-indigo-600 hover:bg-indigo-500 border-indigo-500 text-white"
-              : "bg-black hover:bg-neutral-900 border-neutral-700 text-neutral-200"
+              ? "bg-hud-accent text-hud-accent-fg hover:opacity-90"
+              : "bg-hud-subtle text-hud-text hover:opacity-90"
           }`}
         >
           {config.enabled ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
@@ -70,10 +63,10 @@ export function OverlayControlCenterCard({
         <button
           type="button"
           onClick={onToggleLock}
-          className={`px-3 py-2 rounded-lg text-xs font-semibold border inline-flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`flex-1 px-3 py-2 rounded-md text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer ${
             config.clickThroughLocked
-              ? "bg-amber-500/15 border-amber-500/40 text-amber-200 hover:bg-amber-500/25"
-              : "bg-black border-neutral-700 text-neutral-200 hover:bg-neutral-900"
+              ? "bg-hud-subtle text-hud-warn"
+              : "text-hud-text hover:bg-hud-subtle"
           }`}
         >
           {config.clickThroughLocked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
@@ -81,24 +74,25 @@ export function OverlayControlCenterCard({
         </button>
       </div>
 
-      <label className="flex items-center justify-between gap-3 rounded-lg bg-black border border-neutral-800 px-3 py-2 cursor-pointer">
-        <span className="flex items-center gap-2 text-xs text-neutral-200">
-          <Pin className="h-3.5 w-3.5 text-emerald-400" />
+      <label className="flex items-center justify-between gap-3 py-1 cursor-pointer">
+        <span className="flex items-center gap-2 text-xs text-hud-text">
+          <Pin className="h-3.5 w-3.5 text-hud-ok" />
           Pin Always Visible on Desktop
-          <span className="text-[11px] text-neutral-500">(off = auto-hide on Alt-Tab)</span>
+          <span className="text-[11px] text-hud-muted">(off = auto-hide on Alt-Tab)</span>
         </span>
         <input
           type="checkbox"
           checked={config.pinOnDesktop}
           onChange={(e) => onUpdateConfig({ ...config, pinOnDesktop: e.target.checked })}
-          className="accent-indigo-500 cursor-pointer"
+          className="cursor-pointer"
+          style={{ accentColor: "var(--hud-accent)" }}
         />
       </label>
 
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between text-xs text-neutral-400">
+      <div className="space-y-1.5 pt-2 border-t border-hud-hairline">
+        <div className="flex items-center justify-between text-xs text-hud-muted">
           <span>Snap Dock Position</span>
-          <span className="font-mono text-[11px] text-neutral-500">
+          <span className="font-mono text-[11px]">
             {config.dockPreset === "free" ? "Free Floating" : `Docked: ${config.dockPreset}`}
           </span>
         </div>
@@ -108,10 +102,10 @@ export function OverlayControlCenterCard({
               key={opt.id}
               type="button"
               onClick={() => void applyOverlayDockPresetIpc(opt.id)}
-              className={`px-2 py-1.5 rounded-lg text-xs border cursor-pointer ${
+              className={`px-2 py-1.5 rounded-md text-xs cursor-pointer transition-colors ${
                 config.dockPreset === opt.id
-                  ? "bg-indigo-600/25 border-indigo-500/60 text-indigo-200 font-semibold"
-                  : "bg-black border-neutral-800 text-neutral-300 hover:border-neutral-700"
+                  ? "bg-hud-accent text-hud-accent-fg font-semibold"
+                  : "bg-hud-subtle text-hud-muted hover:text-hud-text"
               }`}
             >
               {opt.label}
@@ -121,9 +115,9 @@ export function OverlayControlCenterCard({
       </div>
 
       <div className="space-y-1">
-        <div className="flex items-center justify-between text-xs text-neutral-400">
+        <div className="flex items-center justify-between text-xs text-hud-muted">
           <span>Backdrop Opacity</span>
-          <span className="font-mono text-neutral-200">{config.opacityPercent}%</span>
+          <span className="font-mono text-hud-text">{config.opacityPercent}%</span>
         </div>
         <input
           type="range"
@@ -131,12 +125,13 @@ export function OverlayControlCenterCard({
           max={100}
           value={config.opacityPercent}
           onChange={(e) => onUpdateConfig({ ...config, opacityPercent: Number(e.target.value) })}
-          className="w-full accent-indigo-500 cursor-pointer"
+          className="w-full cursor-pointer"
+          style={{ accentColor: "var(--hud-accent)" }}
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <label className="space-y-1 text-xs text-neutral-400">
+      <div className="grid grid-cols-2 gap-3">
+        <label className="space-y-1 text-xs text-hud-muted">
           <span>Toggle Overlay Key</span>
           <input
             type="text"
@@ -145,10 +140,10 @@ export function OverlayControlCenterCard({
               onUpdateConfig({ ...config, toggleVisibilityHotkey: e.target.value.toUpperCase() })
             }
             placeholder="F7"
-            className="w-full rounded-lg bg-black border border-neutral-800 px-2.5 py-1.5 text-xs font-mono text-white"
+            className="w-full rounded-md bg-hud-subtle border-b border-hud-hairline px-2.5 py-1.5 text-xs font-mono text-hud-text focus:outline-none focus:border-hud-accent"
           />
         </label>
-        <label className="space-y-1 text-xs text-neutral-400">
+        <label className="space-y-1 text-xs text-hud-muted">
           <span>Click-Through Lock Key</span>
           <input
             type="text"
@@ -157,19 +152,19 @@ export function OverlayControlCenterCard({
               onUpdateConfig({ ...config, toggleLockHotkey: e.target.value.toUpperCase() })
             }
             placeholder="F8"
-            className="w-full rounded-lg bg-black border border-neutral-800 px-2.5 py-1.5 text-xs font-mono text-white"
+            className="w-full rounded-md bg-hud-subtle border-b border-hud-hairline px-2.5 py-1.5 text-xs font-mono text-hud-text focus:outline-none focus:border-hud-accent"
           />
         </label>
       </div>
 
-      <div className="flex items-center justify-between gap-2 pt-1 border-t border-neutral-800/80">
-        <p className="text-[11px] text-neutral-500">
+      <div className="flex items-center justify-between gap-2 pt-2 border-t border-hud-hairline">
+        <p className="text-[11px] text-hud-muted">
           Requires Path of Exile in Windowed Fullscreen or Windowed mode.
         </p>
         <button
           type="button"
           onClick={onResetOverlayLayouts}
-          className="px-2.5 py-1 rounded-lg border border-neutral-800 bg-black text-[11px] text-neutral-300 hover:border-neutral-600 inline-flex items-center gap-1 shrink-0 cursor-pointer"
+          className="px-2 py-1 rounded-md text-[11px] text-hud-muted hover:text-hud-text hover:bg-hud-subtle inline-flex items-center gap-1 shrink-0 cursor-pointer"
         >
           <RotateCcw className="h-3 w-3" /> Reset Layouts
         </button>

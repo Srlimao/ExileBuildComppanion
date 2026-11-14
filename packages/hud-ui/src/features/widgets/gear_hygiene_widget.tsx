@@ -1,13 +1,12 @@
 import type { HudSessionSnapshot, TargetItemSetSummary, TargetItemSlotSummary } from "@exile-hud/core";
-import { AlertTriangle, CheckCircle2, Hammer, ShieldCheck, Wrench } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const RARITY_COLOR_CLASS: Record<TargetItemSlotSummary["rarity"], string> = {
-  unique: "text-amber-400",
-  rare: "text-yellow-300",
-  magic: "text-indigo-300",
-  normal: "text-neutral-200",
-  unknown: "text-neutral-200",
+  unique: "text-hud-warn",
+  rare: "text-hud-quest",
+  magic: "text-hud-cold",
+  normal: "text-hud-text",
+  unknown: "text-hud-text",
 };
 
 function selectDefaultItemSet(itemSets: TargetItemSetSummary[], characterLevel: number): TargetItemSetSummary | null {
@@ -40,61 +39,44 @@ export function GearHygieneWidget({ snapshot }: { snapshot: HudSessionSnapshot }
 
   return (
     <div className="flex flex-col h-full gap-2.5 min-h-0">
-      <div className="flex items-center justify-between gap-2 shrink-0">
-        <div className="flex items-center gap-2">
-          <Wrench className="h-5 w-5 text-amber-400" />
-          <h2 className="text-lg font-bold text-white">Gear & Flasks</h2>
-        </div>
-        <span className="text-xs font-mono text-neutral-400">
+      <div className="flex items-baseline justify-between gap-2 shrink-0">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">Gear &amp; Flasks</h2>
+        <span className="text-xs font-mono text-hud-muted tabular-nums">
           {activeSet ? `${activeSet.slots.length} slots · ` : ""}
           {issues.length + craftSuggestions.length} alerts
         </span>
       </div>
 
-      <div className="space-y-1.5 shrink-0">
+      <div className="space-y-1 shrink-0">
         {issues.map((issue) => (
           <div
             key={issue.id}
-            className={`rounded-lg border px-2.5 py-2 text-xs flex items-start gap-2 ${
-              issue.severity === "warn"
-                ? "border-amber-500/40 bg-amber-500/10 text-amber-200"
-                : "border-neutral-800 bg-black text-neutral-200"
+            className={`text-xs flex items-baseline gap-2 ${
+              issue.severity === "warn" ? "text-hud-warn" : "text-hud-text/85"
             }`}
           >
-            <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
+            <span className="h-1.5 w-1.5 rounded-full bg-current shrink-0 self-center" />
             <span>{issue.message}</span>
           </div>
         ))}
 
         {craftSuggestions.map((s) => (
-          <div
-            key={s.id}
-            className="rounded-lg border border-indigo-500/35 bg-indigo-500/10 px-2.5 py-2 text-xs flex items-start justify-between gap-2 text-indigo-100"
-          >
-            <div className="flex items-start gap-2 min-w-0">
-              <Hammer className="h-3.5 w-3.5 text-indigo-400 shrink-0 mt-0.5" />
-              <span>
-                <span className="font-semibold text-indigo-200">Bench Craft:</span>{" "}
-                {s.problemSummary} → {s.prescription}
-              </span>
-            </div>
-            <span className="shrink-0 rounded bg-black/70 border border-indigo-500/30 px-1.5 py-0.5 font-mono text-[10px] text-amber-300">
-              {s.costLabel}
+          <div key={s.id} className="text-xs flex items-baseline justify-between gap-2">
+            <span className="text-hud-text/90">
+              <span className="text-hud-accent font-medium">Bench:</span> {s.problemSummary} → {s.prescription}
             </span>
+            <span className="shrink-0 font-mono text-hud-quest">{s.costLabel}</span>
           </div>
         ))}
 
         {issues.length === 0 && craftSuggestions.length === 0 && (
-          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-2 text-xs text-emerald-300 flex items-center gap-2">
-            <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-            <span>Boots, flasks, and weapon tiers look good.</span>
-          </div>
+          <p className="text-xs text-hud-ok">Boots, flasks, and weapon tiers look good.</p>
         )}
       </div>
 
       {itemSets.length > 0 && activeSet && (
-        <div className="flex flex-col gap-2 min-h-0 flex-1 border-t border-neutral-800 pt-2">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 shrink-0">
+        <div className="flex flex-col gap-2 min-h-0 flex-1 border-t border-hud-hairline pt-2.5">
+          <div className="flex items-center gap-3 overflow-x-auto pb-1 shrink-0">
             {itemSets.map((set) => {
               const isSelected = set.id === activeSet.id;
               return (
@@ -102,10 +84,10 @@ export function GearHygieneWidget({ snapshot }: { snapshot: HudSessionSnapshot }
                   key={set.id}
                   type="button"
                   onClick={() => setSelectedSetId(set.id)}
-                  className={`px-2 py-1 rounded-md text-[11px] font-medium whitespace-nowrap border cursor-pointer transition-colors ${
+                  className={`pb-0.5 text-xs whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
                     isSelected
-                      ? "bg-indigo-600 border-indigo-500 text-white"
-                      : "bg-black border-neutral-800 text-neutral-400 hover:text-neutral-200"
+                      ? "border-hud-accent text-hud-text font-semibold"
+                      : "border-transparent text-hud-muted hover:text-hud-text"
                   }`}
                 >
                   {set.title} · Lv {set.minLevel}+
@@ -114,44 +96,32 @@ export function GearHygieneWidget({ snapshot }: { snapshot: HudSessionSnapshot }
             })}
           </div>
 
-          <div className="space-y-1.5 overflow-y-auto pr-0.5 flex-1">
+          <div className="divide-y divide-hud-hairline overflow-y-auto pr-0.5 flex-1">
             {activeSet.slots.length === 0 ? (
-              <div className="text-xs text-neutral-500 py-2">No item slots populated in this set.</div>
+              <div className="text-xs text-hud-muted py-2">No item slots populated in this set.</div>
             ) : (
               activeSet.slots.map((slot) => (
-                <div
-                  key={`${slot.slotName}:${slot.itemId}`}
-                  className="rounded-lg bg-black border border-neutral-800 px-2.5 py-2 space-y-1"
-                >
-                  <div className="flex items-center justify-between gap-2 text-[10px]">
-                    <span className="uppercase tracking-wide font-semibold text-neutral-400">{slot.slotName}</span>
-                    <div className="flex items-center gap-1.5">
-                      {slot.verifiedEquipped && (
-                        <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 bg-emerald-500/15 text-emerald-400 font-medium">
-                          <ShieldCheck className="h-3 w-3" />
-                          Equipped
-                        </span>
-                      )}
-                      {slot.sockets && (
-                        <span className="font-mono rounded bg-neutral-900 border border-neutral-800 px-1.5 py-0.5 text-neutral-300">
-                          {slot.sockets}
-                        </span>
-                      )}
-                      <span className="font-mono text-neutral-500">Lv {slot.levelReq}</span>
+                <div key={`${slot.slotName}:${slot.itemId}`} className="py-2 first:pt-0 space-y-0.5">
+                  <div className="flex items-baseline justify-between gap-2 text-[11px]">
+                    <span className="uppercase tracking-wider font-semibold text-hud-muted">{slot.slotName}</span>
+                    <div className="flex items-center gap-2 font-mono">
+                      {slot.verifiedEquipped && <span className="text-hud-ok font-sans font-medium">Equipped</span>}
+                      {slot.sockets && <span className="text-hud-muted">{slot.sockets}</span>}
+                      <span className="text-hud-dim">Lv {slot.levelReq}</span>
                     </div>
                   </div>
 
                   <div className={`text-xs font-semibold leading-tight ${RARITY_COLOR_CLASS[slot.rarity]}`}>
                     {slot.itemName}
                     {slot.baseType !== slot.itemName && (
-                      <span className="text-[11px] font-normal text-neutral-400"> · {slot.baseType}</span>
+                      <span className="text-[11px] font-normal text-hud-muted"> · {slot.baseType}</span>
                     )}
                   </div>
 
                   {slot.mods.length > 0 && (
                     <ul className="space-y-0.5 pt-0.5">
                       {slot.mods.slice(0, 4).map((mod, idx) => (
-                        <li key={idx} className="text-[11px] text-neutral-300 leading-snug">
+                        <li key={idx} className="text-[11px] text-hud-muted leading-snug">
                           {mod}
                         </li>
                       ))}

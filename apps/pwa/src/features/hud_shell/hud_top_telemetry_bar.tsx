@@ -1,8 +1,8 @@
 import type { DeviceFormFactor, HudContextMode, HudSessionSnapshot } from "@exile-hud/core";
-import { Download, LayoutGrid, Lock, Pin, RefreshCw, RotateCcw, ShieldAlert, Unlock, Wifi, WifiOff } from "lucide-react";
-import { useEffect, useState } from "react";
-import { LATEST_PORTABLE_EXE_URL } from "../desktop_download/github_latest_release_client.js";
+import { Pin, Settings, ShieldAlert, Unlock, Wifi, WifiOff } from "lucide-react";
+import { useState } from "react";
 import type { ConnectionPhase } from "../pairing_and_connection/edge_websocket_room_client.js";
+import { HudSettingsDrawer } from "./hud_settings_drawer.js";
 
 interface HudTopTelemetryBarProps {
   snapshot: HudSessionSnapshot;
@@ -24,7 +24,7 @@ function getXpRangeLabel(playerLvl: number, zoneLvl: number): { label: string; o
   const safeDelta = 3 + Math.floor(playerLvl / 16);
   const diff = Math.abs(playerLvl - zoneLvl);
   return {
-    label: `Zone ${zoneLvl} (${diff <= safeDelta ? "100% XP" : `Δ${diff}`})`,
+    label: `Z${zoneLvl} (${diff <= safeDelta ? "100% XP" : `Δ${diff}`})`,
     ok: diff <= safeDelta,
   };
 }
@@ -44,190 +44,147 @@ export function HudTopTelemetryBar({
   onResetProgress,
   onOpenPairingModal,
 }: HudTopTelemetryBarProps) {
-  const [confirmingReset, setConfirmingReset] = useState(false);
-
-  useEffect(() => {
-    if (!confirmingReset) return;
-    const timer = window.setTimeout(() => setConfirmingReset(false), 4000);
-    return () => window.clearTimeout(timer);
-  }, [confirmingReset]);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const xp = getXpRangeLabel(snapshot.characterLevel, snapshot.currentAreaLevel);
   const modePills: HudContextMode[] = ["FIELD", "TOWN", "LAB", "TREE"];
+  const showFinishLayoutPill = editLayoutMode && activeDisplayMode !== "TREE" && activeDisplayMode !== "STANDBY";
 
   return (
-    <header className="sticky top-0 z-30 bg-black/95 backdrop-blur border-b border-neutral-800 px-3 sm:px-5 py-3">
-      <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white truncate">
-              {snapshot.currentAreaName}
-            </h1>
-            <span
-              className={`px-2.5 py-0.5 rounded-lg text-xs font-mono tabular-nums border ${
-                xp.ok
-                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
-                  : "border-amber-500/40 bg-amber-500/10 text-amber-300"
-              }`}
-            >
-              {xp.label}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs sm:text-sm text-neutral-400 mt-0.5 flex-wrap">
-            <span className="font-medium text-neutral-200">
-              Act {snapshot.currentAct} • Lv {snapshot.characterLevel} {snapshot.characterClass}
-            </span>
-            {snapshot.characterName && <span className="text-neutral-500">({snapshot.characterName})</span>}
-            {snapshot.isEndgameOnlyFallback && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs">
-                <ShieldAlert className="h-3.5 w-3.5" /> Fallback Leveling
+    <>
+      <header className="sticky top-0 z-30 bg-hud-bg/92 backdrop-blur border-b border-hud-hairline px-4 sm:px-6 py-3 transition-colors">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-baseline gap-2.5 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-hud-text truncate">
+                {snapshot.currentAreaName}
+              </h1>
+              <span className={`text-xs font-mono tabular-nums ${xp.ok ? "text-hud-ok" : "text-hud-warn"}`}>
+                {xp.label}
               </span>
-            )}
-          </div>
-        </div>
+            </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center rounded-lg bg-neutral-950 border border-neutral-800 p-0.5">
-            {modePills.map((m) => {
-              const selected = activeDisplayMode === m;
-              const isPinned = previewModeOverride === m;
-              const treePulse = m === "TREE" && Boolean(snapshot.inGameTreeOpen);
-              return (
+            <div className="flex items-center gap-2 text-xs text-hud-muted mt-0.5 flex-wrap">
+              <span>
+                Act {snapshot.currentAct} · Lv {snapshot.characterLevel} {snapshot.characterClass}
+              </span>
+              {snapshot.characterName && <span className="text-hud-dim">({snapshot.characterName})</span>}
+              {snapshot.isEndgameOnlyFallback && (
+                <span className="inline-flex items-center gap-1 text-hud-warn font-medium">
+                  <ShieldAlert className="h-3 w-3" /> Fallback Leveling
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            <nav className="flex items-center gap-3" aria-label="HUD context mode">
+              {modePills.map((m) => {
+                const selected = activeDisplayMode === m;
+                const isPinned = previewModeOverride === m;
+                const treePulse = m === "TREE" && Boolean(snapshot.inGameTreeOpen);
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    title={isPinned ? `${m} pinned — auto-switch paused (click to unpin)` : `View ${m}`}
+                    onClick={() => onSelectPreviewMode(previewModeOverride === m ? null : m)}
+                    className={`inline-flex items-center gap-1.5 pb-0.5 border-b-2 text-xs font-semibold tracking-wide transition-colors cursor-pointer ${
+                      selected
+                        ? "border-hud-accent text-hud-accent"
+                        : "border-transparent text-hud-muted hover:text-hud-text"
+                    }`}
+                  >
+                    {treePulse && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-hud-ok animate-pulse" aria-hidden="true" />
+                    )}
+                    <span>{m}</span>
+                    {isPinned && (
+                      <span
+                        data-testid={`mode-pin-${m.toLowerCase()}`}
+                        className="inline-flex items-center justify-center text-hud-danger"
+                        aria-label="Pinned mode"
+                      >
+                        <Pin className="h-3 w-3 rotate-45" />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+
+            <span className="hidden sm:inline-block h-3.5 w-px bg-hud-hairline" aria-hidden="true" />
+
+            <div className="flex items-center gap-2 text-xs">
+              {showFinishLayoutPill && (
                 <button
-                  key={m}
                   type="button"
-                  title={isPinned ? `${m} pinned — auto-switch paused (click to unpin)` : `View ${m}`}
-                  onClick={() => onSelectPreviewMode(previewModeOverride === m ? null : m)}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold tracking-wide transition-colors cursor-pointer ${
-                    isPinned
-                      ? "bg-indigo-600 text-white ring-1 ring-red-400/70"
-                      : selected
-                        ? "bg-indigo-600 text-white"
-                        : "text-neutral-400 hover:text-neutral-200"
-                  }`}
+                  data-testid="hud-finish-layout-btn"
+                  onClick={onToggleEditLayout}
+                  title={`Finish editing ${formFactor} layout`}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-hud-accent text-hud-accent-fg text-xs font-semibold cursor-pointer"
                 >
-                  {treePulse && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
-                  )}
-                  <span>{m}</span>
-                  {isPinned && (
-                    <span
-                      data-testid={`mode-pin-${m.toLowerCase()}`}
-                      className="inline-flex items-center justify-center rounded-full bg-red-950/90 border border-red-400/80 p-0.5 shadow-sm"
-                      aria-label="Pinned mode"
-                    >
-                      <Pin className="h-3 w-3 text-red-400 fill-red-500 rotate-45" />
-                    </span>
-                  )}
+                  <Unlock className="h-3.5 w-3.5" />
+                  <span>Done</span>
                 </button>
-              );
-            })}
-          </div>
+              )}
 
-          <button
-            type="button"
-            onClick={onTriggerManualSync}
-            title="Sync Character Gear Now"
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium cursor-pointer ${
-              snapshot.characterSyncStatus === "OFFLINE_FALLBACK"
-                ? "border-amber-500/40 bg-amber-500/10 text-amber-300"
-                : "border-neutral-800 bg-neutral-950 text-neutral-300 hover:border-neutral-700"
-            }`}
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-            {snapshot.characterSyncStatus === "OFFLINE_FALLBACK" ? "API Fallback" : "Sync"}
-          </button>
+              <span
+                className={`inline-flex items-center gap-1 text-xs font-mono ${
+                  isDemo
+                    ? "text-hud-accent"
+                    : connectionPhase === "connected"
+                      ? "text-hud-ok"
+                      : "text-hud-warn"
+                }`}
+              >
+                {connectionPhase === "connected" || isDemo ? (
+                  <Wifi className="h-3.5 w-3.5" />
+                ) : (
+                  <WifiOff className="h-3.5 w-3.5" />
+                )}
+                <span>{isDemo ? "DEMO" : connectionPhase.toUpperCase()}</span>
+                {wakeLocked && <span className="text-hud-ok">· AWAKE</span>}
+              </span>
 
-          {confirmingReset ? (
-            <div className="inline-flex items-center gap-1">
               <button
                 type="button"
-                data-testid="pwa-confirm-reset-progress-btn"
-                onClick={() => {
-                  onResetProgress();
-                  setConfirmingReset(false);
-                }}
-                className="px-2.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-xs font-semibold text-white cursor-pointer"
+                data-testid="hud-settings-trigger"
+                aria-label="Open settings"
+                aria-expanded={settingsOpen}
+                title="Settings"
+                onClick={() => setSettingsOpen(true)}
+                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-hud-muted hover:text-hud-text hover:bg-hud-subtle transition-colors cursor-pointer"
               >
-                Confirm Reset
-              </button>
-              <button
-                type="button"
-                data-testid="pwa-cancel-reset-progress-btn"
-                onClick={() => setConfirmingReset(false)}
-                className="px-2 py-1.5 rounded-lg border border-neutral-700 bg-neutral-950 hover:border-neutral-600 text-xs text-neutral-300 cursor-pointer"
-              >
-                Cancel
+                <Settings className="h-4 w-4" />
+                <span
+                  className="h-2 w-2 rounded-full shrink-0"
+                  style={{
+                    backgroundColor: "var(--hud-accent)",
+                    boxShadow: "0 0 0 1px var(--hud-hairline)",
+                  }}
+                />
               </button>
             </div>
-          ) : (
-            <button
-              type="button"
-              data-testid="pwa-reset-progress-btn"
-              onClick={() => setConfirmingReset(true)}
-              title="Reset all checklist and gem checks back to zero"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-neutral-800 bg-neutral-950 text-neutral-300 hover:border-red-500/50 hover:text-red-300 text-xs font-medium cursor-pointer transition-colors"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              <span>Reset Checks</span>
-            </button>
-          )}
-
-          {activeDisplayMode !== "TREE" && activeDisplayMode !== "STANDBY" && (
-            <button
-              type="button"
-              onClick={onToggleEditLayout}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer ${
-                editLayoutMode
-                  ? "border-indigo-500 bg-indigo-500/20 text-indigo-200"
-                  : "border-neutral-800 bg-neutral-950 text-neutral-300 hover:border-neutral-700"
-              }`}
-            >
-              {editLayoutMode ? <Unlock className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
-              <LayoutGrid className="h-3.5 w-3.5" />
-              {editLayoutMode ? `Editing (${formFactor})` : "Layout"}
-            </button>
-          )}
-
-          <a
-            href={LATEST_PORTABLE_EXE_URL}
-            title="Download Ready-to-Run Windows PC Companion (.exe)"
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-xs font-semibold"
-          >
-            <Download className="h-3.5 w-3.5" />
-            <span>Download PC App</span>
-          </a>
-
-          {isDemo && onOpenPairingModal && (
-            <button
-              type="button"
-              onClick={onOpenPairingModal}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 text-xs font-semibold cursor-pointer"
-            >
-              Pair PC
-            </button>
-          )}
-
-          <div
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-mono ${
-              isDemo
-                ? "border-indigo-500/40 bg-indigo-500/10 text-indigo-300"
-                : connectionPhase === "connected"
-                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
-                  : "border-amber-500/40 bg-amber-500/10 text-amber-300"
-            }`}
-          >
-            {connectionPhase === "connected" || isDemo ? (
-              <Wifi className="h-3.5 w-3.5" />
-            ) : (
-              <WifiOff className="h-3.5 w-3.5" />
-            )}
-            <span>{isDemo ? "DEMO" : connectionPhase.toUpperCase()}</span>
-            {wakeLocked && <span className="text-emerald-400">• AWAKE</span>}
           </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      <HudSettingsDrawer
+        open={settingsOpen}
+        snapshot={snapshot}
+        activeDisplayMode={activeDisplayMode}
+        editLayoutMode={editLayoutMode}
+        formFactor={formFactor}
+        connectionPhase={connectionPhase}
+        wakeLocked={wakeLocked}
+        isDemo={isDemo}
+        onClose={() => setSettingsOpen(false)}
+        onToggleEditLayout={onToggleEditLayout}
+        onTriggerManualSync={onTriggerManualSync}
+        onResetProgress={onResetProgress}
+        onOpenPairingModal={onOpenPairingModal}
+      />
+    </>
   );
 }

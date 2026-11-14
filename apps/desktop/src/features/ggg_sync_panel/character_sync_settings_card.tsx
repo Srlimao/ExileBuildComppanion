@@ -1,5 +1,5 @@
 import type { CharacterSyncStatus } from "@exile-hud/core";
-import { KeyRound, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
+import { KeyRound, RefreshCw, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 interface CharacterSyncSettingsCardProps {
@@ -16,10 +16,10 @@ interface CharacterSyncSettingsCardProps {
 }
 
 const STATUS_STYLE: Record<CharacterSyncStatus, string> = {
-  ONLINE_PUBLIC: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
-  ONLINE_POESESSID: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
-  OFFLINE_FALLBACK: "border-amber-500/30 bg-amber-500/10 text-amber-300",
-  UNCONFIGURED: "border-neutral-700 bg-neutral-900 text-neutral-300",
+  ONLINE_PUBLIC: "text-hud-ok",
+  ONLINE_POESESSID: "text-hud-ok",
+  OFFLINE_FALLBACK: "text-hud-warn",
+  UNCONFIGURED: "text-hud-muted",
 };
 
 export function CharacterSyncSettingsCard({
@@ -43,47 +43,44 @@ export function CharacterSyncSettingsCard({
   };
 
   return (
-    <section className="bg-neutral-950 border border-neutral-800 rounded-xl p-3.5 space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="h-4 w-4 text-emerald-400" />
-          <h2 className="text-sm font-semibold text-white">GGG Character Telemetry</h2>
-        </div>
-        <span className={`rounded-md border px-2 py-0.5 text-[10px] font-mono ${STATUS_STYLE[syncStatus]}`}>
-          {syncStatus}
-        </span>
+    <section className="space-y-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
+          GGG Character Telemetry
+        </h2>
+        <span className={`text-[11px] font-mono ${STATUS_STYLE[syncStatus]}`}>{syncStatus}</span>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-3">
         <label className="space-y-1">
-          <span className="text-[11px] text-neutral-400">Account (#1234 supported)</span>
+          <span className="text-[11px] text-hud-muted">Account (#1234 supported)</span>
           <input
             type="text"
             value={accountName}
             onChange={(e) => onChangeAccount(e.target.value)}
             placeholder="Name#1234"
-            className="w-full rounded-lg bg-black border border-neutral-800 px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+            className="w-full rounded-md bg-hud-subtle border-b border-hud-hairline px-2.5 py-1.5 text-xs text-hud-text focus:outline-none focus:border-hud-accent"
           />
         </label>
         <label className="space-y-1">
-          <span className="text-[11px] text-neutral-400">Active Character</span>
+          <span className="text-[11px] text-hud-muted">Active Character</span>
           <input
             type="text"
             value={characterName}
             onChange={(e) => onChangeCharacter(e.target.value)}
             placeholder="Auto-detected or name"
-            className="w-full rounded-lg bg-black border border-neutral-800 px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+            className="w-full rounded-md bg-hud-subtle border-b border-hud-hairline px-2.5 py-1.5 text-xs text-hud-text focus:outline-none focus:border-hud-accent"
           />
         </label>
       </div>
 
-      <div className="rounded-lg bg-black border border-neutral-800 p-2.5 space-y-2">
+      <div className="space-y-2 pt-1">
         <div className="flex items-center justify-between text-[11px]">
-          <span className="inline-flex items-center gap-1.5 text-neutral-300 font-medium">
-            <KeyRound className="h-3.5 w-3.5 text-neutral-400" />
+          <span className="inline-flex items-center gap-1.5 text-hud-text font-medium">
+            <KeyRound className="h-3.5 w-3.5 text-hud-muted" />
             Optional Private Profile Keychain
           </span>
-          <span className={hasStoredSession ? "text-emerald-400" : "text-neutral-500"}>
+          <span className={hasStoredSession ? "text-hud-ok" : "text-hud-muted"}>
             {hasStoredSession ? "Stored in DPAPI Keychain" : "Public mode only"}
           </span>
         </div>
@@ -94,12 +91,12 @@ export function CharacterSyncSettingsCard({
             value={draftSession}
             onChange={(e) => setDraftSession(e.target.value)}
             placeholder={hasStoredSession ? "Stored locally (paste to replace)" : "Paste POESESSID (stays on PC)"}
-            className="flex-1 rounded-lg bg-neutral-950 border border-neutral-800 px-2.5 py-1 text-xs font-mono text-white focus:outline-none focus:border-indigo-500"
+            className="flex-1 rounded-md bg-hud-subtle border-b border-hud-hairline px-2.5 py-1.5 text-xs font-mono text-hud-text focus:outline-none focus:border-hud-accent"
           />
           <button
             type="button"
             onClick={() => void handleSaveSecret()}
-            className="rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 px-2.5 py-1 text-xs text-neutral-200 cursor-pointer"
+            className="rounded-md hover:bg-hud-subtle px-2.5 py-1.5 text-xs text-hud-text cursor-pointer"
           >
             Save
           </button>
@@ -108,7 +105,7 @@ export function CharacterSyncSettingsCard({
               type="button"
               onClick={() => void onClearPoesessid()}
               title="Clear POESESSID from Windows Credential Manager"
-              className="rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 px-2 py-1 text-red-300 cursor-pointer"
+              className="rounded-md hover:bg-hud-subtle px-2 py-1 text-hud-danger cursor-pointer"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
@@ -116,14 +113,14 @@ export function CharacterSyncSettingsCard({
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] text-neutral-400 truncate">
+      <div className="flex items-center justify-between gap-2 pt-1">
+        <span className="text-[11px] text-hud-muted truncate">
           {syncMessage ?? "CORS-free Rust poller · 45s cooldown + circuit breaker"}
         </span>
         <button
           type="button"
           onClick={() => void onForceSync()}
-          className="rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 px-2.5 py-1 text-xs font-medium text-emerald-300 inline-flex items-center gap-1 shrink-0 cursor-pointer"
+          className="rounded-md hover:bg-hud-subtle px-2.5 py-1 text-xs font-medium text-hud-ok inline-flex items-center gap-1 shrink-0 cursor-pointer"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Force Sync

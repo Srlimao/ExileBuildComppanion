@@ -39,16 +39,16 @@ export function PassiveTreeLevelStepperBar({
   onFocusAscendancy,
 }: PassiveTreeLevelStepperBarProps) {
   return (
-    <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-2.5 space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 flex-wrap">
+    <div className="space-y-2.5 pb-2 border-b border-hud-hairline">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <div className="flex items-center gap-4 flex-wrap">
           <button
             type="button"
             onClick={() => onSelectManualSpec(null)}
-            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border cursor-pointer ${
+            className={`inline-flex items-center gap-1 pb-1 border-b-2 text-xs font-semibold cursor-pointer transition-colors ${
               manualSpecId === null
-                ? "border-indigo-500 bg-indigo-500/20 text-indigo-200"
-                : "border-neutral-800 bg-black text-neutral-400 hover:text-neutral-200"
+                ? "border-hud-accent text-hud-text"
+                : "border-transparent text-hud-muted hover:text-hud-text"
             }`}
           >
             <Sparkles className="h-3 w-3" />
@@ -63,14 +63,14 @@ export function PassiveTreeLevelStepperBar({
                 key={spec.id}
                 type="button"
                 onClick={() => onSelectManualSpec(spec.id)}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs border cursor-pointer transition-colors ${
+                className={`inline-flex items-baseline gap-1.5 pb-1 border-b-2 text-xs cursor-pointer transition-colors ${
                   active
-                    ? "border-indigo-500/80 bg-indigo-600/25 text-white font-semibold"
-                    : "border-neutral-800 bg-black text-neutral-400 hover:border-neutral-700 hover:text-neutral-200"
+                    ? "border-hud-accent text-hud-text font-semibold"
+                    : "border-transparent text-hud-muted hover:text-hud-text"
                 }`}
               >
                 <span>{spec.title}</span>
-                <span className="text-[10px] font-mono tabular-nums text-neutral-400">
+                <span className="text-[11px] font-mono tabular-nums text-hud-muted">
                   Lv{spec.minLevel} · {allocCount}/{spec.nodeIds.length}
                 </span>
               </button>
@@ -78,45 +78,41 @@ export function PassiveTreeLevelStepperBar({
           })}
         </div>
 
-        <div className="flex items-center gap-1.5 flex-wrap text-[11px] font-mono tabular-nums">
-          <span className="px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">
+        <div className="flex items-center gap-3 flex-wrap text-xs font-mono tabular-nums">
+          <span className="text-hud-ok">
             Alloc {diff.allocatedInTargetIds.length}/{diff.selectedSpec?.nodeIds.length ?? 0}
           </span>
           {diff.unallocatedAddedIds.length > 0 && (
-            <span className="px-2 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-300">
-              +{diff.unallocatedAddedIds.length} Bracket
-            </span>
+            <span className="text-hud-warn">+{diff.unallocatedAddedIds.length} Bracket</span>
           )}
           {diff.earlierMissedIds.length > 0 && (
-            <span className="px-2 py-0.5 rounded bg-cyan-500/15 border border-cyan-500/30 text-cyan-300">
-              {diff.earlierMissedIds.length} Earlier
-            </span>
+            <span className="text-hud-cold">{diff.earlierMissedIds.length} Earlier</span>
           )}
           {(diff.respecFromPrevIds.length > 0 || diff.offSpecAllocatedIds.length > 0) && (
-            <span className="px-2 py-0.5 rounded bg-rose-500/15 border border-rose-500/30 text-rose-300">
+            <span className="text-hud-danger">
               Respec {Math.max(diff.respecFromPrevIds.length, diff.offSpecAllocatedIds.length)}
             </span>
           )}
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-neutral-800/80">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="h-3.5 w-3.5 text-neutral-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+          <Search className="h-3.5 w-3.5 text-hud-muted absolute left-2.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search nodes or stats (e.g. Fire, Life, Mastery)..."
-            className="w-full rounded-lg bg-black border border-neutral-800 pl-8 pr-16 py-1 text-xs text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-indigo-500"
+            className="w-full rounded-md bg-hud-subtle border-b border-hud-hairline pl-8 pr-16 py-1.5 text-xs text-hud-text placeholder:text-hud-muted focus:outline-none focus:border-hud-accent"
           />
           {searchQuery && (
             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-              <span className="text-[10px] font-mono text-indigo-300">{searchMatchCount}</span>
+              <span className="text-[11px] font-mono text-hud-accent">{searchMatchCount}</span>
               <button
                 type="button"
                 onClick={() => onSearchChange("")}
-                className="text-neutral-400 hover:text-white cursor-pointer"
+                className="text-hud-muted hover:text-hud-text cursor-pointer"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -124,29 +120,29 @@ export function PassiveTreeLevelStepperBar({
           )}
         </div>
 
-        <div className="flex items-center gap-1.5 flex-wrap text-xs">
+        <div className="flex items-center gap-3 flex-wrap text-xs">
           <button
             type="button"
             onClick={onFitBracket}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black border border-neutral-800 hover:border-neutral-700 text-neutral-200 cursor-pointer"
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
           >
-            <LocateFixed className="h-3.5 w-3.5 text-indigo-400" />
+            <LocateFixed className="h-3.5 w-3.5 text-hud-accent" />
             Fit Bracket
           </button>
           <button
             type="button"
             onClick={onFocusNextTarget}
             disabled={diff.nextNotableTargets.length === 0}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black border border-neutral-800 hover:border-neutral-700 disabled:opacity-40 text-neutral-200 cursor-pointer"
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-hud-muted hover:text-hud-text hover:bg-hud-subtle disabled:opacity-40 cursor-pointer"
           >
-            <Crosshair className="h-3.5 w-3.5 text-amber-400" />
+            <Crosshair className="h-3.5 w-3.5 text-hud-quest" />
             Next Point
           </button>
           {hasAscendancyNodes && (
             <button
               type="button"
               onClick={onFocusAscendancy}
-              className="px-2.5 py-1 rounded-lg bg-black border border-neutral-800 hover:border-neutral-700 text-neutral-200 cursor-pointer"
+              className="px-2 py-1 rounded-md text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
             >
               Ascendancy
             </button>
@@ -154,10 +150,10 @@ export function PassiveTreeLevelStepperBar({
           <button
             type="button"
             onClick={onToggleShowFuture}
-            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border cursor-pointer ${
+            className={`inline-flex items-center gap-1 px-2 py-1 rounded-md cursor-pointer transition-colors ${
               showFuture
-                ? "border-violet-500/60 bg-violet-500/15 text-violet-200"
-                : "border-neutral-800 bg-black text-neutral-400 hover:text-neutral-200"
+                ? "text-hud-accent font-semibold bg-hud-subtle"
+                : "text-hud-muted hover:text-hud-text hover:bg-hud-subtle"
             }`}
           >
             <Eye className="h-3.5 w-3.5" />

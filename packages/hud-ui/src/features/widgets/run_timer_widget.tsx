@@ -1,5 +1,4 @@
 import type { HudSessionSnapshot } from "@exile-hud/core";
-import { Timer } from "lucide-react";
 import { useEffect, useState } from "react";
 
 function formatClock(ms: number): string {
@@ -24,36 +23,27 @@ export function RunTimerWidget({ snapshot }: { snapshot: HudSessionSnapshot }) {
 
   return (
     <div className="flex flex-col h-full justify-between gap-3">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Timer className="h-5 w-5 text-indigo-400" />
-          <h2 className="text-lg font-bold text-white">Run Timer</h2>
-        </div>
-        <span
-          className={`px-2 py-0.5 rounded-lg text-xs font-mono ${
-            snapshot.runTimerRunning
-              ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
-              : "bg-neutral-900 text-neutral-400 border border-neutral-800"
-          }`}
-        >
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">Run Timer</h2>
+        <span className={`text-xs font-mono ${snapshot.runTimerRunning ? "text-hud-ok" : "text-hud-muted"}`}>
           {snapshot.runTimerRunning ? "LIVE" : "PAUSED"}
         </span>
       </div>
 
-      <div className="rounded-lg bg-black border border-neutral-800 p-4 text-center">
-        <div className="text-3xl sm:text-4xl font-mono tabular-nums font-bold text-white tracking-tight">
+      <div>
+        <div className="text-3xl sm:text-4xl font-mono tabular-nums font-bold text-hud-text tracking-tight">
           {formatClock(displayMs)}
         </div>
-        <div className="text-xs text-neutral-400 mt-1">
-          Act {snapshot.currentAct} • Checkpoints {completedCount}/{snapshot.checkpoints.length}
+        <div className="text-xs text-hud-muted mt-1">
+          Act {snapshot.currentAct} · Checkpoints {completedCount}/{snapshot.checkpoints.length}
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 text-center">
+      <div className="grid grid-cols-3 gap-3 pt-1">
         {[1, 2, 3].map((act) => (
-          <div key={act} className="rounded-lg bg-black border border-neutral-800 py-1.5 px-2">
-            <div className="text-[11px] text-neutral-500">Act {act}</div>
-            <div className="text-xs font-mono tabular-nums text-neutral-200">
+          <div key={act}>
+            <div className="text-[11px] text-hud-muted">Act {act}</div>
+            <div className="text-xs font-mono tabular-nums text-hud-text">
               {snapshot.actSplitsMs[`act_${act}`] ? formatClock(snapshot.actSplitsMs[`act_${act}`]!) : "--:--"}
             </div>
           </div>

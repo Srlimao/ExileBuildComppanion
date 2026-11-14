@@ -1,6 +1,7 @@
 import type { HudSessionSnapshot } from "@exile-hud/core";
 import { poe1GameAdapter } from "@exile-hud/game-data";
-import { GitBranch, Maximize2 } from "lucide-react";
+import { Maximize2 } from "lucide-react";
+import { useHudTheme } from "../theme/hud_theme_provider.js";
 
 interface PassiveTreeWidgetProps {
   snapshot: HudSessionSnapshot;
@@ -8,6 +9,7 @@ interface PassiveTreeWidgetProps {
 }
 
 export function PassiveTreeWidget({ snapshot, onOpenFullTree }: PassiveTreeWidgetProps) {
+  const { treePalette } = useHudTheme();
   const tree = snapshot.passiveTree;
   const pts = tree.targetNodesPreview;
   const graphNodes = poe1GameAdapter.getPassiveTreeNodes();
@@ -44,36 +46,34 @@ export function PassiveTreeWidget({ snapshot, onOpenFullTree }: PassiveTreeWidge
   }
 
   return (
-    <div className="flex flex-col h-full gap-3">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center gap-2">
-          <GitBranch className="h-5 w-5 text-emerald-400" />
-          <h2 className="text-lg font-bold text-white">{tree.specName}</h2>
-        </div>
-        <div className="flex items-center gap-2 text-xs font-mono tabular-nums">
-          <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+    <div className="flex flex-col h-full gap-2.5">
+      <div className="flex items-baseline justify-between gap-2 flex-wrap">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">{tree.specName}</h2>
+        <div className="flex items-center gap-3 text-xs font-mono tabular-nums">
+          <span className="text-hud-ok">
             {tree.allocatedTargetCount}/{tree.targetNodeCount}
           </span>
           {tree.respecPointsNeeded > 0 && (
-            <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
-              Respec: {tree.respecPointsNeeded}
-            </span>
+            <span className="text-hud-warn">Respec {tree.respecPointsNeeded}</span>
           )}
           {onOpenFullTree && (
             <button
               type="button"
               onClick={onOpenFullTree}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 font-sans font-semibold cursor-pointer"
+              className="inline-flex items-center gap-1 text-hud-accent hover:opacity-80 font-sans font-semibold cursor-pointer"
             >
               <Maximize2 className="h-3 w-3" />
-              <span>Open Full Tree →</span>
+              <span>Full Tree</span>
             </button>
           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1 min-h-0">
-        <div className="rounded-lg bg-black border border-neutral-800 p-2 flex items-center justify-center min-h-[120px]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1 min-h-0">
+        <div
+          className="rounded-md p-2 flex items-center justify-center min-h-[120px]"
+          style={{ backgroundColor: treePalette.canvasBg }}
+        >
           <svg
             viewBox={`${minX} ${minY} ${Math.max(100, maxX - minX)} ${Math.max(100, maxY - minY)}`}
             className="w-full h-36"
@@ -85,10 +85,10 @@ export function PassiveTreeWidget({ snapshot, onOpenFullTree }: PassiveTreeWidge
                 y1={edge.y1}
                 x2={edge.x2}
                 y2={edge.y2}
-                stroke={edge.allocated ? "#10b981" : "#eab308"}
+                stroke={edge.allocated ? treePalette.allocated : treePalette.newBracket}
                 strokeWidth={edge.allocated ? 36 : 26}
                 strokeLinecap="round"
-                opacity={edge.allocated ? 0.75 : 0.45}
+                opacity={edge.allocated ? 0.8 : 0.55}
               />
             ))}
             {pts.map((node) => (
@@ -97,8 +97,8 @@ export function PassiveTreeWidget({ snapshot, onOpenFullTree }: PassiveTreeWidge
                 cx={node.x}
                 cy={node.y}
                 r={node.allocated ? 140 : 175}
-                fill={node.allocated ? "#22C55E" : "#EAB308"}
-                opacity={node.allocated ? 0.85 : 0.95}
+                fill={node.allocated ? treePalette.allocated : treePalette.newBracket}
+                opacity={node.allocated ? 0.88 : 0.96}
               >
                 <title>{node.label}</title>
               </circle>
@@ -107,20 +107,20 @@ export function PassiveTreeWidget({ snapshot, onOpenFullTree }: PassiveTreeWidge
         </div>
 
         <div className="space-y-1.5 overflow-y-auto">
-          <div className="text-xs uppercase tracking-wider text-neutral-500 font-semibold">Next Target Notables</div>
+          <div className="text-[11px] uppercase tracking-[0.12em] text-hud-muted font-semibold">
+            Next Notables
+          </div>
           {tree.remainingNotableNames.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
+            <ul className="space-y-1">
               {tree.remainingNotableNames.map((name) => (
-                <span
-                  key={name}
-                  className="px-2 py-1 rounded-lg bg-black border border-neutral-800 text-xs text-neutral-200"
-                >
-                  {name}
-                </span>
+                <li key={name} className="text-xs text-hud-text/90 flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-hud-quest shrink-0" />
+                  <span className="truncate">{name}</span>
+                </li>
               ))}
-            </div>
+            </ul>
           ) : (
-            <p className="text-sm text-emerald-400">All target notables allocated!</p>
+            <p className="text-sm text-hud-ok">All target notables allocated.</p>
           )}
         </div>
       </div>

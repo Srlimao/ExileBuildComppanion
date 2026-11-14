@@ -96,24 +96,26 @@ export function CustomizableModeWidgetGrid({
           ? "grid-cols-1 md:grid-cols-2"
           : "grid-cols-1 md:grid-cols-3";
 
-  const wrapperClass = compactOverlay ? "px-2 py-2 space-y-2" : "max-w-7xl mx-auto px-3 sm:px-5 py-4 space-y-3";
-  const gridGapClass = compactOverlay ? "gap-2 auto-rows-[minmax(120px,auto)]" : "gap-3 auto-rows-[minmax(190px,auto)]";
-  const cardBgClass = compactOverlay ? "bg-neutral-950/75" : "bg-neutral-950";
-  const contentPaddingClass = compactOverlay ? "p-2.5 flex-1 flex flex-col min-h-0" : "p-4 flex-1 flex flex-col min-h-0";
+  const wrapperClass = compactOverlay
+    ? "px-3 py-2.5 space-y-3"
+    : "max-w-7xl mx-auto px-4 sm:px-6 py-5 space-y-4";
+  const gridGapClass = compactOverlay
+    ? "gap-x-5 gap-y-5 auto-rows-[minmax(110px,auto)]"
+    : "gap-x-8 gap-y-7 auto-rows-[minmax(165px,auto)]";
 
   return (
     <div className={wrapperClass}>
       {editMode && (
-        <div className="rounded-xl border border-indigo-500/40 bg-indigo-950/20 px-3 py-2 flex items-center justify-between gap-2 flex-wrap">
-          <p className="text-xs sm:text-sm text-indigo-200">
-            Editing <span className="font-bold">{mode === "TREE_COMPACT" ? "TREE" : mode}</span> layout ({formFactor})
+        <div className="border-b border-dashed border-hud-accent/55 pb-2.5 flex items-center justify-between gap-2 flex-wrap">
+          <p className="text-xs sm:text-sm text-hud-muted">
+            Editing <span className="font-semibold text-hud-text">{mode === "TREE_COMPACT" ? "TREE" : mode}</span> layout ({formFactor})
           </p>
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
-            className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white inline-flex items-center gap-1.5 cursor-pointer"
+            className="px-3 py-1.5 rounded-md bg-hud-accent text-hud-accent-fg hover:opacity-90 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
           >
-            <Plus className="h-4 w-4" /> Add Widget
+            <Plus className="h-3.5 w-3.5" /> Add Widget
           </button>
         </div>
       )}
@@ -128,30 +130,46 @@ export function CustomizableModeWidgetGrid({
               onDragStart={() => setDraggedId(item.widgetId)}
               onDragOver={(e) => editMode && e.preventDefault()}
               onDrop={() => editMode && handleDropOn(item.widgetId)}
-              className={`${getSpanClasses(item, formFactor)} rounded-xl ${cardBgClass} border ${
-                editMode ? "border-indigo-500/50 ring-1 ring-indigo-500/20" : "border-neutral-800"
-              } flex flex-col overflow-hidden`}
+              className={`${getSpanClasses(item, formFactor)} flex flex-col min-w-0 ${
+                editMode ? "rounded-lg border border-dashed border-hud-accent/55 p-3" : ""
+              }`}
             >
               {editMode && (
-                <div className="px-3 py-1.5 bg-neutral-900/90 border-b border-neutral-800 flex items-center justify-between gap-2 text-xs">
-                  <span className="font-semibold text-indigo-300 truncate">{title}</span>
+                <div className="pb-2 mb-2 border-b border-hud-hairline flex items-center justify-between gap-2 text-xs">
+                  <span className="font-semibold text-hud-accent truncate">{title}</span>
                   <div className="flex items-center gap-1">
-                    <button type="button" onClick={() => moveItem(idx, -1)} className="p-1 rounded hover:bg-neutral-800 text-neutral-300 cursor-pointer">
+                    <button
+                      type="button"
+                      onClick={() => moveItem(idx, -1)}
+                      className="p-1 rounded hover:bg-hud-subtle text-hud-muted hover:text-hud-text cursor-pointer"
+                    >
                       <ArrowUp className="h-3.5 w-3.5" />
                     </button>
-                    <button type="button" onClick={() => moveItem(idx, 1)} className="p-1 rounded hover:bg-neutral-800 text-neutral-300 cursor-pointer">
+                    <button
+                      type="button"
+                      onClick={() => moveItem(idx, 1)}
+                      className="p-1 rounded hover:bg-hud-subtle text-hud-muted hover:text-hud-text cursor-pointer"
+                    >
                       <ArrowDown className="h-3.5 w-3.5" />
                     </button>
-                    <button type="button" onClick={() => cycleSpan(item.widgetId)} className="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-200 font-mono inline-flex items-center gap-1 cursor-pointer">
+                    <button
+                      type="button"
+                      onClick={() => cycleSpan(item.widgetId)}
+                      className="px-1.5 py-0.5 rounded bg-hud-subtle text-hud-text font-mono inline-flex items-center gap-1 cursor-pointer"
+                    >
                       <Maximize2 className="h-3 w-3" /> {item.colSpan}x{item.rowSpan}
                     </button>
-                    <button type="button" onClick={() => removeWidget(item.widgetId)} className="p-1 rounded hover:bg-red-500/20 text-red-400 cursor-pointer">
+                    <button
+                      type="button"
+                      onClick={() => removeWidget(item.widgetId)}
+                      className="p-1 rounded hover:bg-hud-subtle text-hud-danger cursor-pointer"
+                    >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 </div>
               )}
-              <div className={contentPaddingClass}>{renderWidget(item.widgetId)}</div>
+              <div className="flex-1 flex flex-col min-h-0">{renderWidget(item.widgetId)}</div>
             </div>
           );
         })}

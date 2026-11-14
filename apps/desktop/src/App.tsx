@@ -1,3 +1,4 @@
+import { ThemeSelectorPopover } from "@exile-hud/hud-ui";
 import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { DesktopUpdateFooterBar } from "./features/auto_updater/desktop_update_footer_bar.js";
@@ -40,42 +41,48 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-neutral-100 p-3 flex flex-col gap-3">
-      <header className="flex items-center justify-between gap-2 border-b border-neutral-800 pb-2">
+    <div className="min-h-screen bg-hud-bg text-hud-text px-4 py-3.5 flex flex-col gap-4 transition-colors">
+      <header className="flex items-center justify-between gap-2 border-b border-hud-hairline pb-2.5">
         <div className="min-w-0">
-          <h1 className="text-base font-bold tracking-tight text-white truncate">Exile Relay</h1>
-          <p className="text-[11px] font-mono text-neutral-400 truncate">
+          <h1 className="text-base font-bold tracking-tight text-hud-text truncate">Exile Relay</h1>
+          <p className="text-[11px] font-mono text-hud-muted truncate">
             {ctl.snapshot ? `${ctl.snapshot.mode} · ${ctl.snapshot.currentAreaName}` : "Initializing..."}
           </p>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
+
+        <div className="flex items-center gap-2.5 shrink-0">
           <button
             type="button"
             onClick={() => void toggleOverlayVisibilityIpc()}
             title={`Toggle local PC overlay (${overlayConfig.toggleVisibilityHotkey})`}
-            className={`px-2 py-1 rounded-lg border text-[11px] font-semibold inline-flex items-center gap-1 cursor-pointer ${
+            className={`px-2 py-1 rounded-md text-[11px] font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors ${
               overlayConfig.enabled
-                ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300"
-                : "bg-neutral-950 border-neutral-800 text-neutral-400 hover:text-neutral-200"
+                ? "text-hud-ok bg-hud-subtle"
+                : "text-hud-muted hover:text-hud-text hover:bg-hud-subtle"
             }`}
           >
             {overlayConfig.enabled ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
             HUD
           </button>
-          <div className="flex rounded-lg bg-neutral-950 border border-neutral-800 p-0.5 text-[11px]">
+
+          <nav className="flex items-center gap-2.5 text-xs">
             {(["pairing", "overlay", "build", "simulator"] as TabKey[]).map((key) => (
               <button
                 key={key}
                 type="button"
                 onClick={() => setTab(key)}
-                className={`px-2 py-1 rounded-md capitalize cursor-pointer ${
-                  tab === key ? "bg-indigo-600 text-white font-semibold" : "text-neutral-400 hover:text-neutral-200"
+                className={`pb-0.5 border-b-2 capitalize cursor-pointer transition-colors ${
+                  tab === key
+                    ? "border-hud-accent text-hud-accent font-semibold"
+                    : "border-transparent text-hud-muted hover:text-hud-text"
                 }`}
               >
                 {key === "build" ? "PoB" : key === "simulator" ? "Sim" : key === "overlay" ? "Overlay" : "Pair"}
               </button>
             ))}
-          </div>
+          </nav>
+
+          <ThemeSelectorPopover compact />
         </div>
       </header>
 
@@ -108,7 +115,7 @@ export function App() {
       )}
 
       {tab === "build" && (
-        <div className="space-y-3">
+        <div className="space-y-6">
           <PobBuildLoaderCard
             snapshot={ctl.snapshot}
             pobInput={ctl.pobInput}
@@ -124,18 +131,20 @@ export function App() {
             onApplyBuild={ctl.applyBuild}
           />
 
-          <CharacterSyncSettingsCard
-            accountName={ctl.accountName}
-            characterName={ctl.characterName}
-            syncStatus={ctl.snapshot?.characterSyncStatus ?? "UNCONFIGURED"}
-            hasStoredSession={ctl.hasStoredSession}
-            syncMessage={ctl.syncMessage}
-            onChangeAccount={ctl.setAccountName}
-            onChangeCharacter={ctl.setCharacterName}
-            onSavePoesessid={ctl.savePoesessid}
-            onClearPoesessid={ctl.clearPoesessid}
-            onForceSync={ctl.forceSync}
-          />
+          <div className="border-t border-hud-hairline pt-5">
+            <CharacterSyncSettingsCard
+              accountName={ctl.accountName}
+              characterName={ctl.characterName}
+              syncStatus={ctl.snapshot?.characterSyncStatus ?? "UNCONFIGURED"}
+              hasStoredSession={ctl.hasStoredSession}
+              syncMessage={ctl.syncMessage}
+              onChangeAccount={ctl.setAccountName}
+              onChangeCharacter={ctl.setCharacterName}
+              onSavePoesessid={ctl.savePoesessid}
+              onClearPoesessid={ctl.clearPoesessid}
+              onForceSync={ctl.forceSync}
+            />
+          </div>
         </div>
       )}
 

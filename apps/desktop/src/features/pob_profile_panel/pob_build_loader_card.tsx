@@ -1,5 +1,5 @@
 import type { HudSessionSnapshot, PobBuildPreview, PobSetSelection } from "@exile-hud/core";
-import { AlertTriangle, FileCode2, FolderOpen, RefreshCw, Route, Sparkles } from "lucide-react";
+import { AlertTriangle, FolderOpen, RefreshCw, Route, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { PobSetSelectorSection } from "./pob_set_selector_section.js";
 
@@ -94,13 +94,12 @@ export function PobBuildLoaderCard({
   const canOpenFolder = Boolean(pobStoragePath) && !pobStoragePath.startsWith("Browser ");
 
   return (
-    <section className="bg-neutral-950 border border-neutral-800 rounded-xl p-3.5 space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <FileCode2 className="h-4 w-4 text-yellow-400" />
-          <h2 className="text-sm font-semibold text-white">PoB & Campaign Route</h2>
-        </div>
-        <div className="inline-flex rounded-lg bg-black border border-neutral-800 p-0.5 text-[11px]">
+    <section className="space-y-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
+          PoB &amp; Campaign Route
+        </h2>
+        <div className="inline-flex items-center gap-3 text-[11px]">
           {[
             { label: "League Start", val: true },
             { label: "Twink", val: false },
@@ -109,8 +108,10 @@ export function PobBuildLoaderCard({
               key={opt.label}
               type="button"
               onClick={() => setDraftLeagueStart(opt.val)}
-              className={`px-2 py-0.5 rounded-md cursor-pointer ${
-                draftLeagueStart === opt.val ? "bg-indigo-600 text-white font-medium" : "text-neutral-400 hover:text-neutral-200"
+              className={`pb-0.5 border-b-2 cursor-pointer transition-colors ${
+                draftLeagueStart === opt.val
+                  ? "border-hud-accent text-hud-text font-semibold"
+                  : "border-transparent text-hud-muted hover:text-hud-text"
               }`}
             >
               {opt.label}
@@ -120,32 +121,32 @@ export function PobBuildLoaderCard({
       </div>
 
       {snapshot && (
-        <div className="rounded-lg bg-black border border-neutral-800 px-3 py-2 flex items-center justify-between text-xs">
+        <div className="flex items-baseline justify-between gap-2 text-xs">
           <div className="min-w-0">
-            <div className="font-semibold text-white truncate">{snapshot.buildName}</div>
-            <div className="text-[11px] text-neutral-400">
+            <div className="font-semibold text-hud-text truncate">{snapshot.buildName}</div>
+            <div className="text-[11px] text-hud-muted">
               {snapshot.characterClass} · {snapshot.ascendancyName} · {snapshot.checkpoints.length} steps
             </div>
           </div>
-          <span className="font-mono text-[11px] text-emerald-400 shrink-0">{snapshot.gemSteps.length} gems</span>
+          <span className="font-mono text-[11px] text-hud-ok shrink-0">{snapshot.gemSteps.length} gems</span>
         </div>
       )}
 
       {snapshot?.isEndgameOnlyFallback && snapshot.fallbackNotice && (
-        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-[11px] text-amber-200 flex items-start gap-2">
-          <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-amber-400" />
+        <div className="border-l-2 border-hud-warn pl-2.5 py-0.5 text-[11px] text-hud-warn flex items-start gap-2">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
           <span>{snapshot.fallbackNotice}</span>
         </div>
       )}
 
       <label className="block space-y-1">
-        <span className="text-[11px] text-neutral-400">pobb.in URL, PoB Export Code, or XML</span>
+        <span className="text-[11px] text-hud-muted">pobb.in URL, PoB Export Code, or XML</span>
         <textarea
           rows={3}
           value={draftPob}
           onChange={(e) => setDraftPob(e.target.value)}
           placeholder="https://pobb.in/... or raw PoB code"
-          className="w-full rounded-lg bg-black border border-neutral-800 p-2 text-xs font-mono text-neutral-200 focus:outline-none focus:border-indigo-500 resize-none"
+          className="w-full rounded-md bg-hud-subtle border-b border-hud-hairline p-2.5 text-xs font-mono text-hud-text focus:outline-none focus:border-hud-accent resize-none"
         />
       </label>
 
@@ -153,18 +154,18 @@ export function PobBuildLoaderCard({
         <button
           type="button"
           onClick={() => setShowCustomRoute((v) => !v)}
-          className="text-[11px] text-neutral-400 hover:text-neutral-200 inline-flex items-center gap-1 cursor-pointer"
+          className="text-[11px] text-hud-muted hover:text-hud-text inline-flex items-center gap-1 cursor-pointer"
         >
           <Route className="h-3.5 w-3.5" />
           {showCustomRoute ? "Hide custom .txt route" : "Custom route"}
         </button>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             disabled={inspecting || !draftPob.trim()}
             onClick={() => void runInspect(draftPob)}
-            className="rounded-lg bg-black border border-neutral-800 hover:border-neutral-700 disabled:opacity-50 px-2.5 py-1.5 text-[11px] text-neutral-200 inline-flex items-center gap-1 cursor-pointer"
+            className="rounded-md hover:bg-hud-subtle disabled:opacity-45 px-2.5 py-1.5 text-[11px] text-hud-text inline-flex items-center gap-1 cursor-pointer"
           >
             <RefreshCw className={`h-3 w-3 ${inspecting ? "animate-spin" : ""}`} />
             {inspecting ? "Reading..." : "Inspect Sets"}
@@ -182,7 +183,7 @@ export function PobBuildLoaderCard({
                 customRouteText: draftRoute,
               })
             }
-            className="rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 px-3 py-1.5 text-xs font-semibold text-white inline-flex items-center gap-1.5 cursor-pointer"
+            className="rounded-md bg-hud-accent text-hud-accent-fg hover:opacity-90 disabled:opacity-50 px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
           >
             <Sparkles className="h-3.5 w-3.5" />
             {loading ? "Compiling..." : "Compile & Save PoB"}
@@ -200,29 +201,29 @@ export function PobBuildLoaderCard({
           value={draftRoute}
           onChange={(e) => setDraftRoute(e.target.value)}
           placeholder="Optional exile-leveling route fragment override..."
-          className="w-full rounded-lg bg-black border border-neutral-800 p-2 text-xs font-mono text-neutral-200 focus:outline-none focus:border-indigo-500 resize-none"
+          className="w-full rounded-md bg-hud-subtle border-b border-hud-hairline p-2.5 text-xs font-mono text-hud-text focus:outline-none focus:border-hud-accent resize-none"
         />
       )}
 
       {(error || inspectError) && (
-        <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-2.5 py-1.5 text-[11px] text-red-300">
+        <p className="border-l-2 border-hud-danger pl-2.5 py-0.5 text-[11px] text-hud-danger">
           {error || inspectError}
-        </div>
+        </p>
       )}
 
       {pobStoragePath && (
-        <div className="border-t border-neutral-800 pt-2 flex items-center justify-between gap-2 text-[10px] text-neutral-400">
+        <div className="pt-2 flex items-center justify-between gap-2 text-[10px] text-hud-muted">
           <div className="min-w-0 truncate" title={pobStoragePath}>
-            <span className="text-neutral-500">Saved locally: </span>
-            <span className="font-mono text-neutral-300">{pobStoragePath}</span>
+            <span>Saved locally: </span>
+            <span className="font-mono text-hud-text">{pobStoragePath}</span>
           </div>
           {canOpenFolder && (
             <button
               type="button"
               onClick={() => void onOpenStorageFolder()}
-              className="shrink-0 rounded-md bg-black border border-neutral-800 hover:border-neutral-700 px-2 py-1 text-[10px] text-neutral-200 inline-flex items-center gap-1 cursor-pointer"
+              className="shrink-0 rounded-md hover:bg-hud-subtle px-2 py-1 text-[10px] text-hud-text inline-flex items-center gap-1 cursor-pointer"
             >
-              <FolderOpen className="h-3 w-3 text-indigo-400" />
+              <FolderOpen className="h-3 w-3 text-hud-accent" />
               Open Save Folder
             </button>
           )}

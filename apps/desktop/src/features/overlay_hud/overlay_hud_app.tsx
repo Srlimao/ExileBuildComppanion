@@ -136,10 +136,10 @@ export function OverlayHudApp() {
 
   return (
     <div
-      style={{ backgroundColor: `rgba(9, 9, 11, ${bgAlpha})` }}
+      style={{ backgroundColor: `rgba(var(--hud-bg-rgb, 0, 0, 0), ${bgAlpha})` }}
       className={`h-screen w-screen flex flex-col overflow-hidden rounded-xl border ${
-        config.clickThroughLocked ? "border-neutral-800/70" : "border-indigo-500/45 shadow-2xl"
-      } text-neutral-100`}
+        config.clickThroughLocked ? "border-hud-hairline" : "border-hud-accent/55 shadow-2xl"
+      } text-hud-text transition-colors`}
     >
       <OverlayFramelessResizeHandles unlocked={!config.clickThroughLocked} />
 
@@ -162,7 +162,7 @@ export function OverlayHudApp() {
 
       <div className={`flex-1 min-h-0 overflow-y-auto ${config.clickThroughLocked ? "pointer-events-none" : ""}`}>
         {!snapshot ? (
-          <div className="p-4 text-xs text-neutral-400">
+          <div className="p-4 text-xs text-hud-muted">
             Waiting for local telemetry snapshot from Exile Relay Control Center...
           </div>
         ) : (

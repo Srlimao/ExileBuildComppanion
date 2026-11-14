@@ -208,7 +208,7 @@ export function App() {
     layouts[formFactor]?.[effectiveMode] ?? getDefaultLayoutForMode(formFactor, effectiveMode);
 
   return (
-    <div className="min-h-screen bg-black text-neutral-100 pb-10">
+    <div className="min-h-screen bg-hud-bg text-hud-text pb-10 transition-colors">
       <HudTopTelemetryBar
         snapshot={snapshot}
         activeDisplayMode={effectiveMode}
@@ -267,7 +267,7 @@ export function App() {
         />
       )}
 
-      <footer className="max-w-7xl mx-auto px-4 pt-6 pb-2 text-center text-[11px] text-neutral-600">
+      <footer className="max-w-7xl mx-auto px-4 pt-6 pb-2 text-center text-[11px] text-hud-dim">
         Exile Relay — This product isn&apos;t affiliated with or endorsed by Grinding Gear Games in any way.
       </footer>
     </div>

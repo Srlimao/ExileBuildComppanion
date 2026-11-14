@@ -1,5 +1,31 @@
 export { DeathRespawnResumeBanner } from "./features/hud_shell/death_respawn_resume_banner.js";
 export { StandbySessionSummaryView } from "./features/hud_shell/standby_session_summary_view.js";
+export { HudThemeProvider, useHudTheme } from "./features/theme/hud_theme_provider.js";
+export {
+  applyHudThemeToDocument,
+  HUD_THEME_STORAGE_KEY,
+  initHudThemeOnDom,
+  loadSavedHudTheme,
+  parseSavedHudTheme,
+  saveHudTheme,
+  subscribeHudThemeChanges,
+} from "./features/theme/theme_persistence_storage.js";
+export { ThemeAppearanceControls } from "./features/theme/theme_appearance_controls.js";
+export { ThemeSelectorPopover } from "./features/theme/theme_selector_popover.js";
+export {
+  computeRelativeLuminance,
+  DEFAULT_HUD_THEME,
+  HUD_ACCENT_SWATCHES,
+  normalizeHexColor,
+  resolvePassiveTreePalette,
+  resolveReadableAccentForMode,
+  resolveThemeCssVariables,
+  type HudAccentPresetId,
+  type HudAccentSwatch,
+  type HudAppearanceMode,
+  type PassiveTreeThemePalette,
+  type SavedHudTheme,
+} from "./features/theme/theme_tokens_and_palettes.js";
 export { PassiveTreeCommandView } from "./features/passive_tree_visualizer/passive_tree_command_view.js";
 export {
   computeBracketOverviewBounds,

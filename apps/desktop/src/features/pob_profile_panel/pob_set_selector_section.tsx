@@ -25,11 +25,11 @@ function SetCategoryList({ title, options, selectedIds, onUpdate }: SetCategoryL
   };
 
   return (
-    <div className="rounded-lg bg-black border border-neutral-800 p-2 space-y-1.5">
+    <div className="space-y-1">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
-          <span className="text-[11px] font-semibold text-neutral-200">{title}</span>
-          <span className="text-[10px] font-mono text-neutral-400">
+          <span className="text-[11px] font-semibold text-hud-text">{title}</span>
+          <span className="text-[10px] font-mono text-hud-muted">
             ({selectedIds.length}/{options.length})
           </span>
         </div>
@@ -38,14 +38,14 @@ function SetCategoryList({ title, options, selectedIds, onUpdate }: SetCategoryL
             <button
               type="button"
               onClick={() => onUpdate(options.map((opt) => opt.id))}
-              className="text-indigo-400 hover:text-indigo-300 cursor-pointer"
+              className="text-hud-accent hover:underline cursor-pointer"
             >
               All
             </button>
             <button
               type="button"
               onClick={() => onUpdate([])}
-              className="text-neutral-400 hover:text-neutral-200 cursor-pointer"
+              className="text-hud-muted hover:text-hud-text cursor-pointer"
             >
               None
             </button>
@@ -54,18 +54,18 @@ function SetCategoryList({ title, options, selectedIds, onUpdate }: SetCategoryL
       </div>
 
       {options.length === 0 ? (
-        <div className="text-[10px] text-neutral-500">None present in this PoB.</div>
+        <div className="text-[10px] text-hud-muted">None present in this PoB.</div>
       ) : (
-        <div className="max-h-28 overflow-y-auto space-y-1 pr-0.5">
+        <div className="max-h-28 overflow-y-auto space-y-0.5 pr-0.5">
           {options.map((opt) => {
             const checked = selectedSet.has(opt.id);
             return (
               <label
                 key={opt.id}
-                className={`flex items-center justify-between gap-2 rounded-md px-2 py-1 text-[11px] cursor-pointer border transition-colors ${
+                className={`flex items-center justify-between gap-2 rounded-md px-2 py-1 text-[11px] cursor-pointer transition-colors ${
                   checked
-                    ? "bg-indigo-500/10 border-indigo-500/30 text-neutral-100"
-                    : "bg-neutral-950 border-neutral-900 text-neutral-400 hover:text-neutral-200"
+                    ? "bg-hud-subtle text-hud-text font-medium"
+                    : "text-hud-muted hover:text-hud-text hover:bg-hud-subtle"
                 }`}
               >
                 <span className="flex items-center gap-2 min-w-0">
@@ -73,11 +73,12 @@ function SetCategoryList({ title, options, selectedIds, onUpdate }: SetCategoryL
                     type="checkbox"
                     checked={checked}
                     onChange={() => toggleId(opt.id)}
-                    className="h-3.5 w-3.5 rounded border-neutral-700 bg-black text-indigo-500 focus:ring-0"
+                    className="h-3.5 w-3.5 rounded focus:ring-0"
+                    style={{ accentColor: "var(--hud-accent)" }}
                   />
-                  <span className="truncate font-medium">{opt.title}</span>
+                  <span className="truncate">{opt.title}</span>
                 </span>
-                <span className="text-[10px] font-mono text-neutral-400 shrink-0">
+                <span className="text-[10px] font-mono text-hud-muted shrink-0">
                   Lv {opt.minLevel}+ · {opt.detail}
                 </span>
               </label>
@@ -92,12 +93,12 @@ function SetCategoryList({ title, options, selectedIds, onUpdate }: SetCategoryL
 /** Displays selectable Passive Trees, Skill Sets, and Item Sets parsed from a PoB import. */
 export function PobSetSelectorSection({ preview, selection, onChange }: PobSetSelectorSectionProps) {
   return (
-    <div className="space-y-2 border-t border-neutral-800 pt-2.5">
+    <div className="space-y-3 border-t border-hud-hairline pt-3">
       <div className="flex items-center justify-between text-[11px]">
-        <span className="font-semibold text-neutral-200 truncate">
+        <span className="font-semibold text-hud-text truncate">
           Import Selection · {preview.buildName}
         </span>
-        <span className="font-mono text-[10px] text-neutral-400 shrink-0">
+        <span className="font-mono text-[10px] text-hud-muted shrink-0">
           {preview.characterClass} Lv {preview.buildLevel}
         </span>
       </div>

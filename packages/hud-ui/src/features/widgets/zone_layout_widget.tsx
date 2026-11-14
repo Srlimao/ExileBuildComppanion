@@ -1,5 +1,5 @@
 import type { HudSessionSnapshot } from "@exile-hud/core";
-import { Compass, Map as MapIcon, ZoomIn } from "lucide-react";
+import { Compass, ZoomIn } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function ZoneLayoutWidget({ snapshot }: { snapshot: HudSessionSnapshot }) {
@@ -20,24 +20,18 @@ export function ZoneLayoutWidget({ snapshot }: { snapshot: HudSessionSnapshot })
   const subNotes = zoneCheckpoints.flatMap((c) => c.subNotes);
 
   return (
-    <div className="flex flex-col h-full gap-3">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <MapIcon className="h-5 w-5 text-indigo-400" />
-          <h2 className="text-lg font-bold text-white">Zone Layout Seeds</h2>
-        </div>
-        <div className="flex items-center gap-2">
+    <div className="flex flex-col h-full gap-2.5">
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">Zone Layout</h2>
+        <div className="flex items-center gap-2.5 text-xs font-mono text-hud-muted">
           {directions.map((deg) => (
-            <span
-              key={deg}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-indigo-500/15 border border-indigo-500/40 text-xs font-mono text-indigo-200"
-            >
+            <span key={deg} className="inline-flex items-center gap-1 text-hud-accent">
               <Compass className="h-3.5 w-3.5" style={{ transform: `rotate(${deg}deg)` }} />
               {deg}°
             </span>
           ))}
           {variants.length > 1 && (
-            <span className="text-xs font-mono text-neutral-400">
+            <span className="tabular-nums">
               {selectedIdx + 1}/{variants.length}
             </span>
           )}
@@ -45,7 +39,7 @@ export function ZoneLayoutWidget({ snapshot }: { snapshot: HudSessionSnapshot })
       </div>
 
       {activeSrc ? (
-        <div className="relative flex-1 min-h-[160px] rounded-lg bg-black border border-neutral-800 overflow-hidden flex items-center justify-center">
+        <div className="relative flex-1 min-h-[150px] rounded-md bg-hud-subtle overflow-hidden flex items-center justify-center">
           <img
             src={activeSrc}
             alt={`${snapshot.currentAreaName} layout seed ${selectedIdx + 1}`}
@@ -55,28 +49,28 @@ export function ZoneLayoutWidget({ snapshot }: { snapshot: HudSessionSnapshot })
           <button
             type="button"
             onClick={() => setZoomed(true)}
-            className="absolute bottom-2 right-2 p-1.5 rounded-lg bg-black/80 border border-neutral-700 text-neutral-300 hover:text-white cursor-pointer"
+            className="absolute bottom-2 right-2 p-1.5 rounded-md bg-hud-surface/85 text-hud-muted hover:text-hud-text cursor-pointer"
           >
             <ZoomIn className="h-4 w-4" />
           </button>
         </div>
       ) : (
-        <div className="flex-1 min-h-[120px] rounded-lg bg-black border border-neutral-800 flex items-center justify-center text-sm text-neutral-500 p-4 text-center">
-          Linear / Town zone — follow quest & exit direction markers below.
-        </div>
+        <p className="text-xs text-hud-muted py-4">
+          Linear / Town zone — follow quest &amp; exit direction markers below.
+        </p>
       )}
 
       {variants.length > 1 && (
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+        <div className="flex items-center gap-3 overflow-x-auto pb-1">
           {variants.map((path, idx) => (
             <button
               key={path}
               type="button"
               onClick={() => setSelectedIdx(idx)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-mono border shrink-0 cursor-pointer ${
+              className={`pb-0.5 text-xs font-mono border-b-2 shrink-0 cursor-pointer transition-colors ${
                 idx === selectedIdx
-                  ? "bg-indigo-600 border-indigo-500 text-white"
-                  : "bg-black border-neutral-800 text-neutral-400 hover:border-neutral-700"
+                  ? "border-hud-accent text-hud-text font-semibold"
+                  : "border-transparent text-hud-muted hover:text-hud-text"
               }`}
             >
               Seed {idx + 1}
@@ -86,10 +80,10 @@ export function ZoneLayoutWidget({ snapshot }: { snapshot: HudSessionSnapshot })
       )}
 
       {subNotes.length > 0 && (
-        <ul className="space-y-1 text-sm text-neutral-300">
+        <ul className="space-y-1 text-xs text-hud-text/85">
           {subNotes.map((note, idx) => (
             <li key={`${note}-${idx}`} className="flex items-start gap-2">
-              <span className="text-indigo-400 font-bold">•</span>
+              <span className="text-hud-accent font-bold">·</span>
               <span>{note}</span>
             </li>
           ))}
