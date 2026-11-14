@@ -197,8 +197,9 @@ export function App() {
           setRoomId(r);
           setPin(p);
         }}
-        onStartDemo={() => {
+        onStartDemo={(mode) => {
           setIsDemo(true);
+          if (mode) setPreviewModeOverride(mode);
           setSnapshot(applySavedCampaignProgress(createInteractiveDemoSnapshot(), loadDemoProgress()));
         }}
       />
