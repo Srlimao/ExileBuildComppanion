@@ -113,6 +113,22 @@ export function resetSnapshotProgress(snapshot: HudSessionSnapshot): HudSessionS
   };
 }
 
+/** Normalizes pre-quest-name saved checkpoint keys so legacy turn-in completions stay checked. */
+function extractLegacyQuestKeySet(rawKeys: readonly string[]): Set<string> {
+  const set = new Set<string>();
+  for (const raw of rawKeys) {
+    const parts = raw.split("|");
+    if (parts.length < 5 || !parts[3]) continue;
+    const rest = parts.slice(4).join("|");
+    if (!rest.includes(`Turn in quest (${parts[3]})`)) continue;
+    const occMatch = /#(\d+)$/.exec(rest);
+    if (occMatch?.[1]) {
+      set.add(`${parts[0]}|${parts[1]}|${parts[2]}|${parts[3]}#${occMatch[1]}`);
+    }
+  }
+  return set;
+}
+
 /** Merges saved progress onto a freshly compiled or bootstrapped snapshot (or honors explicit reset). */
 export function applySavedCampaignProgress(
   snapshot: HudSessionSnapshot,
@@ -136,14 +152,33 @@ export function applySavedCampaignProgress(
 
   const completedSet = new Set(saved.completedCheckpointIds);
   const softSet = new Set(saved.softCompletedCheckpointIds);
+  const legacyCompletedQuestSet = extractLegacyQuestKeySet(saved.completedCheckpointIds);
+  const legacySoftQuestSet = extractLegacyQuestKeySet(saved.softCompletedCheckpointIds);
   const manualGemSet = new Set(saved.manualCompletedGemIds);
   const softGemSet = new Set(saved.softAcquiredGemIds);
   const keys = computeCheckpointProgressKeys(snapshot.checkpoints);
+  const questCounts = new Map<string, number>();
 
   const checkpoints = snapshot.checkpoints.map((cp, idx) => {
     const key = keys[idx]!;
-    const completed = cp.completed || completedSet.has(key) || completedSet.has(cp.id);
-    const softCompleted = !completed && (cp.softCompleted || softSet.has(key) || softSet.has(cp.id));
+    let legacyQuestKey: string | null = null;
+    if (cp.questId) {
+      const qBase = `${cp.sectionAct}|${cp.areaId}|${cp.category}|${cp.questId}`;
+      const qOcc = (questCounts.get(qBase) ?? 0) + 1;
+      questCounts.set(qBase, qOcc);
+      legacyQuestKey = `${qBase}#${qOcc}`;
+    }
+    const completed =
+      cp.completed ||
+      completedSet.has(key) ||
+      completedSet.has(cp.id) ||
+      (legacyQuestKey !== null && legacyCompletedQuestSet.has(legacyQuestKey));
+    const softCompleted =
+      !completed &&
+      (cp.softCompleted ||
+        softSet.has(key) ||
+        softSet.has(cp.id) ||
+        (legacyQuestKey !== null && legacySoftQuestSet.has(legacyQuestKey)));
     return { ...cp, completed, softCompleted };
   });
 

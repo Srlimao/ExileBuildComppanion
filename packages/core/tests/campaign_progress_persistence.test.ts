@@ -130,4 +130,28 @@ describe("Campaign Progress Persistence", () => {
     );
     expect(reset.activeVendorRegex).toContain("nne");
   });
+
+  it("restores legacy Turn in quest (id) keys onto renamed quest turn-in checkpoints", async () => {
+    const fresh = await buildSnapshot(false);
+    const legacySaved = {
+      completedCheckpointIds: [
+        "1|1_1_town|MANDATORY_PATH|a1q1|Hand in Turn in quest (a1q1)#1",
+        "1|1_1_town|MANDATORY_PATH|a1q2|Hand in Turn in quest (a1q2)#2",
+      ],
+      softCompletedCheckpointIds: [],
+      manualCompletedGemIds: [],
+      softAcquiredGemIds: [],
+      wasExplicitlyReset: false,
+      updatedAtMs: 555,
+    };
+
+    const restored = applySavedCampaignProgress(fresh, legacySaved);
+    const gate = restored.checkpoints.find((cp) => cp.title === "Hand in Enemy at the Gate (Tarkleigh)");
+    const bruteNessa = restored.checkpoints.find((cp) => cp.title === "Hand in The Caged Brute (Nessa)");
+    const bruteTarkleigh = restored.checkpoints.find((cp) => cp.title === "Hand in The Caged Brute (Tarkleigh)");
+
+    expect(gate?.completed).toBe(true);
+    expect(bruteNessa?.completed).toBe(false);
+    expect(bruteTarkleigh?.completed).toBe(true);
+  });
 });

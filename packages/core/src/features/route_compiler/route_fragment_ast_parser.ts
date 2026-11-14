@@ -12,7 +12,7 @@ export type ParsedFragment =
   | { type: "waypoint_get" }
   | { type: "portal_set" }
   | { type: "portal_use"; dstAreaId: string }
-  | { type: "quest"; questId: string; rewardOffers: string[] }
+  | { type: "quest"; questId: string; questName: string; questNpc?: string; rewardOffers: string[] }
   | { type: "quest_text"; value: string }
   | { type: "generic"; value: string }
   | { type: "reward_quest"; item: string }
@@ -41,7 +41,7 @@ interface TrackerState {
   portalAreaId: string | null;
 }
 
-function formatFragment(fragment: ParsedFragment): string {
+function formatFragment(fragment: ParsedFragment, prevFragment?: ParsedFragment): string {
   switch (fragment.type) {
     case "text":
       return fragment.value;
@@ -65,8 +65,11 @@ function formatFragment(fragment: ParsedFragment): string {
       return "Set Portal";
     case "portal_use":
       return "Use Portal";
-    case "quest":
-      return `Turn in quest (${fragment.questId})`;
+    case "quest": {
+      const label = fragment.questNpc ? `${fragment.questName} (${fragment.questNpc})` : fragment.questName;
+      const hasVerbPrefix = prevFragment?.type === "text" && /\b(?:hand|turn)\s+in$/i.test(prevFragment.value);
+      return hasVerbPrefix ? label : `Turn in ${label}`;
+    }
     case "quest_text":
       return fragment.value;
     case "generic":
@@ -144,7 +147,20 @@ function parseSingleFragment(rawTag: string, adapter: GameAdapter, state: Tracke
       const questId = parts[1] ?? "";
       const q = quests[questId];
       const rewardOffers = parts.length > 2 ? parts.slice(2) : Object.keys(q?.reward_offers ?? {});
-      return { type: "quest", questId, rewardOffers };
+      const npcs = Array.from(
+        new Set(
+          rewardOffers
+            .map((offerId) => q?.reward_offers?.[offerId]?.quest_npc?.trim())
+            .filter((npc): npc is string => Boolean(npc)),
+        ),
+      );
+      return {
+        type: "quest",
+        questId,
+        questName: q?.name || questId,
+        questNpc: npcs.length > 0 ? npcs.join(" / ") : undefined,
+        rewardOffers,
+      };
     }
     case "quest_text":
       return { type: "quest_text", value: parts[1] ?? "" };
@@ -221,7 +237,12 @@ export function parsePreprocessedRouteLines(lines: string[], adapter: GameAdapte
       for (const frag of subFragments) {
         if (frag.type === "dir") prev.directions.push(frag.dirDegrees);
       }
-      const note = subFragments.map(formatFragment).join(" ").replace(/\s+/g, " ").trim();
+      const note = subFragments
+        .map((frag, idx) => formatFragment(frag, subFragments[idx - 1]))
+        .join(" ")
+        .replace(/\s+([,.;:!?])/g, "$1")
+        .replace(/\s+/g, " ")
+        .trim();
       if (note) prev.subNotes.push(note);
       continue;
     }
@@ -240,9 +261,10 @@ export function parsePreprocessedRouteLines(lines: string[], adapter: GameAdapte
 
     const areaObj = areas[stepAreaId] ?? areas[state.currentAreaId];
     const renderedText = fragments
-      .map(formatFragment)
+      .map((frag, idx) => formatFragment(frag, fragments[idx - 1]))
       .join(" ")
       .replace(/^➞\s*/, "")
+      .replace(/\s+([,.;:!?])/g, "$1")
       .replace(/\s+/g, " ")
       .trim();
 

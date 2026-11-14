@@ -199,4 +199,33 @@ Implicits: 0
     expect(reconciled.skillSetIds).toEqual([]);
     expect(reconciled.itemSetIds).toEqual(["2"]);
   });
+
+  it("renders human-readable quest names and turn-in NPCs in parsed route steps", () => {
+    const customSteps = parsePreprocessedRouteLines(
+      [
+        "#section Act 1",
+        "Hand in {quest|a1q1} #Enemy at the Gate",
+        "Hand in {quest|a1q2|a1q2b}",
+        "Hand in {quest|a1q2|a1q2}",
+        "Hand in {quest|a2q7}, take {quest_text|The Apex}",
+        "Hand in {quest|a4q5}",
+        "{quest|a1q1}",
+      ],
+      poe1GameAdapter,
+    );
+
+    expect(customSteps.map((s) => s.renderedText)).toEqual([
+      "Hand in Enemy at the Gate (Tarkleigh)",
+      "Hand in The Caged Brute (Nessa)",
+      "Hand in The Caged Brute (Tarkleigh)",
+      "Hand in Deal with the Bandits (Eramir), take The Apex",
+      "Hand in Corpus Malachus",
+      "Turn in Enemy at the Gate (Tarkleigh)",
+    ]);
+
+    const defs = buildPreprocessorDefinitions({ leagueStart: true, bandit: "Alira", includeLibrary: true });
+    const raw = combineRouteActFiles(poe1GameAdapter.getDefaultRouteFiles());
+    const fullSteps = parsePreprocessedRouteLines(preprocessRouteConditionals(raw, defs), poe1GameAdapter);
+    expect(fullSteps.filter((s) => s.renderedText.includes("Turn in quest ("))).toEqual([]);
+  });
 });
