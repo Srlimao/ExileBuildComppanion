@@ -4,18 +4,27 @@ import { useState, type ReactNode } from "react";
 import { AddWidgetDrawer } from "./add_widget_drawer.js";
 import { WIDGET_CATALOG } from "./default_mode_grid_presets.js";
 
+export type WidgetGridMode = HudContextMode | "TREE_COMPACT";
+export type WidgetGridFormFactor = DeviceFormFactor | "pc-overlay";
+
 interface CustomizableModeWidgetGridProps {
-  mode: HudContextMode;
-  formFactor: DeviceFormFactor;
+  mode: WidgetGridMode;
+  formFactor: WidgetGridFormFactor;
   items: WidgetGridItemLayout[];
   editMode: boolean;
+  compactOverlay?: boolean;
   renderWidget: (widgetId: WidgetId) => ReactNode;
   onUpdateLayout: (nextItems: WidgetGridItemLayout[]) => void;
   onResetDefaults: () => void;
 }
 
-function getSpanClasses(item: WidgetGridItemLayout, formFactor: DeviceFormFactor): string {
+function getSpanClasses(item: WidgetGridItemLayout, formFactor: WidgetGridFormFactor): string {
   if (formFactor === "phone") return "col-span-1 row-span-1";
+  if (formFactor === "pc-overlay") {
+    const col = item.colSpan === 2 ? "min-[560px]:col-span-2" : "col-span-1";
+    const row = item.rowSpan === 2 ? "min-[560px]:row-span-2" : "row-span-1";
+    return `${col} ${row}`;
+  }
   const col = item.colSpan === 2 ? "md:col-span-2" : "col-span-1";
   const row = item.rowSpan === 2 ? "md:row-span-2" : "row-span-1";
   return `${col} ${row}`;
@@ -26,6 +35,7 @@ export function CustomizableModeWidgetGrid({
   formFactor,
   items,
   editMode,
+  compactOverlay = false,
   renderWidget,
   onUpdateLayout,
   onResetDefaults,
@@ -78,14 +88,25 @@ export function CustomizableModeWidgetGrid({
   };
 
   const gridColsClass =
-    formFactor === "phone" ? "grid-cols-1" : formFactor === "tablet-portrait" ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1 md:grid-cols-3";
+    formFactor === "pc-overlay"
+      ? "grid-cols-1 min-[560px]:grid-cols-2"
+      : formFactor === "phone"
+        ? "grid-cols-1"
+        : formFactor === "tablet-portrait"
+          ? "grid-cols-1 md:grid-cols-2"
+          : "grid-cols-1 md:grid-cols-3";
+
+  const wrapperClass = compactOverlay ? "px-2 py-2 space-y-2" : "max-w-7xl mx-auto px-3 sm:px-5 py-4 space-y-3";
+  const gridGapClass = compactOverlay ? "gap-2 auto-rows-[minmax(120px,auto)]" : "gap-3 auto-rows-[minmax(190px,auto)]";
+  const cardBgClass = compactOverlay ? "bg-neutral-950/75" : "bg-neutral-950";
+  const contentPaddingClass = compactOverlay ? "p-2.5 flex-1 flex flex-col min-h-0" : "p-4 flex-1 flex flex-col min-h-0";
 
   return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-5 py-4 space-y-3">
+    <div className={wrapperClass}>
       {editMode && (
-        <div className="rounded-xl border border-indigo-500/40 bg-indigo-950/20 px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap">
-          <p className="text-sm text-indigo-200">
-            Editing <span className="font-bold">{mode}</span> layout ({formFactor}) — drag cards or tap size/order controls.
+        <div className="rounded-xl border border-indigo-500/40 bg-indigo-950/20 px-3 py-2 flex items-center justify-between gap-2 flex-wrap">
+          <p className="text-xs sm:text-sm text-indigo-200">
+            Editing <span className="font-bold">{mode === "TREE_COMPACT" ? "TREE" : mode}</span> layout ({formFactor})
           </p>
           <button
             type="button"
@@ -97,7 +118,7 @@ export function CustomizableModeWidgetGrid({
         </div>
       )}
 
-      <div className={`grid ${gridColsClass} gap-3 auto-rows-[minmax(190px,auto)]`}>
+      <div className={`grid ${gridColsClass} ${gridGapClass}`}>
         {sorted.map((item, idx) => {
           const title = WIDGET_CATALOG.find((c) => c.widgetId === item.widgetId)?.label ?? item.widgetId;
           return (
@@ -107,7 +128,7 @@ export function CustomizableModeWidgetGrid({
               onDragStart={() => setDraggedId(item.widgetId)}
               onDragOver={(e) => editMode && e.preventDefault()}
               onDrop={() => editMode && handleDropOn(item.widgetId)}
-              className={`${getSpanClasses(item, formFactor)} rounded-xl bg-neutral-950 border ${
+              className={`${getSpanClasses(item, formFactor)} rounded-xl ${cardBgClass} border ${
                 editMode ? "border-indigo-500/50 ring-1 ring-indigo-500/20" : "border-neutral-800"
               } flex flex-col overflow-hidden`}
             >
@@ -130,7 +151,7 @@ export function CustomizableModeWidgetGrid({
                   </div>
                 </div>
               )}
-              <div className="p-4 flex-1 flex flex-col min-h-0">{renderWidget(item.widgetId)}</div>
+              <div className={contentPaddingClass}>{renderWidget(item.widgetId)}</div>
             </div>
           );
         })}

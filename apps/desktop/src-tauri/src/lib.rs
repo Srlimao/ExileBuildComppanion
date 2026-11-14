@@ -44,6 +44,21 @@ pub(crate) mod windows_self_update_installer;
 #[path = "features/auto_updater/auto_update_coordinator.rs"]
 pub(crate) mod auto_update_coordinator;
 
+#[path = "features/overlay_window/overlay_config_disk_store.rs"]
+pub(crate) mod overlay_config_disk_store;
+
+#[path = "features/overlay_window/overlay_monitor_docking.rs"]
+pub(crate) mod overlay_monitor_docking;
+
+#[path = "features/overlay_window/overlay_hotkey_and_focus_watcher.rs"]
+pub(crate) mod overlay_hotkey_and_focus_watcher;
+
+#[path = "features/overlay_window/overlay_window_controller.rs"]
+pub(crate) mod overlay_window_controller;
+
+#[path = "features/overlay_window/overlay_ipc_commands.rs"]
+pub(crate) mod overlay_ipc_commands;
+
 mod background_telemetry_watchers;
 mod tauri_host_ipc_commands;
 
@@ -72,6 +87,7 @@ pub fn run() {
         .manage(shared)
         .manage(auto_update_coordinator::AutoUpdaterSharedState::new())
         .setup(|app| {
+            app.manage(overlay_window_controller::OverlaySharedState::load_or_default(app.handle()));
             tray_icon_and_menu_controller::setup_tray(app.handle())?;
             let state = app.state::<HostSharedState>();
             background_telemetry_watchers::spawn_background_watchers(app.handle(), &state);
@@ -82,6 +98,17 @@ pub fn run() {
             if let WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
                 let _ = window.hide();
+                if window.label() == overlay_window_controller::OVERLAY_WINDOW_LABEL {
+                    let app = window.app_handle();
+                    let state = app.state::<overlay_window_controller::OverlaySharedState>();
+                    if let Ok(mut cfg) = state.config.lock() {
+                        cfg.enabled = false;
+                        let _ = overlay_window_controller::persist_and_emit_overlay_config(app, &cfg);
+                    }
+                    if let Ok(mut vis) = state.last_applied_visible.lock() {
+                        *vis = Some(false);
+                    };
+                }
             }
         })
         .invoke_handler(tauri::generate_handler![
@@ -103,6 +130,12 @@ pub fn run() {
             tauri_host_ipc_commands::open_app_data_folder,
             tauri_host_ipc_commands::set_passive_tree_hotkey,
             tauri_host_ipc_commands::set_in_game_tree_open,
+            overlay_ipc_commands::get_overlay_config,
+            overlay_ipc_commands::update_overlay_config,
+            overlay_ipc_commands::apply_overlay_dock_preset,
+            overlay_ipc_commands::save_overlay_free_bounds,
+            overlay_ipc_commands::toggle_overlay_visibility,
+            overlay_ipc_commands::toggle_overlay_click_through,
             auto_update_coordinator::get_app_update_state,
             auto_update_coordinator::check_for_app_update,
             auto_update_coordinator::install_app_update,

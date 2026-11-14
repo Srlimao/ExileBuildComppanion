@@ -1,11 +1,12 @@
-import type { DeviceFormFactor, HudContextMode, WidgetGridItemLayout, WidgetId } from "@exile-hud/core";
+import type { WidgetGridItemLayout, WidgetId } from "@exile-hud/core";
 import { Plus, X } from "lucide-react";
+import type { WidgetGridFormFactor, WidgetGridMode } from "./customizable_mode_widget_grid.js";
 import { WIDGET_CATALOG } from "./default_mode_grid_presets.js";
 
 interface AddWidgetDrawerProps {
   open: boolean;
-  mode: HudContextMode;
-  formFactor: DeviceFormFactor;
+  mode: WidgetGridMode;
+  formFactor: WidgetGridFormFactor;
   activeItems: WidgetGridItemLayout[];
   onAddWidget: (widgetId: WidgetId) => void;
   onResetDefaults: () => void;
@@ -29,7 +30,7 @@ export function AddWidgetDrawer({
       <div className="w-full max-w-2xl bg-neutral-950 border border-neutral-800 rounded-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-xl font-bold text-white">Customize {mode} Widgets</h2>
+            <h2 className="text-xl font-bold text-white">Customize {mode === "TREE_COMPACT" ? "TREE" : mode} Widgets</h2>
             <p className="text-xs text-neutral-400">Saved specifically for {formFactor} viewport</p>
           </div>
           <div className="flex items-center gap-2">

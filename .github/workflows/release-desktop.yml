@@ -7,6 +7,8 @@ on:
       - "apps/desktop/**"
       - "packages/core/**"
       - "packages/game-data/**"
+      - "packages/hud-ui/**"
+      - "apps/pwa/public/**"
       - "scripts/generate_tauri_icons.mjs"
       - "scripts/stamp_desktop_release_version.mjs"
       - ".github/workflows/release-desktop.yml"

@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "vite --port 1420",
     "build": "tsc -b && vite build",
+    "test": "vitest run",
     "tauri": "tauri"
   },
   "dependencies": {
     "@exile-hud/core": "workspace:*",
     "@exile-hud/game-data": "workspace:*",
+    "@exile-hud/hud-ui": "workspace:*",
     "@tauri-apps/api": "^2.3.0",
     "lucide-react": "^0.475.0",
     "qrcode.react": "^4.2.0",

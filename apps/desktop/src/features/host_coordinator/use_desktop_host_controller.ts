@@ -6,6 +6,7 @@ import {
   type PobSetSelection,
   type ValidatedPobBuild,
   type ViewerPresenceEntry,
+  type ViewerToRoomMessage,
 } from "@exile-hud/core";
 import { poe1GameAdapter } from "@exile-hud/game-data";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -43,10 +44,11 @@ import {
   setInGameTreeOpenIpc,
   setPassiveTreeHotkeyIpc,
   setTrayTelemetryStatus,
-  subscribeTauriListeners,
   writeVendorRegexClipboard,
 } from "./tauri_ipc_adapter.js";
 import { executeGggCharacterSync } from "./passive_tree_hotkey_sync_helper.js";
+import { useTauriHostEventBridge } from "./use_tauri_host_event_bridge.js";
+import { useHostOverlayBroadcastBridge } from "../overlay_hud/overlay_local_bus.js";
 
 export function useDesktopHostController() {
   const [initPrefs] = useState(loadHostIdentityPrefs);
@@ -114,6 +116,19 @@ export function useDesktopHostController() {
     [pushPatch],
   );
 
+  const handleViewerCommand = useCallback(
+    (cmd: ViewerToRoomMessage) => {
+      if (!snapshotRef.current) return;
+      const outcome = applyViewerCommandToSnapshot(snapshotRef.current, cmd);
+      if (outcome.copyRegex) void writeVendorRegexClipboard(outcome.copyRegex);
+      if (outcome.requestSync) runGggSync(true);
+      if (outcome.nextSnapshot && outcome.eventTag) pushPatch(outcome.nextSnapshot, outcome.eventTag);
+    },
+    [pushPatch, runGggSync],
+  );
+
+  useHostOverlayBroadcastBridge(snapshot, snapshotRef, handleViewerCommand);
+
   const connectRelay = useCallback(
     (overrideSnap?: HudSessionSnapshot, overridePin?: string, overrideRelayUrl?: string) => {
       const targetSnap = overrideSnap ?? snapshotRef.current;
@@ -134,16 +149,10 @@ export function useDesktopHostController() {
         onDisconnected: () => setRelayConnected(false),
         onError: (msg) => setRelayError(`${msg} — running offline locally`),
         onViewersChange: setViewers,
-        onViewerCommand: (cmd) => {
-          if (!snapshotRef.current) return;
-          const outcome = applyViewerCommandToSnapshot(snapshotRef.current, cmd);
-          if (outcome.copyRegex) void writeVendorRegexClipboard(outcome.copyRegex);
-          if (outcome.requestSync) runGggSync(true);
-          if (outcome.nextSnapshot && outcome.eventTag) pushPatch(outcome.nextSnapshot, outcome.eventTag);
-        },
+        onViewerCommand: handleViewerCommand,
       });
     },
-    [hostSecret, pin, pushPatch, relayUrl, roomId, runGggSync],
+    [handleViewerCommand, hostSecret, pin, relayUrl, roomId],
   );
 
   useEffect(() => {
@@ -199,37 +208,14 @@ export function useDesktopHostController() {
     [pushPatch, runGggSync],
   );
 
-  useEffect(() => {
-    let cleanup: () => void = () => undefined;
-    void subscribeTauriListeners({
-      onClientLogLines: processLogLines,
-      onPoeProcessState: (running) => {
-        const cur = snapshotRef.current;
-        if (cur) pushPatch(reduceTelemetrySession(cur, { type: "process_state", running }, poe1GameAdapter), "poe_process");
-      },
-      onClientLogPathChanged: (nextPath) => {
-        setClientLogPathState(nextPath);
-        setClientLogFound(true);
-        if (snapshotRef.current && !snapshotRef.current.clientLogHooked) {
-          pushPatch({ ...snapshotRef.current, clientLogHooked: true }, "log_auto_switched");
-        }
-      },
-      onPassiveTreeState: (open) => {
-        const cur = snapshotRef.current;
-        if (cur) pushPatch(reduceTelemetrySession(cur, { type: "in_game_tree_state", open }, poe1GameAdapter), "poe_tree_hotkey");
-        if (open) runGggSync(false);
-      },
-      onTrayAction: (action) => {
-        if (action === "force-sync") runGggSync(true);
-        if (action === "copy-regex" && snapshotRef.current?.activeVendorRegex) {
-          void writeVendorRegexClipboard(snapshotRef.current.activeVendorRegex);
-        }
-      },
-    }).then((fn) => {
-      cleanup = fn;
-    });
-    return () => cleanup();
-  }, [processLogLines, pushPatch, runGggSync]);
+  useTauriHostEventBridge({
+    snapshotRef,
+    processLogLines,
+    pushPatch,
+    runGggSync,
+    setClientLogPathState,
+    setClientLogFound,
+  });
 
   const applyBuild = async (nextCfg: { pobInput: string; cachedXml?: string | null; selection?: PobSetSelection | null; leagueStart: boolean; customRouteText: string }) => {
     setCompileLoading(true);

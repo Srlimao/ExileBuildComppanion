@@ -1,10 +1,11 @@
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 
 use crate::client_txt_byte_offset_tailer::read_recent_bootstrap_lines;
 use crate::foreground_poe_hotkey_poller::poll_foreground_poe_hotkey;
+use crate::overlay_window_controller::{poll_overlay_focus_and_hotkeys, OverlaySharedState};
 use crate::poe_process_heartbeat::find_running_poe_process;
 use crate::HostSharedState;
 
@@ -108,6 +109,8 @@ pub fn spawn_background_watchers(app: &AppHandle, shared: &HostSharedState) {
             if let Some(open) = poll_foreground_poe_hotkey(&hotkey_tracker, pid) {
                 let _ = hotkey_app.emit("poe-passive-tree-state", open);
             }
+            let overlay_state = hotkey_app.state::<OverlaySharedState>();
+            poll_overlay_focus_and_hotkeys(&hotkey_app, &overlay_state, pid);
         }
     });
 }

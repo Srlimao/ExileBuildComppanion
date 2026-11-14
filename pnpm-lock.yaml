@@ -41,6 +41,9 @@ importers:
       '@exile-hud/game-data':
         specifier: workspace:*
         version: link:../../packages/game-data
+      '@exile-hud/hud-ui':
+        specifier: workspace:*
+        version: link:../../packages/hud-ui
       '@tauri-apps/api':
         specifier: ^2.3.0
         version: 2.12.4
@@ -112,6 +115,9 @@ importers:
       '@exile-hud/game-data':
         specifier: workspace:*
         version: link:../../packages/game-data
+      '@exile-hud/hud-ui':
+        specifier: workspace:*
+        version: link:../../packages/hud-ui
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.3.1)
@@ -167,6 +173,31 @@ importers:
         version: 2.0.4
 
   packages/game-data: {}
+
+  packages/hud-ui:
+    dependencies:
+      '@exile-hud/core':
+        specifier: workspace:*
+        version: link:../core
+      '@exile-hud/game-data':
+        specifier: workspace:*
+        version: link:../game-data
+      lucide-react:
+        specifier: ^0.475.0
+        version: 0.475.0(react@19.3.1)
+      react:
+        specifier: ^19.0.0
+        version: 19.3.1
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.3.1(react@19.3.1)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.10
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.0.4
+        version: 19.3.0(@types/react@19.3.0)
 
 packages:
 

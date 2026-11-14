@@ -1,9 +1,11 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Default capabilities for Exile Companion Control Center main window",
-  "windows": ["main"],
+  "description": "Default capabilities for Exile Companion Control Center and Overlay windows",
+  "windows": ["main", "overlay"],
   "permissions": [
-    "core:default"
+    "core:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-start-resize-dragging"
   ]
 }

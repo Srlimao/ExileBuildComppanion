@@ -4,7 +4,6 @@ import type {
   HudSessionSnapshot,
   ModeWidgetGrids,
   WidgetGridItemLayout,
-  WidgetId,
 } from "@exile-hud/core";
 import {
   applySavedCampaignProgress,
@@ -16,10 +15,16 @@ import {
   type SavedCampaignProgress,
 } from "@exile-hud/core";
 import { poe1GameAdapter } from "@exile-hud/game-data";
+import {
+  CustomizableModeWidgetGrid,
+  DeathRespawnResumeBanner,
+  getDefaultLayoutForMode,
+  PassiveTreeCommandView,
+  renderHudWidget,
+  StandbySessionSummaryView,
+} from "@exile-hud/hud-ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { DeathRespawnResumeBanner } from "./features/hud_shell/death_respawn_resume_banner.js";
 import { HudTopTelemetryBar } from "./features/hud_shell/hud_top_telemetry_bar.js";
-import { StandbySessionSummaryView } from "./features/hud_shell/standby_session_summary_view.js";
 import { createInteractiveDemoSnapshot } from "./features/pairing_and_connection/demo_campaign_snapshot_factory.js";
 import {
   detectDeviceFormFactor,
@@ -28,20 +33,6 @@ import {
 } from "./features/pairing_and_connection/edge_websocket_room_client.js";
 import { QrPinJoinModal } from "./features/pairing_and_connection/qr_pin_join_modal.js";
 import { useScreenWakeLock } from "./features/pairing_and_connection/screen_wake_lock_controller.js";
-import { CustomizableModeWidgetGrid } from "./features/widget_grid_engine/customizable_mode_widget_grid.js";
-import { getDefaultLayoutForMode } from "./features/widget_grid_engine/default_mode_grid_presets.js";
-import { ActiveChecklistWidget } from "./features/widgets/active_checklist_widget.js";
-import { DeferredBacklogWidget } from "./features/widgets/deferred_backlog_widget.js";
-import { GearHygieneWidget } from "./features/widgets/gear_hygiene_widget.js";
-import { LabCompassWidget } from "./features/widgets/lab_compass_widget.js";
-import { PassiveTreeWidget } from "./features/widgets/passive_tree_widget.js";
-import { PassiveTreeCommandView } from "./features/passive_tree_visualizer/passive_tree_command_view.js";
-import { RegexSyncWidget } from "./features/widgets/regex_sync_widget.js";
-import { ResistanceCapWidget } from "./features/widgets/resistance_cap_widget.js";
-import { RunTimerWidget } from "./features/widgets/run_timer_widget.js";
-import { SocketLinksWidget } from "./features/widgets/socket_links_widget.js";
-import { VendorShoppingWidget } from "./features/widgets/vendor_shopping_widget.js";
-import { ZoneLayoutWidget } from "./features/widgets/zone_layout_widget.js";
 
 const LOCAL_LAYOUT_KEY = "exile_hud_widget_layouts_v1";
 const DEMO_PROGRESS_KEY = "exile_hud_demo_progress_v1";
@@ -211,38 +202,6 @@ export function App() {
   const activeGridItems =
     layouts[formFactor]?.[effectiveMode] ?? getDefaultLayoutForMode(formFactor, effectiveMode);
 
-  const renderWidget = (widgetId: WidgetId) => {
-    switch (widgetId) {
-      case "zone_layout":
-        return <ZoneLayoutWidget snapshot={snapshot} />;
-      case "active_checklist":
-        return <ActiveChecklistWidget snapshot={snapshot} onToggleCheckpoint={handleToggleCheckpoint} />;
-      case "vendor_shopping":
-        return <VendorShoppingWidget snapshot={snapshot} onToggleGem={handleToggleGem} />;
-      case "socket_links":
-        return <SocketLinksWidget snapshot={snapshot} />;
-      case "passive_tree":
-        return <PassiveTreeWidget snapshot={snapshot} onOpenFullTree={() => setPreviewModeOverride("TREE")} />;
-      case "regex_sync":
-        return (
-          <RegexSyncWidget
-            snapshot={snapshot}
-            onPushToPcClipboard={(regex) => clientRef.current?.sendCommand({ type: "viewer:request_regex_copy", regex })}
-          />
-        );
-      case "deferred_backlog":
-        return <DeferredBacklogWidget snapshot={snapshot} onToggleCheckpoint={handleToggleCheckpoint} />;
-      case "resistance_cap":
-        return <ResistanceCapWidget snapshot={snapshot} />;
-      case "gear_hygiene":
-        return <GearHygieneWidget snapshot={snapshot} />;
-      case "run_timer":
-        return <RunTimerWidget snapshot={snapshot} />;
-      case "lab_compass":
-        return <LabCompassWidget snapshot={snapshot} onImportPoelabJson={handleImportPoelab} />;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-black text-neutral-100 pb-10">
       <HudTopTelemetryBar
@@ -287,7 +246,17 @@ export function App() {
           formFactor={formFactor}
           items={activeGridItems}
           editMode={editMode}
-          renderWidget={renderWidget}
+          renderWidget={(widgetId) =>
+            renderHudWidget(widgetId, {
+              snapshot,
+              onToggleCheckpoint: handleToggleCheckpoint,
+              onToggleGem: handleToggleGem,
+              onOpenFullTree: () => setPreviewModeOverride("TREE"),
+              onPushToPcClipboard: (regex) =>
+                clientRef.current?.sendCommand({ type: "viewer:request_regex_copy", regex }),
+              onImportPoelabJson: handleImportPoelab,
+            })
+          }
           onUpdateLayout={(next) => handleUpdateLayout(effectiveMode, next)}
           onResetDefaults={() => handleUpdateLayout(effectiveMode, getDefaultLayoutForMode(formFactor, effectiveMode))}
         />

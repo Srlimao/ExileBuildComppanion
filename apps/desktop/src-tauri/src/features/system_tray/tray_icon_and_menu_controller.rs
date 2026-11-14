@@ -60,6 +60,20 @@ fn build_tray_menu(
 ) -> tauri::Result<Menu<tauri::Wry>> {
     let open_item =
         MenuItem::with_id(app, "open_control_center", "Open Control Center", true, None::<&str>)?;
+    let overlay_item = MenuItem::with_id(
+        app,
+        "toggle_overlay",
+        "Toggle In-Game Overlay (F7)",
+        true,
+        None::<&str>,
+    )?;
+    let overlay_lock_item = MenuItem::with_id(
+        app,
+        "toggle_overlay_lock",
+        "Lock/Unlock Overlay Clicks (F8)",
+        true,
+        None::<&str>,
+    )?;
     let sync_item =
         MenuItem::with_id(app, "force_sync", "Force Character Sync", true, None::<&str>)?;
     let copy_item =
@@ -77,6 +91,8 @@ fn build_tray_menu(
                 &update_item,
                 &update_sep,
                 &open_item,
+                &overlay_item,
+                &overlay_lock_item,
                 &sync_item,
                 &copy_item,
                 &sep,
@@ -84,7 +100,18 @@ fn build_tray_menu(
             ],
         )
     } else {
-        Menu::with_items(app, &[&open_item, &sync_item, &copy_item, &sep, &quit_item])
+        Menu::with_items(
+            app,
+            &[
+                &open_item,
+                &overlay_item,
+                &overlay_lock_item,
+                &sync_item,
+                &copy_item,
+                &sep,
+                &quit_item,
+            ],
+        )
     }
 }
 
@@ -102,6 +129,12 @@ pub fn setup_tray(app: &AppHandle) -> tauri::Result<()> {
                 let _ = crate::auto_update_coordinator::trigger_update_install(app.clone());
             }
             "open_control_center" => show_main_window(app),
+            "toggle_overlay" => {
+                let _ = crate::overlay_ipc_commands::toggle_overlay_enabled_from_backend(app);
+            }
+            "toggle_overlay_lock" => {
+                let _ = crate::overlay_ipc_commands::toggle_overlay_lock_from_backend(app);
+            }
             "force_sync" => {
                 let _ = app.emit("tray-action", "force-sync");
             }

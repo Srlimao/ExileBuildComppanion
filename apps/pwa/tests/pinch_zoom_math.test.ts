@@ -2,24 +2,20 @@ import { computeBracketProgressionDiff, resolveEffectiveAllocatedSet, selectBrac
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createInteractiveDemoSnapshot } from "../src/features/pairing_and_connection/demo_campaign_snapshot_factory.js";
 import {
-  computeNextPassivesBounds,
-  getBuiltPoe1TreeGeometry,
-} from "../src/features/passive_tree_visualizer/passive_tree_geometry_builder.js";
-import {
-  clearSavedTreeViewportCache,
-  loadSavedTreeViewport,
-  saveTreeViewport,
-} from "../src/features/passive_tree_visualizer/passive_tree_viewport_storage.js";
-import {
   clampViewWidth,
+  clearSavedTreeViewportCache,
   computeCursorZoomCamera,
+  computeNextPassivesBounds,
   computePinchedCamera,
   createPinchAnchor,
+  getBuiltPoe1TreeGeometry,
+  loadSavedTreeViewport,
   MAX_VIEW_WIDTH,
   MIN_VIEW_WIDTH,
+  saveTreeViewport,
   type ViewportCamera,
   type ViewportRect,
-} from "../src/features/passive_tree_visualizer/pinch_zoom_math.js";
+} from "@exile-hud/hud-ui";
 
 const RECT: ViewportRect = { left: 100, top: 50, width: 800, height: 600 };
 

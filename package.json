@@ -12,7 +12,7 @@
     "prepare": "pnpm run build",
     "deploy": "pnpm run build && wrangler deploy",
     "build:all": "pnpm --filter @exile-hud/core build && pnpm --filter @exile-hud/pwa build && pnpm --filter @exile-hud/desktop build",
-    "test": "pnpm --filter @exile-hud/core test && pnpm --filter @exile-hud/edge-worker test && pnpm --filter @exile-hud/pwa test",
+    "test": "pnpm --filter @exile-hud/core test && pnpm --filter @exile-hud/edge-worker test && pnpm --filter @exile-hud/pwa test && pnpm --filter @exile-hud/desktop test",
     "dev:edge": "pnpm run build && wrangler dev",
     "dev:pwa": "pnpm --filter @exile-hud/pwa dev",
     "dev:desktop": "pnpm --filter @exile-hud/desktop tauri dev"

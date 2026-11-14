@@ -12,6 +12,7 @@ Engineering guardrails and repository context for AI coding agents working in `E
 | --- | --- | --- | --- |
 | `packages/game-data` | `@exile-hud/game-data` | Exports `src/index.ts` directly (**no `dist/` build step**) | Consumed directly by Vite/Vitest/`tsc` workspace resolution; static JSON/datasets under `packages/game-data/data/poe1/` |
 | `packages/core` | `@exile-hud/core` | Compiles to `dist/` via `tsc -p tsconfig.json` | Pure TypeScript domain engine + Zod wire protocol; **must be built before `pwa` or `desktop` `tsc -b` builds** |
+| `packages/hud-ui` | `@exile-hud/hud-ui` | Exports `src/index.ts` directly (**no `dist/` build step**) | Shared React 19 HUD widgets, modular grid engine, and passive tree visualizer consumed by both `pwa` and `desktop` |
 | `apps/edge-worker` | `@exile-hud/edge-worker` | Cloudflare Worker + Hibernating `SessionRoomDurableObject` | Deployed via root `wrangler.jsonc` (`name: "exilebuildcomppanion"`, serving `./apps/pwa/dist` as static `ASSETS` and `/api/*` + WS routes) |
 | `apps/pwa` | `@exile-hud/pwa` | React 19 + Tailwind CSS v4 + Vite + Workbox PWA | Second-screen HUD (`FIELD`, `TOWN`, `LAB`, `TREE`, `STANDBY`); supports offline `?demo=1` mode |
 | `apps/desktop` | `@exile-hud/desktop` | Tauri v2 Rust host (`src-tauri/`) + React 19 coordinator (`src/`) | Runs in Windows System Tray; bundles native `Client.txt` tailing, PoE process monitor, GGG HTTP sync, Credential Manager, hotkey watcher, and local AppData JSON stores |
@@ -90,7 +91,7 @@ cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml   # Required whenev
 
 - **CI (`.github/workflows/ci.yml`):** Triggers on `push` / `pull_request` to `main`. Runs `pnpm run check:lines`, `pnpm run build:all`, and `pnpm test` on `ubuntu-latest`, plus desktop Vite build and `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml` on `windows-latest`.
 - **Cloudflare Worker (`wrangler.jsonc`):** Pushing to `main` triggers Cloudflare Workers Builds to deploy `exilebuildcomppanion` (`https://exile.dunhas.com`), serving both the built PWA static bundle (`./apps/pwa/dist`) and the `SessionRoomDurableObject` WebSocket/API routes. Local non-interactive shells generally do not hold Cloudflare credentials; avoid committing secrets into `wrangler.jsonc`.
-- **Windows Desktop Release (`.github/workflows/release-desktop.yml`):** Pushing changes under `apps/desktop/**`, `packages/core/**`, `packages/game-data/**`, or `scripts/generate_tauri_icons.mjs` to `main` (or manual `workflow_dispatch`) builds `ExileCompanionHUD.exe`, `ExileCompanionHUD-Setup.exe`, and `SHA256SUMS.txt` and publishes the latest GitHub Release.
+- **Windows Desktop Release (`.github/workflows/release-desktop.yml`):** Pushing changes under `apps/desktop/**`, `packages/core/**`, `packages/game-data/**`, `packages/hud-ui/**`, `apps/pwa/public/**`, or `scripts/generate_tauri_icons.mjs` to `main` (or manual `workflow_dispatch`) builds `ExileCompanionHUD.exe`, `ExileCompanionHUD-Setup.exe`, and `SHA256SUMS.txt` and publishes the latest GitHub Release.
 
 ---
 
@@ -101,8 +102,9 @@ cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml   # Required whenev
 - PoB Decoder & Set Filtering: [packages/core/src/features/pob_import/README.md](packages/core/src/features/pob_import/README.md)
 - Route Preprocessor, AST & Gem Assigner: [packages/core/src/features/route_compiler/README.md](packages/core/src/features/route_compiler/README.md)
 - Edge Durable Object Relay & SQLite: [apps/edge-worker/src/features/session_room/README.md](apps/edge-worker/src/features/session_room/README.md)
-- Passive Tree Visualizer (`TREE` Mode): [apps/pwa/src/features/passive_tree_visualizer/README.md](apps/pwa/src/features/passive_tree_visualizer/README.md)
-- Modular Widget Grid Engine: [apps/pwa/src/features/widget_grid_engine/README.md](apps/pwa/src/features/widget_grid_engine/README.md)
+- Passive Tree Visualizer (`TREE` Mode): [packages/hud-ui/src/features/passive_tree_visualizer/README.md](packages/hud-ui/src/features/passive_tree_visualizer/README.md)
+- Modular Widget Grid Engine: [packages/hud-ui/src/features/widget_grid_engine/README.md](packages/hud-ui/src/features/widget_grid_engine/README.md)
 - Desktop Coordinator & Tauri IPC Bridge: [apps/desktop/src/features/host_coordinator/README.md](apps/desktop/src/features/host_coordinator/README.md)
+- Desktop Local PC Overlay HUD: [apps/desktop/src/features/overlay_hud/README.md](apps/desktop/src/features/overlay_hud/README.md)
 - Desktop Auto-Updater (`Portable` & `NSIS Setup`): [apps/desktop/src/features/auto_updater/README.md](apps/desktop/src/features/auto_updater/README.md)
 - Planned Next Features Roadmap: [NEXT_FEATURES.md](NEXT_FEATURES.md)

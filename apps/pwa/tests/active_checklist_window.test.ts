@@ -11,7 +11,7 @@ import {
 } from "@exile-hud/core";
 import { poe1GameAdapter } from "@exile-hud/game-data";
 import { describe, expect, it } from "vitest";
-import { selectChecklistWindow } from "../src/features/widgets/active_checklist_widget.js";
+import { selectChecklistWindow } from "@exile-hud/hud-ui";
 
 function createTestSnapshot(): HudSessionSnapshot {
   const defs = buildPreprocessorDefinitions({ leagueStart: true, bandit: "None", includeLibrary: true });
