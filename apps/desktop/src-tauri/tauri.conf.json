@@ -19,6 +19,24 @@
         "resizable": true,
         "visible": true,
         "additionalBrowserArgs": "--disable-background-timer-throttling --disable-renderer-backgrounding"
+      },
+      {
+        "label": "overlay",
+        "title": "Exile Companion Overlay",
+        "url": "index.html?window=overlay",
+        "width": 380,
+        "height": 520,
+        "minWidth": 300,
+        "minHeight": 240,
+        "resizable": true,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "shadow": false,
+        "focus": false,
+        "visible": false,
+        "additionalBrowserArgs": "--disable-background-timer-throttling --disable-renderer-backgrounding"
       }
     ],
     "security": {

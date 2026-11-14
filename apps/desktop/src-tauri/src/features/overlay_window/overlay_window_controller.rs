@@ -17,6 +17,8 @@ use crate::poe_process_heartbeat::find_running_poe_process;
 
 pub const OVERLAY_WINDOW_LABEL: &str = "overlay";
 pub const OVERLAY_CONFIG_UPDATED_EVENT: &str = "overlay-config-updated";
+pub const OVERLAY_BROWSER_ARGS: &str =
+    "--disable-background-timer-throttling --disable-renderer-backgrounding";
 
 pub struct OverlaySharedState {
     pub config: Mutex<SavedOverlayConfigRecord>,
@@ -85,6 +87,7 @@ pub fn ensure_overlay_window(
     .resizable(true)
     .focused(false)
     .visible(false)
+    .additional_browser_args(OVERLAY_BROWSER_ARGS)
     .min_inner_size(300.0, 240.0)
     .inner_size(bounds.width as f64, bounds.height as f64)
     .position(bounds.x as f64, bounds.y as f64)

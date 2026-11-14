@@ -2,6 +2,7 @@ use tauri::{AppHandle, Manager, State};
 
 use crate::overlay_config_disk_store::{
     is_valid_dock_preset, sanitize_overlay_config, OverlayBounds, SavedOverlayConfigRecord,
+    OVERLAY_CONFIG_SCHEMA_VERSION,
 };
 use crate::overlay_monitor_docking::{
     clamp_bounds_to_monitors, collect_monitor_work_rects, compute_dock_bounds,
@@ -23,12 +24,16 @@ pub fn get_overlay_config(state: State<'_, OverlaySharedState>) -> SavedOverlayC
 
 fn update_overlay_config_blocking(
     app: &AppHandle,
-    config: SavedOverlayConfigRecord,
+    mut config: SavedOverlayConfigRecord,
 ) -> Result<SavedOverlayConfigRecord, String> {
     let state = app.state::<OverlaySharedState>();
+    if config.schema_version == 0 {
+        config.schema_version = OVERLAY_CONFIG_SCHEMA_VERSION;
+    }
     let sanitized = sanitize_overlay_config(config);
     let was_enabled = state.config.lock().map(|g| g.enabled).unwrap_or(false);
 
+    sync_overlay_window_chrome(app, &state, &sanitized, !was_enabled && sanitized.enabled)?;
     if let Ok(mut watcher) = state.watcher.lock() {
         watcher.sync_hotkeys(
             &sanitized.toggle_visibility_hotkey,
@@ -40,7 +45,6 @@ fn update_overlay_config_blocking(
     }
 
     persist_and_emit_overlay_config(app, &sanitized)?;
-    sync_overlay_window_chrome(app, &state, &sanitized, !was_enabled && sanitized.enabled)?;
     Ok(sanitized)
 }
 
@@ -68,7 +72,6 @@ fn apply_overlay_dock_preset_blocking(
         guard.clone()
     };
 
-    persist_and_emit_overlay_config(app, &updated)?;
     if updated.enabled || app.get_webview_window(OVERLAY_WINDOW_LABEL).is_some() {
         let win = ensure_overlay_window(app, &state, &updated, poe_pid)?;
         if let Some(b) = updated.bounds {
@@ -76,6 +79,7 @@ fn apply_overlay_dock_preset_blocking(
         }
         sync_overlay_window_chrome(app, &state, &updated, false)?;
     }
+    persist_and_emit_overlay_config(app, &updated)?;
     Ok(updated)
 }
 
@@ -162,30 +166,32 @@ pub async fn toggle_overlay_click_through(app: AppHandle) -> Result<SavedOverlay
 
 pub fn toggle_overlay_enabled_from_backend(app: &AppHandle) -> Result<SavedOverlayConfigRecord, String> {
     let state = app.state::<OverlaySharedState>();
-    let updated = {
-        let mut guard = state
-            .config
-            .lock()
-            .map_err(|_| "Overlay config lock poisoned".to_string())?;
-        guard.enabled = !guard.enabled;
-        guard.clone()
-    };
-    persist_and_emit_overlay_config(app, &updated)?;
+    let mut updated = state
+        .config
+        .lock()
+        .map_err(|_| "Overlay config lock poisoned".to_string())?
+        .clone();
+    updated.enabled = !updated.enabled;
     sync_overlay_window_chrome(app, &state, &updated, updated.enabled)?;
+    if let Ok(mut guard) = state.config.lock() {
+        *guard = updated.clone();
+    }
+    persist_and_emit_overlay_config(app, &updated)?;
     Ok(updated)
 }
 
 pub fn toggle_overlay_lock_from_backend(app: &AppHandle) -> Result<SavedOverlayConfigRecord, String> {
     let state = app.state::<OverlaySharedState>();
-    let updated = {
-        let mut guard = state
-            .config
-            .lock()
-            .map_err(|_| "Overlay config lock poisoned".to_string())?;
-        guard.click_through_locked = !guard.click_through_locked;
-        guard.clone()
-    };
-    persist_and_emit_overlay_config(app, &updated)?;
+    let mut updated = state
+        .config
+        .lock()
+        .map_err(|_| "Overlay config lock poisoned".to_string())?
+        .clone();
+    updated.click_through_locked = !updated.click_through_locked;
     sync_overlay_window_chrome(app, &state, &updated, false)?;
+    if let Ok(mut guard) = state.config.lock() {
+        *guard = updated.clone();
+    }
+    persist_and_emit_overlay_config(app, &updated)?;
     Ok(updated)
 }

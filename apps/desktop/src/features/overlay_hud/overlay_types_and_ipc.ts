@@ -20,6 +20,7 @@ export interface OverlayBounds {
 }
 
 export interface SavedOverlayConfig {
+  schemaVersion?: number;
   enabled: boolean;
   clickThroughLocked: boolean;
   pinOnDesktop: boolean;
@@ -46,6 +47,7 @@ const FALLBACK_STORAGE_KEY = "exile_saved_overlay_config_v1";
 const FALLBACK_EVENT_NAME = "exile-local-overlay-config-updated";
 
 export const DEFAULT_OVERLAY_CONFIG: SavedOverlayConfig = {
+  schemaVersion: 2,
   enabled: false,
   clickThroughLocked: false,
   pinOnDesktop: true,

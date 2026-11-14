@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use tauri::{AppHandle, Manager};
 
 pub const OVERLAY_CONFIG_FILE_NAME: &str = "saved_overlay_config.json";
+pub const OVERLAY_CONFIG_SCHEMA_VERSION: u8 = 2;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -17,6 +18,8 @@ pub struct OverlayBounds {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct SavedOverlayConfigRecord {
+    #[serde(default)]
+    pub schema_version: u8,
     #[serde(default)]
     pub enabled: bool,
     #[serde(default)]
@@ -66,6 +69,7 @@ fn default_mode_layouts() -> serde_json::Value {
 impl Default for SavedOverlayConfigRecord {
     fn default() -> Self {
         Self {
+            schema_version: OVERLAY_CONFIG_SCHEMA_VERSION,
             enabled: false,
             click_through_locked: false,
             pin_on_desktop: default_pin_on_desktop(),
@@ -87,8 +91,12 @@ pub fn is_valid_dock_preset(preset: &str) -> bool {
     )
 }
 
-/// Normalizes opacity, dock preset, and modeLayouts shape before use or persistence.
+/// Normalizes opacity, dock preset, schema migrations, and modeLayouts shape before use or persistence.
 pub fn sanitize_overlay_config(mut cfg: SavedOverlayConfigRecord) -> SavedOverlayConfigRecord {
+    if cfg.schema_version < OVERLAY_CONFIG_SCHEMA_VERSION {
+        cfg.pin_on_desktop = true;
+        cfg.schema_version = OVERLAY_CONFIG_SCHEMA_VERSION;
+    }
     cfg.opacity_percent = cfg.opacity_percent.clamp(35, 100);
     if !is_valid_dock_preset(&cfg.dock_preset) {
         cfg.dock_preset = default_dock_preset();
@@ -167,9 +175,10 @@ mod tests {
         assert_eq!(initial.toggle_lock_hotkey, "F8");
 
         let custom = SavedOverlayConfigRecord {
+            schema_version: OVERLAY_CONFIG_SCHEMA_VERSION,
             enabled: true,
             click_through_locked: true,
-            pin_on_desktop: true,
+            pin_on_desktop: false,
             opacity_percent: 12,
             dock_preset: "invalid-slot".to_string(),
             bounds: Some(OverlayBounds { x: 40, y: 60, width: 420, height: 600 }),
@@ -182,12 +191,20 @@ mod tests {
         };
         save_overlay_config_to_path(&path, &custom).unwrap();
         let reloaded = load_overlay_config_from_path(&path).unwrap();
+        assert_eq!(reloaded.schema_version, OVERLAY_CONFIG_SCHEMA_VERSION);
         assert_eq!(reloaded.opacity_percent, 35);
         assert_eq!(reloaded.dock_preset, "top-left");
         assert!(reloaded.enabled);
         assert!(reloaded.click_through_locked);
-        assert!(reloaded.pin_on_desktop);
+        assert!(!reloaded.pin_on_desktop);
         assert_eq!(reloaded.bounds, custom.bounds);
         assert_eq!(reloaded.mode_layouts["FIELD"][0]["widgetId"], "active_checklist");
+
+        let legacy_path = temp.path().join("legacy_v1_overlay.json");
+        fs::write(&legacy_path, r#"{"enabled":true,"pinOnDesktop":false,"dockPreset":"top-left"}"#)
+            .unwrap();
+        let migrated = load_overlay_config_from_path(&legacy_path).unwrap();
+        assert_eq!(migrated.schema_version, OVERLAY_CONFIG_SCHEMA_VERSION);
+        assert!(migrated.pin_on_desktop);
     }
 }
