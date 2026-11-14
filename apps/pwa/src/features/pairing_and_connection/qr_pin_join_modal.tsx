@@ -1,5 +1,6 @@
 import type { DeviceFormFactor, HudContextMode } from "@exile-hud/core";
-import { Compass, History, MonitorSmartphone, Play, QrCode, SlidersHorizontal, Sparkles, X } from "lucide-react";
+import { ExileRelayBrandIcon } from "@exile-hud/hud-ui";
+import { Compass, History, MonitorSmartphone, Play, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { DesktopCompanionDownloadCard } from "../desktop_download/desktop_companion_download_card.js";
 import { detectDeviceFormFactor } from "./edge_websocket_room_client.js";
@@ -69,9 +70,7 @@ export function QrPinJoinModal({
       <div className="w-full max-w-5xl mx-auto space-y-5">
         <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="h-9 w-9 rounded-xl bg-hud-surface border border-hud-hairline flex items-center justify-center shrink-0">
-              <QrCode className="h-5 w-5 text-hud-accent" />
-            </div>
+            <ExileRelayBrandIcon className="h-9 w-9 shrink-0" />
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-hud-text">Exile Relay</h1>

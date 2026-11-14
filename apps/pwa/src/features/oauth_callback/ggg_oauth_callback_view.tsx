@@ -1,5 +1,5 @@
-import { ThemeSelectorPopover } from "@exile-hud/hud-ui";
-import { Check, Copy, ExternalLink, KeyRound, ShieldAlert, ShieldCheck } from "lucide-react";
+import { ExileRelayBrandIcon, ThemeSelectorPopover } from "@exile-hud/hud-ui";
+import { Check, Copy, ExternalLink, ShieldAlert, ShieldCheck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 /** Renders GGG OAuth 2.1 callback handling and endpoint metadata on /oauth/callback. */
@@ -35,7 +35,7 @@ export function GggOauthCallbackView() {
       <div className="w-full max-w-lg space-y-6">
         <div className="flex items-start justify-between gap-3 pb-4 border-b border-hud-hairline">
           <div className="flex items-center gap-3">
-            <KeyRound className="h-5 w-5 text-hud-accent shrink-0" />
+            <ExileRelayBrandIcon className="h-8 w-8 shrink-0" />
             <div>
               <h1 className="text-xl font-bold tracking-tight text-hud-text">
                 Exile Relay — GGG OAuth 2.1 Callback

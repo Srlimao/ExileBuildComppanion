@@ -1,4 +1,4 @@
-import { ThemeSelectorPopover } from "@exile-hud/hud-ui";
+import { ExileRelayBrandIcon, ThemeSelectorPopover } from "@exile-hud/hud-ui";
 import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { DesktopUpdateFooterBar } from "./features/auto_updater/desktop_update_footer_bar.js";
@@ -43,11 +43,14 @@ export function App() {
   return (
     <div className="min-h-screen bg-hud-bg text-hud-text px-4 py-3.5 flex flex-col gap-4 transition-colors">
       <header className="flex items-center justify-between gap-2 border-b border-hud-hairline pb-2.5">
-        <div className="min-w-0">
-          <h1 className="text-base font-bold tracking-tight text-hud-text truncate">Exile Relay</h1>
-          <p className="text-[11px] font-mono text-hud-muted truncate">
-            {ctl.snapshot ? `${ctl.snapshot.mode} · ${ctl.snapshot.currentAreaName}` : "Initializing..."}
-          </p>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <ExileRelayBrandIcon className="h-7 w-7 shrink-0" />
+          <div className="min-w-0">
+            <h1 className="text-base font-bold tracking-tight text-hud-text truncate">Exile Relay</h1>
+            <p className="text-[11px] font-mono text-hud-muted truncate">
+              {ctl.snapshot ? `${ctl.snapshot.mode} · ${ctl.snapshot.currentAreaName}` : "Initializing..."}
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0">

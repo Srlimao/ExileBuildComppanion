@@ -1,4 +1,5 @@
 export { DeathRespawnResumeBanner } from "./features/hud_shell/death_respawn_resume_banner.js";
+export { ExileRelayBrandIcon } from "./features/hud_shell/exile_relay_brand_icon.js";
 export { StandbySessionSummaryView } from "./features/hud_shell/standby_session_summary_view.js";
 export { HudThemeProvider, useHudTheme } from "./features/theme/hud_theme_provider.js";
 export {

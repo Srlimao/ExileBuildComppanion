@@ -5,6 +5,8 @@ import sharp from "sharp";
 
 const THIS_DIR = path.dirname(fileURLToPath(import.meta.url));
 const ICONS_DIR = path.resolve(THIS_DIR, "../apps/desktop/src-tauri/icons");
+const PWA_PUBLIC_DIR = path.resolve(THIS_DIR, "../apps/pwa/public");
+const DESKTOP_PUBLIC_DIR = path.resolve(THIS_DIR, "../apps/desktop/public");
 
 function buildBadgeSvg(accentHex, innerHex, options = {}) {
   const updateDotMarkup = options.updateDot
@@ -57,6 +59,8 @@ function buildMultiSizeIco(entries) {
 
 async function main() {
   fs.mkdirSync(ICONS_DIR, { recursive: true });
+  fs.mkdirSync(PWA_PUBLIC_DIR, { recursive: true });
+  fs.mkdirSync(DESKTOP_PUBLIC_DIR, { recursive: true });
 
   const mainSvg = buildBadgeSvg("#6366F1", "#EAB308");
   const trayGraySvg = buildBadgeSvg("#71717A", "#D4D4D8");
@@ -66,18 +70,33 @@ async function main() {
   const trayGreenUpdateSvg = buildBadgeSvg("#22C55E", "#ECFDF5", { updateDot: true });
   const trayAmberUpdateSvg = buildBadgeSvg("#F59E0B", "#FEF3C7", { updateDot: true });
 
-  const [png32, png128, png256, trayGray, trayGreen, trayAmber, trayGrayUpd, trayGreenUpd, trayAmberUpd] =
-    await Promise.all([
-      renderRgbaPng(mainSvg, 32),
-      renderRgbaPng(mainSvg, 128),
-      renderRgbaPng(mainSvg, 256),
-      renderRgbaPng(trayGraySvg, 64),
-      renderRgbaPng(trayGreenSvg, 64),
-      renderRgbaPng(trayAmberSvg, 64),
-      renderRgbaPng(trayGrayUpdateSvg, 64),
-      renderRgbaPng(trayGreenUpdateSvg, 64),
-      renderRgbaPng(trayAmberUpdateSvg, 64),
-    ]);
+  const [
+    png32,
+    png128,
+    png180,
+    png192,
+    png256,
+    png512,
+    trayGray,
+    trayGreen,
+    trayAmber,
+    trayGrayUpd,
+    trayGreenUpd,
+    trayAmberUpd,
+  ] = await Promise.all([
+    renderRgbaPng(mainSvg, 32),
+    renderRgbaPng(mainSvg, 128),
+    renderRgbaPng(mainSvg, 180),
+    renderRgbaPng(mainSvg, 192),
+    renderRgbaPng(mainSvg, 256),
+    renderRgbaPng(mainSvg, 512),
+    renderRgbaPng(trayGraySvg, 64),
+    renderRgbaPng(trayGreenSvg, 64),
+    renderRgbaPng(trayAmberSvg, 64),
+    renderRgbaPng(trayGrayUpdateSvg, 64),
+    renderRgbaPng(trayGreenUpdateSvg, 64),
+    renderRgbaPng(trayAmberUpdateSvg, 64),
+  ]);
 
   fs.writeFileSync(path.join(ICONS_DIR, "32x32.png"), png32);
   fs.writeFileSync(path.join(ICONS_DIR, "128x128.png"), png128);
@@ -96,7 +115,14 @@ async function main() {
   ]);
   fs.writeFileSync(path.join(ICONS_DIR, "icon.ico"), icoBuffer);
 
-  console.log(`Generated Tauri RGBA PNG + ICO assets in ${ICONS_DIR}`);
+  fs.writeFileSync(path.join(PWA_PUBLIC_DIR, "favicon.svg"), mainSvg);
+  fs.writeFileSync(path.join(PWA_PUBLIC_DIR, "favicon.ico"), icoBuffer);
+  fs.writeFileSync(path.join(PWA_PUBLIC_DIR, "apple-touch-icon.png"), png180);
+  fs.writeFileSync(path.join(PWA_PUBLIC_DIR, "icon-192.png"), png192);
+  fs.writeFileSync(path.join(PWA_PUBLIC_DIR, "icon-512.png"), png512);
+  fs.writeFileSync(path.join(DESKTOP_PUBLIC_DIR, "favicon.svg"), mainSvg);
+
+  console.log(`Generated Tauri & Web/PWA icon assets in ${ICONS_DIR}, ${PWA_PUBLIC_DIR}, and ${DESKTOP_PUBLIC_DIR}`);
 }
 
 main().catch((err) => {

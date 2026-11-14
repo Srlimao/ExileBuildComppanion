@@ -1,4 +1,4 @@
-# Exile Relay
+# <img src="apps/pwa/public/favicon.svg" width="28" height="28" align="top" alt="Exile Relay" /> Exile Relay
 
 [![Live Web HUD](https://img.shields.io/badge/Live_HUD-exile--relay.dunhas.com-6366f1)](https://exile-relay.dunhas.com)
 [![Interactive Demo](https://img.shields.io/badge/Interactive_Demo-Try_%3Fdemo%3D1-10b981)](https://exile-relay.dunhas.com/?demo=1)

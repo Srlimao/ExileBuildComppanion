@@ -1,4 +1,5 @@
 import type { DeviceFormFactor, HudContextMode, HudSessionSnapshot } from "@exile-hud/core";
+import { ExileRelayBrandIcon } from "@exile-hud/hud-ui";
 import { Pin, Settings, ShieldAlert, Unlock, Wifi, WifiOff } from "lucide-react";
 import { useState } from "react";
 import type { ConnectionPhase } from "../pairing_and_connection/edge_websocket_room_client.js";
@@ -54,26 +55,42 @@ export function HudTopTelemetryBar({
     <>
       <header className="sticky top-0 z-30 bg-hud-bg/92 backdrop-blur border-b border-hud-hairline px-4 sm:px-6 py-3 transition-colors">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-baseline gap-2.5 flex-wrap">
-              <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-hud-text truncate">
-                {snapshot.currentAreaName}
-              </h1>
-              <span className={`text-xs font-mono tabular-nums ${xp.ok ? "text-hud-ok" : "text-hud-warn"}`}>
-                {xp.label}
-              </span>
-            </div>
+          <div className="flex items-center gap-3 min-w-0">
+            {onOpenPairingModal ? (
+              <button
+                type="button"
+                onClick={onOpenPairingModal}
+                title="Exile Relay — Pairing & Home"
+                aria-label="Exile Relay — Pairing & Home"
+                className="shrink-0 rounded-lg hover:opacity-85 transition-opacity cursor-pointer"
+              >
+                <ExileRelayBrandIcon className="h-7 w-7" />
+              </button>
+            ) : (
+              <ExileRelayBrandIcon className="h-7 w-7 shrink-0" />
+            )}
 
-            <div className="flex items-center gap-2 text-xs text-hud-muted mt-0.5 flex-wrap">
-              <span>
-                Act {snapshot.currentAct} · Lv {snapshot.characterLevel} {snapshot.characterClass}
-              </span>
-              {snapshot.characterName && <span className="text-hud-dim">({snapshot.characterName})</span>}
-              {snapshot.isEndgameOnlyFallback && (
-                <span className="inline-flex items-center gap-1 text-hud-warn font-medium">
-                  <ShieldAlert className="h-3 w-3" /> Fallback Leveling
+            <div className="min-w-0">
+              <div className="flex items-baseline gap-2.5 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-hud-text truncate">
+                  {snapshot.currentAreaName}
+                </h1>
+                <span className={`text-xs font-mono tabular-nums ${xp.ok ? "text-hud-ok" : "text-hud-warn"}`}>
+                  {xp.label}
                 </span>
-              )}
+              </div>
+
+              <div className="flex items-center gap-2 text-xs text-hud-muted mt-0.5 flex-wrap">
+                <span>
+                  Act {snapshot.currentAct} · Lv {snapshot.characterLevel} {snapshot.characterClass}
+                </span>
+                {snapshot.characterName && <span className="text-hud-dim">({snapshot.characterName})</span>}
+                {snapshot.isEndgameOnlyFallback && (
+                  <span className="inline-flex items-center gap-1 text-hud-warn font-medium">
+                    <ShieldAlert className="h-3 w-3" /> Fallback Leveling
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
