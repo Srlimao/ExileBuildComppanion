@@ -17,9 +17,6 @@ pub(crate) mod client_txt_byte_offset_tailer;
 #[path = "features/process_monitor/poe_process_heartbeat.rs"]
 pub(crate) mod poe_process_heartbeat;
 
-#[path = "features/ggg_api_client/os_keychain_poesessid_store.rs"]
-pub(crate) mod os_keychain_poesessid_store;
-
 #[path = "features/ggg_api_client/character_window_http_poller.rs"]
 pub(crate) mod character_window_http_poller;
 
@@ -134,9 +131,6 @@ pub fn run() {
             tauri_host_ipc_commands::read_bootstrap_log_lines,
             tauri_host_ipc_commands::check_poe_running,
             tauri_host_ipc_commands::write_vendor_regex_clipboard,
-            tauri_host_ipc_commands::save_poesessid,
-            tauri_host_ipc_commands::has_poesessid,
-            tauri_host_ipc_commands::clear_poesessid,
             tauri_host_ipc_commands::poll_character_window,
             tauri_host_ipc_commands::set_tray_telemetry_status,
             tauri_host_ipc_commands::get_pob_profile_storage_path,

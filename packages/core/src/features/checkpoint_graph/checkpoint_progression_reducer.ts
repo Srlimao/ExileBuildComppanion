@@ -59,7 +59,7 @@ function transitionToZone(
   const checkpoints = evaluation.checkpoints;
 
   let gemSteps = state.gemSteps;
-  if (prevWasTown && !isTown && state.characterSyncStatus !== "ONLINE_PUBLIC" && state.characterSyncStatus !== "ONLINE_POESESSID") {
+  if (prevWasTown && !isTown && state.characterSyncStatus !== "ONLINE_PUBLIC") {
     gemSteps = state.gemSteps.map((gs) =>
       gs.act <= nextHighestAct && !gs.verifiedByApi && !gs.manualCompleted ? { ...gs, softAcquired: true } : gs,
     );

@@ -8,7 +8,6 @@ export interface ClientLogDetectionResult {
 export interface CharacterPollResponse {
   ok: boolean;
   statusCode: number;
-  usedPoesessid: boolean;
   throttledMs: number | null;
   error: string | null;
   itemsJson: Record<string, any> | null;
@@ -18,8 +17,6 @@ export interface CharacterPollResponse {
 export function isTauriRuntime(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
-
-let mockVaultHasSession = false;
 
 async function callInvoke<T>(command: string, args?: Record<string, unknown>): Promise<T> {
   const { invoke } = await import("@tauri-apps/api/core");
@@ -61,38 +58,15 @@ export async function writeVendorRegexClipboard(regex: string): Promise<void> {
   await callInvoke("write_vendor_regex_clipboard", { regex });
 }
 
-export async function savePoesessid(value: string): Promise<void> {
-  if (!isTauriRuntime()) {
-    mockVaultHasSession = value.trim().length > 0;
-    return;
-  }
-  await callInvoke("save_poesessid", { value });
-}
-
-export async function hasPoesessid(): Promise<boolean> {
-  if (!isTauriRuntime()) return mockVaultHasSession;
-  return callInvoke<boolean>("has_poesessid");
-}
-
-export async function clearPoesessid(): Promise<void> {
-  if (!isTauriRuntime()) {
-    mockVaultHasSession = false;
-    return;
-  }
-  await callInvoke("clear_poesessid");
-}
-
 export async function pollCharacterWindow(params: {
   accountName: string;
   characterName: string;
-  usePoesessid: boolean;
   force: boolean;
 }): Promise<CharacterPollResponse> {
   if (!isTauriRuntime()) {
     return {
       ok: false,
       statusCode: 503,
-      usedPoesessid: false,
       throttledMs: 60_000,
       error: "GGG HTTP fetch requires Windows Tauri desktop runtime (use Replay Simulator in browser preview).",
       itemsJson: null,

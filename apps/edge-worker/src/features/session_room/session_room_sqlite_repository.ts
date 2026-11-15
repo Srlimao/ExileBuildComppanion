@@ -26,7 +26,7 @@ export interface RegisterRoomInput {
 }
 
 export function containsForbiddenSecret(raw: string): boolean {
-  return /poesessid|access_token|refresh_token|client_secret|code_verifier/i.test(raw);
+  return /access_token|refresh_token|client_secret|code_verifier/i.test(raw);
 }
 
 /** Wraps Cloudflare Durable Object SQLite storage for one paired companion room. */

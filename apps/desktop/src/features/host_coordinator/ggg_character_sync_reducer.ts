@@ -115,7 +115,7 @@ export function applyGggCharacterResponseToSnapshot(
     version: snapshot.version + 1,
     characterName: charMeta?.name || snapshot.characterName,
     characterLevel,
-    characterSyncStatus: response.usedPoesessid ? "ONLINE_POESESSID" : "ONLINE_PUBLIC",
+    characterSyncStatus: "ONLINE_PUBLIC",
     lastCharacterSyncAt: Date.now(),
     gemSteps: gemVerification.updatedGemSteps,
     nextTownCurrencyBudget: computeNextTownCurrencyBudget(

@@ -8,7 +8,7 @@ A lightweight, real-time second-screen telemetry HUD designed for Path of Exile 
 
 * **Tech Stack Target:**
 
-  * **PC Desktop Host & Tray App:** Tauri v2 (`apps/desktop` — Rust backend + React/TypeScript coordinator) — provides native Windows System Tray integration, lightweight Control Center UI, `Client.txt` byte-offset discovery & tailing, `PathOfExile.exe` process heartbeat monitor, GGG Character API poller with Windows Credential Manager `POESESSID`, foreground passive-tree hotkey polling, Windows clipboard regex control, AppData disk persistence (`saved_pob_profile.json` and `saved_campaign_progress.json`), and an outbound WebSocket uplink to Cloudflare.
+  * **PC Desktop Host & Tray App:** Tauri v2 (`apps/desktop` — Rust backend + React/TypeScript coordinator) — provides native Windows System Tray integration, lightweight Control Center UI, `Client.txt` byte-offset discovery & tailing, `PathOfExile.exe` process heartbeat monitor, GGG public Character API poller, foreground passive-tree hotkey polling, Windows clipboard regex control, AppData disk persistence (`saved_pob_profile.json` and `saved_campaign_progress.json`), and an outbound WebSocket uplink to Cloudflare.
 
   * **Cloudflare Edge Infrastructure (`wrangler.jsonc` -> `https://exile.dunhas.com`):**
 
@@ -92,15 +92,13 @@ Clicking the tray icon opens a sleek, compact (\~420×640px) setup window on the
 
    * **Saved Build Profile & Progress Persistence:** Persists the active PoB profile, raw XML cache, route customizer flags, and set selection to `saved_pob_profile.json` and completed checklist/gem steps to `saved_campaign_progress.json` in Windows AppData (`Reset Checks` clears saved progress across both PC and Web).
 
-3. **GGG Character Sync Settings (Public or `POESESSID`):**
+3. **GGG Character Sync Settings (Public Profile):**
 
    * **Account & Character Inputs:** Dedicated text fields in the PC setup window for **PoE Account Name** (including discriminator if applicable, e.g., `Name#1234`) and **Character Name** (with an `Auto-detect from Client.txt` toggle that updates the character name automatically on level-up).
 
-   * **Optional Private-Profile Bypass (`POESESSID`):** Expandable advanced field allowing the user to paste their `POESESSID` cookie if their PoE account privacy is set to private.
+   * **Public-Profile Policy & Edge Token Guard:** Sync queries public PoE character profiles only—no browser session cookies are ever collected, stored, or sent. The edge relay actively rejects any HTTP or WebSocket payload containing leaked auth token fields (`access_token`, `refresh_token`, `client_secret`, `code_verifier`) with HTTP `400` / close code `1008`.
 
-     * *Local-Only Security Boundary:* `POESESSID` is stored locally on Windows via Windows Credential Manager and used solely for outbound requests from the PC host to `pathofexile.com`—it is **never** sent to Cloudflare Workers or Durable Objects (the edge relay actively rejects any message or query containing `poesessid` with close code `1008`).
-
-   * **Connection & Launch Outage Status Badge:** Validates credentials on save and displays `Connected (Public Profile)`, `Connected (POESESSID Authenticated)`, or `API Unavailable (Fallback Mode Active)`.
+   * **Connection & Launch Outage Status Badge:** Displays `ONLINE_PUBLIC`, `OFFLINE_FALLBACK`, or `UNCONFIGURED`.
 
 4. **Environment & `Client.txt` Detection:**
 
@@ -135,8 +133,6 @@ Clicking the tray icon opens a sleek, compact (\~420×640px) setup window on the
   * `https://www.pathofexile.com/character-window/get-items?accountName=<ACC>&character=<CHAR>`
 
   * `https://www.pathofexile.com/character-window/get-passive-skills?accountName=<ACC>&character=<CHAR>`
-
-  * *(Attaches `Cookie: POESESSID=<TOKEN>` header locally when configured for private accounts.)*
 
 * **Rate-Limit & Outage Circuit Breaker:**
 
@@ -260,7 +256,7 @@ Instead of a single rigid layout, **each active Context Mode (*Field*, *Town*, *
 
 * \[x\] **Cloudflare Edge Stack:** Single Worker (`exilebuildcomppanion`) serving offline-cached Static Assets PWA (`./apps/pwa/dist`) plus Hibernating `SessionRoomDurableObject` WebSocket broker and embedded `ctx.storage.sql` SQLite persistence.
 
-* \[x\] **GGG Character Snapshot Sync & Launch-Outage Resilience:** Rate-limit-safe town-entry polling with manual Account/Character inputs, auto-character detection, local-only Windows Credential Manager `POESESSID` private-profile bypass, and circuit-breaker fallback to heuristic tracking during league-launch API downtime.
+* \[x\] **GGG Character Snapshot Sync & Launch-Outage Resilience:** Rate-limit-safe town-entry polling with manual Account/Character inputs, auto-character detection, and circuit-breaker fallback to heuristic tracking during league-launch API downtime.
 
 * \[x\] **Non-Linear Progression & Persisted State:** Checkpoint graph with human-readable quest turn-in names & NPCs, semantic per-act completion persistence in Windows AppData (`saved_campaign_progress.json`, `saved_pob_profile.json`), 2-step `Reset Checks`, `FREE_QUEST_REWARD` vs. `VENDOR_BUY` tagging + currency tally, death respawn banner, `PathOfExile.exe` process heartbeat, and Act 1–5 vs. 6–10 zone disambiguation.
 

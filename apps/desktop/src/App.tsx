@@ -139,12 +139,9 @@ export function App() {
               accountName={ctl.accountName}
               characterName={ctl.characterName}
               syncStatus={ctl.snapshot?.characterSyncStatus ?? "UNCONFIGURED"}
-              hasStoredSession={ctl.hasStoredSession}
               syncMessage={ctl.syncMessage}
               onChangeAccount={ctl.setAccountName}
               onChangeCharacter={ctl.setCharacterName}
-              onSavePoesessid={ctl.savePoesessid}
-              onClearPoesessid={ctl.clearPoesessid}
               onForceSync={ctl.forceSync}
             />
           </div>

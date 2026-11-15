@@ -15,7 +15,7 @@ Engineering guardrails and repository context for AI coding agents working in `E
 | `packages/hud-ui` | `@exile-hud/hud-ui` | Exports `src/index.ts` directly (**no `dist/` build step**) | Shared React 19 HUD widgets, modular grid engine, and passive tree visualizer consumed by both `pwa` and `desktop` |
 | `apps/edge-worker` | `@exile-hud/edge-worker` | Cloudflare Worker + Hibernating `SessionRoomDurableObject` | Deployed via root `wrangler.jsonc` (`name: "exilebuildcomppanion"`, serving `./apps/pwa/dist` as static `ASSETS` and `/api/*` + WS routes) |
 | `apps/pwa` | `@exile-hud/pwa` | React 19 + Tailwind CSS v4 + Vite + Workbox PWA | Second-screen HUD (`FIELD`, `TOWN`, `LAB`, `TREE`, `STANDBY`); supports offline `?demo=1` mode |
-| `apps/desktop` | `@exile-hud/desktop` | Tauri v2 Rust host (`src-tauri/`) + React 19 coordinator (`src/`) | Runs in Windows System Tray; bundles native `Client.txt` tailing, PoE process monitor, GGG HTTP sync, Credential Manager, hotkey watcher, and local AppData JSON stores |
+| `apps/desktop` | `@exile-hud/desktop` | Tauri v2 Rust host (`src-tauri/`) + React 19 coordinator (`src/`) | Runs in Windows System Tray; bundles native `Client.txt` tailing, PoE process monitor, GGG HTTP sync, hotkey watcher, and local AppData JSON stores |
 | `scripts` | — | Node ESM scripts | Asset ingestion (`ingest_upstream_game_assets.mjs`, `ingest_ggg_passive_tree.mjs`), icon generation, and `verify_max_file_lines.mjs` |
 
 Use `pnpm run build:all` so `@exile-hud/core` compiles before `@exile-hud/pwa` and `@exile-hud/desktop`.
@@ -57,10 +57,10 @@ Use `pnpm run build:all` so `@exile-hud/core` compiles before `@exile-hud/pwa` a
 
 ## 4. Security, Privacy & Persistence Boundaries
 
-- **`POESESSID` Local-Only Rule (CRITICAL):**
-  - Optional `POESESSID` tokens are persisted solely in Windows Credential Manager (`apps/desktop/src-tauri/src/features/ggg_api_client/os_keychain_poesessid_store.rs`) and used exclusively by `character_window_http_poller.rs` for direct PC -> `www.pathofexile.com` requests.
-  - **Never** include `POESESSID` in `HudSessionSnapshot`, WebSocket frames, worker logs, localStorage, or `saved_pob_profile.json` / `saved_campaign_progress.json`.
-  - `apps/edge-worker/src/features/session_room/session_room_durable_object.ts` enforces close code `1008` if any inbound payload contains `"poesessid"`. Keep that guard intact and covered by E2E tests.
+- **No Session Cookies & Auth-Token Edge Guard (CRITICAL):**
+  - Browser session cookies are never collected, stored, or transmitted anywhere (per GGG API policy); `character_window_http_poller.rs` queries public `www.pathofexile.com` character profiles only.
+  - **Never** include OAuth tokens or secrets (`access_token`, `refresh_token`, `client_secret`, `code_verifier`) in `HudSessionSnapshot`, WebSocket frames, worker logs, localStorage, or `saved_pob_profile.json` / `saved_campaign_progress.json`.
+  - `apps/edge-worker/src/features/session_room/session_room_durable_object.ts` enforces HTTP `400` / close code `1008` if any inbound payload contains forbidden auth token fields. Keep that guard intact and covered by E2E tests.
 - **Backwards-Compatible Storage & Wire Protocol:**
   - Wire schema changes belong in `packages/core/src/features/protocol/session_room_wire_protocol.ts` using Zod schemas shared across desktop, worker, and PWA.
   - Durable Object SQLite schema in `apps/edge-worker/src/features/session_room/session_room_sqlite_repository.ts` (`room_meta`, `room_snapshot`, `room_layouts`) must remain backwards-compatible for existing rooms.

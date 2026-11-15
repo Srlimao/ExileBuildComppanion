@@ -7,7 +7,6 @@ export async function executeGggCharacterSync(params: {
   force: boolean;
   accountName: string;
   characterName: string;
-  hasStoredSession: boolean;
   simulatedOutage: boolean;
   activeBuild: ValidatedPobBuild | null;
   getLatestSnapshot: () => HudSessionSnapshot | null;
@@ -18,7 +17,6 @@ export async function executeGggCharacterSync(params: {
     force,
     accountName,
     characterName,
-    hasStoredSession,
     simulatedOutage,
     activeBuild,
     getLatestSnapshot,
@@ -43,15 +41,13 @@ export async function executeGggCharacterSync(params: {
   const res = await pollCharacterWindow({
     accountName,
     characterName,
-    usePoesessid: hasStoredSession,
     force,
   });
 
   if (!res.ok && !force) return;
   const latest = getLatestSnapshot();
   if (!latest) return;
-  const modeLabel = res.usedPoesessid ? "POESESSID" : "Public API";
-  setSyncMessage(res.ok ? `${force ? "Synced" : "Auto-synced"} via ${modeLabel}` : res.error);
+  setSyncMessage(res.ok ? `${force ? "Synced" : "Auto-synced"} via Public API` : res.error);
   const next = applyGggCharacterResponseToSnapshot(latest, activeBuild, res);
   if (
     res.ok &&

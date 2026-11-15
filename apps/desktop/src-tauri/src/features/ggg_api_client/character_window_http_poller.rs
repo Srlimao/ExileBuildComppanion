@@ -3,8 +3,6 @@ use serde_json::Value;
 use std::time::{SystemTime, UNIX_EPOCH};
 use urlencoding::encode;
 
-use super::os_keychain_poesessid_store::load_poesessid_internal;
-
 pub const DEFAULT_COOLDOWN_MS: u64 = 45_000;
 const BACKOFF_SCHEDULE_MS: &[u64] = &[60_000, 120_000, 300_000];
 
@@ -85,7 +83,6 @@ pub fn parse_retry_after_ms(headers: &reqwest::header::HeaderMap) -> Option<u64>
 pub struct CharacterPollResponse {
     pub ok: bool,
     pub status_code: u16,
-    pub used_poesessid: bool,
     pub throttled_ms: Option<u64>,
     pub error: Option<String>,
     pub items_json: Option<Value>,
@@ -95,7 +92,6 @@ pub struct CharacterPollResponse {
 pub async fn execute_character_window_fetch(
     account_name: &str,
     character_name: &str,
-    use_poesessid: bool,
 ) -> CharacterPollResponse {
     let items_url = build_character_window_url("get-items", account_name, character_name);
     let passives_url = build_character_window_url("get-passive-skills", account_name, character_name);
@@ -110,7 +106,6 @@ pub async fn execute_character_window_fetch(
             return CharacterPollResponse {
                 ok: false,
                 status_code: 0,
-                used_poesessid: false,
                 throttled_ms: None,
                 error: Some(format!("HTTP client init failed: {e}")),
                 items_json: None,
@@ -119,20 +114,7 @@ pub async fn execute_character_window_fetch(
         }
     };
 
-    let sess_cookie = if use_poesessid {
-        load_poesessid_internal()
-    } else {
-        None
-    };
-    let used_sess = sess_cookie.is_some();
-
-    let send_get = |url: String| {
-        let mut req = client.get(url);
-        if let Some(ref val) = sess_cookie {
-            req = req.header("Cookie", format!("POESESSID={val}"));
-        }
-        req.send()
-    };
+    let send_get = |url: String| client.get(url).send();
 
     let items_res = match send_get(items_url).await {
         Ok(r) => r,
@@ -140,7 +122,6 @@ pub async fn execute_character_window_fetch(
             return CharacterPollResponse {
                 ok: false,
                 status_code: 503,
-                used_poesessid: used_sess,
                 throttled_ms: None,
                 error: Some(format!("GGG get-items request error: {e}")),
                 items_json: None,
@@ -155,7 +136,6 @@ pub async fn execute_character_window_fetch(
         return CharacterPollResponse {
             ok: false,
             status_code: status,
-            used_poesessid: used_sess,
             throttled_ms: retry_ms,
             error: Some(format!("GGG API get-items HTTP {status}")),
             items_json: None,
@@ -173,7 +153,6 @@ pub async fn execute_character_window_fetch(
     CharacterPollResponse {
         ok: true,
         status_code: 200,
-        used_poesessid: used_sess,
         throttled_ms: None,
         error: None,
         items_json,

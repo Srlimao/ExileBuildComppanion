@@ -191,7 +191,7 @@ describe("Cloudflare Worker + SessionRoomDurableObject E2E", () => {
     }
   });
 
-  it("rejects POESESSID payloads on query and body with 400 and closes unregistered WS with 4001", async () => {
+  it("rejects auth token payloads on query and body with 400 and closes unregistered WS with 4001", async () => {
     const portableRedirect = await fetch(`${BASE_HTTP}/api/download/desktop`, { redirect: "manual" });
     expect(portableRedirect.status).toBe(302);
     expect(portableRedirect.headers.get("location")).toBe(
@@ -204,7 +204,7 @@ describe("Cloudflare Worker + SessionRoomDurableObject E2E", () => {
       "https://github.com/Srlimao/ExileBuildComppanion/releases/latest/download/ExileRelay-Setup.exe",
     );
 
-    const queryLeak = await fetch(`${BASE_HTTP}/api/session/LEAK01/register?poesessid=secret`);
+    const queryLeak = await fetch(`${BASE_HTTP}/api/session/LEAK01/register?access_token=secret`);
     expect(queryLeak.status).toBe(400);
 
     const bodyLeak = await fetch(`${BASE_HTTP}/api/session/LEAK01/register`, {
@@ -214,7 +214,7 @@ describe("Cloudflare Worker + SessionRoomDurableObject E2E", () => {
         hostSecret: "host-secret-123",
         pin: "4455",
         snapshot: createSampleSnapshot("LEAK01"),
-        poesessid: "never-send-this",
+        access_token: "never-send-this",
       }),
     });
     expect(bodyLeak.status).toBe(400);

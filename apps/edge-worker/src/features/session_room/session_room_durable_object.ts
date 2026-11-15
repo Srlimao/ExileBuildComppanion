@@ -34,7 +34,7 @@ export class SessionRoomDurableObject extends DurableObject<unknown> {
 
   async fetch(request: Request): Promise<Response> {
     if (containsForbiddenSecret(request.url)) {
-      return Response.json({ error: "POESESSID is prohibited from edge relay requests." }, { status: 400 });
+      return Response.json({ error: "Auth tokens are prohibited from edge relay requests." }, { status: 400 });
     }
 
     const url = new URL(request.url);
@@ -51,7 +51,7 @@ export class SessionRoomDurableObject extends DurableObject<unknown> {
   private async handleRegister(request: Request, url: URL): Promise<Response> {
     const rawBody = await request.text();
     if (containsForbiddenSecret(rawBody)) {
-      return Response.json({ error: "POESESSID must never leave the PC keychain." }, { status: 400 });
+      return Response.json({ error: "Auth tokens must never leave the PC keychain." }, { status: 400 });
     }
 
     let jsonBody: unknown;
@@ -145,7 +145,7 @@ export class SessionRoomDurableObject extends DurableObject<unknown> {
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
     const raw = typeof message === "string" ? message : new TextDecoder().decode(message);
     if (containsForbiddenSecret(raw)) {
-      ws.close(1008, "POESESSID forbidden on WebSocket transport");
+      ws.close(1008, "Auth tokens forbidden on WebSocket transport");
       return;
     }
 

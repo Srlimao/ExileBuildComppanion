@@ -21,7 +21,6 @@ export type CheckpointCategory = z.infer<typeof CheckpointCategorySchema>;
 export const CharacterSyncStatusSchema = z.enum([
   "UNCONFIGURED",
   "ONLINE_PUBLIC",
-  "ONLINE_POESESSID",
   "OFFLINE_FALLBACK",
 ]);
 export type CharacterSyncStatus = z.infer<typeof CharacterSyncStatusSchema>;

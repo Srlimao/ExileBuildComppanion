@@ -50,7 +50,7 @@ export default {
 
     if (containsForbiddenSecret(url.search)) {
       return withCors(
-        Response.json({ error: "POESESSID query parameters are forbidden on edge relay." }, { status: 400 }),
+        Response.json({ error: "Auth token query parameters are forbidden on edge relay." }, { status: 400 }),
       );
     }
 

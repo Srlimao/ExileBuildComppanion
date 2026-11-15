@@ -14,7 +14,6 @@ use crate::local_pob_profile_disk_store::{
     load_saved_pob_profile_from_path, resolve_profile_file_path, save_pob_profile_to_path,
     SavedPobProfileRecord,
 };
-use crate::os_keychain_poesessid_store;
 use crate::poe_process_heartbeat;
 use crate::tray_icon_and_menu_controller;
 use crate::windows_clipboard_writer;
@@ -77,25 +76,9 @@ pub fn write_vendor_regex_clipboard(regex: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn save_poesessid(value: String) -> Result<(), String> {
-    os_keychain_poesessid_store::store_poesessid(&value)
-}
-
-#[tauri::command]
-pub fn has_poesessid() -> bool {
-    os_keychain_poesessid_store::has_stored_poesessid()
-}
-
-#[tauri::command]
-pub fn clear_poesessid() -> Result<(), String> {
-    os_keychain_poesessid_store::delete_poesessid()
-}
-
-#[tauri::command]
 pub async fn poll_character_window(
     account_name: String,
     character_name: String,
-    use_poesessid: bool,
     force: bool,
     state: State<'_, HostSharedState>,
 ) -> Result<CharacterPollResponse, String> {
@@ -105,7 +88,6 @@ pub async fn poll_character_window(
             return Ok(CharacterPollResponse {
                 ok: false,
                 status_code: 429,
-                used_poesessid: false,
                 throttled_ms: Some(wait_ms),
                 error: Some(format!(
                     "Circuit breaker / cooldown active ({}s remaining)",
@@ -117,7 +99,7 @@ pub async fn poll_character_window(
         }
     }
 
-    let mut response = execute_character_window_fetch(&account_name, &character_name, use_poesessid).await;
+    let mut response = execute_character_window_fetch(&account_name, &character_name).await;
     let after_ms = now_epoch_ms();
 
     if let Ok(mut guard) = state.circuit_breaker.lock() {

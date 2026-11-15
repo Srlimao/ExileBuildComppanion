@@ -14,7 +14,6 @@ import { poe1GameAdapter } from "@exile-hud/game-data";
 import {
   checkPoeRunning,
   detectClientLogPath,
-  hasPoesessid,
   isTauriRuntime,
   readBootstrapLogLines,
   setClientLogPath,
@@ -49,13 +48,11 @@ export async function hookAndBootstrapLogPath(
 export async function bootstrapHostEnvironment(initialSnap: HudSessionSnapshot): Promise<{
   detectedPath: string | null;
   hooked: boolean;
-  hasSession: boolean;
   snapshot: HudSessionSnapshot;
 }> {
   let snap = initialSnap;
-  const [logRes, hasSession, poeLive] = await Promise.all([
+  const [logRes, poeLive] = await Promise.all([
     detectClientLogPath(),
-    hasPoesessid(),
     checkPoeRunning(),
   ]);
 
@@ -73,7 +70,6 @@ export async function bootstrapHostEnvironment(initialSnap: HudSessionSnapshot):
   return {
     detectedPath: logRes.detectedPath,
     hooked,
-    hasSession,
     snapshot: snap,
   };
 }

@@ -1,6 +1,6 @@
 # Planned Next Features Roadmap
 
-Prioritized roadmap of telemetry, QoL, and open-API improvements for **Exile Companion HUD**. Every feature below must preserve `@exile-hud/core` purity (no DOM/Node/Tauri imports), the strict `< 300`-line file ceiling (`pnpm run check:lines`), the local-only `POESESSID` security boundary, and graceful offline/outage fallback behavior.
+Prioritized roadmap of telemetry, QoL, and open-API improvements for **Exile Companion HUD**. Every feature below must preserve `@exile-hud/core` purity (no DOM/Node/Tauri imports), the strict `< 300`-line file ceiling (`pnpm run check:lines`), the strict no-session-cookie / auth-token security boundary, and graceful offline/outage fallback behavior.
 
 ---
 
@@ -86,7 +86,7 @@ Prioritized roadmap of telemetry, QoL, and open-API improvements for **Exile Com
   - `apps/desktop/src/features/ggg_sync_panel/character_sync_settings_card.tsx`
   - `apps/desktop/src/features/host_coordinator/tauri_ipc_adapter.ts` & `desktop_telemetry_bridge.ts`
 - **Behavior:**
-  - Entering an Account Name (`Name#1234`) exposes a **"Fetch Characters"** action (and auto-populates on valid credentials using local Windows Credential Manager `POESESSID` only on PC—never sent to Cloudflare).
+  - Entering an Account Name (`Name#1234`) exposes a **"Fetch Characters"** action for public PoE profiles.
   - Render a 1-click dropdown listing each character's `name`, `class`, `level`, `league`, and `lastActive` badge, auto-selecting the `lastActive` character without needing to wait for a `Client.txt` level-up line.
   - Detect `SSF` / `Ruthless` / `Hardcore` rulesets from the character's `league` name and show a non-blocking warning in the PC Control Center if the selected character's class mismatches the loaded PoB `characterClass`.
 - **Offline Fallback:** Manual character input and `Client.txt` level-up auto-detection continue to work unchanged if `get-characters` fails or returns `429`/`5xx`.

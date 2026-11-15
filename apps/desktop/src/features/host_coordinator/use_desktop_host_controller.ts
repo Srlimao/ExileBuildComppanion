@@ -18,9 +18,7 @@ import { compileAndSavePobProfile, openPobStorageFolder } from "./pob_profile_pe
 import { createHostRunTimerClock } from "./host_run_timer_clock.js";
 import { createHostRelaySession, type HostRelaySession } from "./relay_host_connection.js";
 import {
-  clearPoesessid,
   detectClientLogPath,
-  savePoesessid,
   setInGameTreeOpenIpc,
   setPassiveTreeHotkeyIpc,
   setTrayTelemetryStatus,
@@ -50,7 +48,6 @@ export function useDesktopHostController() {
   const [customRouteText, setCustomRouteText] = useState("");
   const [compileLoading, setCompileLoading] = useState(false);
   const [compileError, setCompileError] = useState<string | null>(null);
-  const [hasStoredSession, setHasStoredSession] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [simulatedOutage, setSimulatedOutage] = useState(false);
   const [clientLogPath, setClientLogPathState] = useState("");
@@ -63,9 +60,9 @@ export function useDesktopHostController() {
   const snapshotRef = useRef<HudSessionSnapshot | null>(null);
   const timerClockRef = useRef(createHostRunTimerClock());
   const activeBuildRef = useRef<ValidatedPobBuild | null>(null);
-  const syncPrefsRef = useRef({ accountName, characterName, hasStoredSession, simulatedOutage });
+  const syncPrefsRef = useRef({ accountName, characterName, simulatedOutage });
   activeBuildRef.current = activeBuild;
-  syncPrefsRef.current = { accountName, characterName, hasStoredSession, simulatedOutage };
+  syncPrefsRef.current = { accountName, characterName, simulatedOutage };
 
   const getLiveSnapshot = useCallback(() => timerClockRef.current.advanceSnapshotRef(snapshotRef), []);
 
@@ -151,7 +148,6 @@ export function useDesktopHostController() {
       setPobPreview(compiled.preview);
       setPobSelection(compiled.selection);
       setActiveBuild(compiled.build);
-      setHasStoredSession(env.hasSession);
       if (env.detectedPath) setClientLogPathState(env.detectedPath);
       setClientLogFound(env.hooked);
       if (hydratedSnapshot.characterName && hydratedSnapshot.characterName !== characterName) {
@@ -165,7 +161,6 @@ export function useDesktopHostController() {
       syncPrefsRef.current = {
         ...syncPrefsRef.current,
         characterName: hydratedSnapshot.characterName || characterName,
-        hasStoredSession: env.hasSession,
       };
       connectRelay(hydratedSnapshot);
       runGggSync(false);
@@ -248,7 +243,7 @@ export function useDesktopHostController() {
   return {
     roomId, pin, relayUrl, snapshot, pobInput, pobPreview, pobSelection, pobStoragePath,
     leagueStart, customRouteText, compileLoading, compileError, accountName, characterName,
-    hasStoredSession, syncMessage, simulatedOutage, clientLogPath, clientLogFound,
+    syncMessage, simulatedOutage, clientLogPath, clientLogFound,
     relayConnected, relayError, viewers, passiveTreeHotkey, setPassiveTreeHotkey,
     setAccountName, setCharacterName, applyBuild,
     inspectBuild: (rawPobInput: string, previousSelection?: PobSetSelection | null) => inspectPobBuildSets({ rawPobInput, previousSelection }),
@@ -265,8 +260,6 @@ export function useDesktopHostController() {
     reconnectRelay: () => connectRelay(),
     setRelayUrl: (u: string) => { setRelayUrl(u); connectRelay(undefined, undefined, u); },
     rotatePin: () => { const nextPin = generateRoomPin(); setPin(nextPin); connectRelay(undefined, nextPin); },
-    savePoesessid: async (val: string) => { await savePoesessid(val); setHasStoredSession(true); },
-    clearPoesessid: async () => { await clearPoesessid(); setHasStoredSession(false); },
     setLogPath: (p: string) => applySelectedLogPath(p, true, "log_path"),
     autoDetectPath: async () => { const res = await detectClientLogPath(); if (res.detectedPath) await applySelectedLogPath(res.detectedPath, false, "log_auto_detect"); },
     toggleAutoClipboard: () => { const cur = getLiveSnapshot(); if (cur) pushPatch({ ...cur, autoClipboardEnabled: !cur.autoClipboardEnabled }, "toggle_clip"); },

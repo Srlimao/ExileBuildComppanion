@@ -10,4 +10,4 @@ Hibernating WebSocket relay and SQLite persistence unit for one active PC-to-Com
 ## WebSocket Authentication & Close Codes
 - `4001`: Room has not been registered yet by a PC host (`POST /api/session/:roomId/register`).
 - `4003`: Invalid `pin` (for `role=viewer`) or invalid `secret` (for `role=host`).
-- `1008`: Payload rejected by security policy (`POESESSID` / `poesessid` strings are strictly rejected at the edge and must remain inside Windows Credential Manager on the PC).
+- `1008`: Payload rejected by security policy (OAuth / auth secret fields such as `access_token`, `refresh_token`, `client_secret`, and `code_verifier` are strictly rejected at the edge and must never leave the PC).
