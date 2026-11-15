@@ -5,19 +5,25 @@ import {
   selectBracketSpecIndex,
   sortTreeSpecsByLevel,
 } from "@exile-hud/core";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { PassiveTreeCanvasSvg } from "./passive_tree_canvas_svg.js";
+import { useCallback, useDeferredValue, useMemo, useState } from "react";
+import { syncRunTimerSnapshot } from "../widgets/run_timer_clock_tracker.js";
 import {
   computeBracketOverviewBounds,
   computeNextPassivesBounds,
   computeNodeSetBounds,
-  getBuiltPoe1TreeGeometry,
-  resolveVisibleAscendancies,
-} from "./passive_tree_geometry_builder.js";
+} from "./passive_tree_camera_bounds.js";
+import { PassiveTreeCanvas } from "./passive_tree_canvas.js";
+import { getBuiltPoe1TreeGeometry, resolveVisibleAscendancies } from "./passive_tree_geometry_builder.js";
 import { PassiveTreeLevelStepperBar } from "./passive_tree_level_stepper_bar.js";
 import { PassiveTreeSidebarDrawer } from "./passive_tree_sidebar_drawer.js";
+import {
+  buildSpatialTreeIndex,
+  buildTreeHighlightLookup,
+  hitTestPassiveTreeNode,
+} from "./passive_tree_spatial_index.js";
 import { loadSavedTreeViewport, saveTreeViewport } from "./passive_tree_viewport_storage.js";
-import { usePanZoomViewport } from "./use_pan_zoom_viewport.js";
+import { usePanZoomViewport, type ViewportCamera, type WorldPointHit } from "./use_pan_zoom_viewport.js";
+import { useTreeViewportPersistence } from "./use_tree_viewport_persistence.js";
 
 interface PassiveTreeCommandViewProps {
   snapshot: HudSessionSnapshot;
@@ -29,6 +35,7 @@ export function PassiveTreeCommandView({
   snapshot,
   onTriggerManualSync,
 }: PassiveTreeCommandViewProps) {
+  syncRunTimerSnapshot(snapshot);
   const geometry = useMemo(() => getBuiltPoe1TreeGeometry(), []);
   const specs = useMemo(
     () => sortTreeSpecsByLevel(snapshot.passiveTree.specs ?? []),
@@ -38,6 +45,7 @@ export function PassiveTreeCommandView({
 
   const [manualSpecId, setManualSpecId] = useState<string | null>(() => savedViewport?.manualSpecId ?? null);
   const [searchQuery, setSearchQuery] = useState("");
+  const deferredSearchQuery = useDeferredValue(searchQuery);
   const [showFuture, setShowFuture] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
@@ -89,28 +97,45 @@ export function PassiveTreeCommandView({
     [geometry.edges, visibleAscendancies],
   );
 
+  const spatialIndex = useMemo(
+    () => buildSpatialTreeIndex(visibleNodes, visibleEdges),
+    [visibleNodes, visibleEdges],
+  );
+
   const ascendancyNodeIds = useMemo(
     () => visibleNodes.filter((n) => Boolean(n.ascendancyName)).map((n) => n.id),
     [visibleNodes],
   );
 
   const searchMatchIds = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
+    const q = deferredSearchQuery.trim().toLowerCase();
     if (!q) return new Set<string>();
     const hits = new Set<string>();
     for (const node of visibleNodes) {
-      if (node.name.toLowerCase().includes(q) || node.stats.some((s) => s.toLowerCase().includes(q))) {
-        hits.add(node.id);
-      }
+      const haystack = geometry.searchTextByNodeId.get(node.id);
+      if (haystack && haystack.includes(q)) hits.add(node.id);
     }
     return hits;
-  }, [searchQuery, visibleNodes]);
+  }, [deferredSearchQuery, visibleNodes, geometry]);
+
+  const highlightLookup = useMemo(
+    () =>
+      buildTreeHighlightLookup({
+        index: spatialIndex,
+        diff,
+        allocatedIds,
+        showFuture,
+        searchMatchIds,
+        selectedNodeId,
+      }),
+    [spatialIndex, diff, allocatedIds, showFuture, searchMatchIds, selectedNodeId],
+  );
 
   const currentSpecKey = `${snapshot.profileId}::${diff.selectedSpec?.id ?? "__empty__"}`;
   const restoredCamera =
     savedViewport && savedViewport.specKey === currentSpecKey ? savedViewport.camera : null;
 
-  const initialBounds = useMemo(
+  const getNextBounds = useCallback(
     () =>
       computeNextPassivesBounds({
         diff,
@@ -118,69 +143,87 @@ export function PassiveTreeCommandView({
         characterClass: snapshot.characterClass,
         geometry,
       }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [diff, allocatedIds, snapshot.characterClass, geometry],
   );
 
-  const viewport = usePanZoomViewport(initialBounds, setSelectedNodeId, restoredCamera);
-  const lastFittedSpecKey = useRef<string>(restoredCamera ? currentSpecKey : "");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const initialBounds = useMemo(() => getNextBounds(), []);
 
-  useEffect(() => {
-    if (lastFittedSpecKey.current === currentSpecKey) return;
-    lastFittedSpecKey.current = currentSpecKey;
-    viewport.fitBounds(
-      computeNextPassivesBounds({
-        diff,
-        allocatedIds,
-        characterClass: snapshot.characterClass,
-        geometry,
-      }),
-    );
-  }, [currentSpecKey, diff, allocatedIds, snapshot.characterClass, geometry, viewport]);
-
-  const latestPersistRef = useRef({
-    profileId: snapshot.profileId,
-    specKey: currentSpecKey,
-    camera: viewport.camera,
-    manualSpecId,
-  });
-  latestPersistRef.current = {
-    profileId: snapshot.profileId,
-    specKey: currentSpecKey,
-    camera: viewport.camera,
-    manualSpecId,
-  };
-
-  useEffect(() => {
-    saveTreeViewport(snapshot.profileId, {
-      specKey: currentSpecKey,
-      camera: viewport.camera,
-      manualSpecId,
-    });
-  }, [snapshot.profileId, currentSpecKey, viewport.camera, manualSpecId]);
-
-  useEffect(
-    () => () => {
-      const latest = latestPersistRef.current;
-      saveTreeViewport(
-        latest.profileId,
-        {
-          specKey: latest.specKey,
-          camera: latest.camera,
-          manualSpecId: latest.manualSpecId,
-        },
-        true,
+  const handleTapWorldPoint = useCallback(
+    (hit: WorldPointHit, viewWidth: number) => {
+      setSelectedNodeId(
+        hitTestPassiveTreeNode({
+          index: spatialIndex,
+          lookup: highlightLookup,
+          worldX: hit.worldX,
+          worldY: hit.worldY,
+          worldPerPx: hit.worldPerPx,
+          viewWidth,
+        }),
       );
     },
-    [],
+    [spatialIndex, highlightLookup],
   );
 
-  const focusNode = (nodeId: string) => {
-    const node = geometry.nodes[nodeId];
-    if (!node) return;
-    setSelectedNodeId(nodeId);
-    viewport.focusPoint(node.x, node.y, Math.min(viewport.viewWidth, 3200));
-  };
+  const handleCameraSettled = useCallback(
+    (camera: ViewportCamera) => {
+      saveTreeViewport(snapshot.profileId, { specKey: currentSpecKey, camera, manualSpecId });
+    },
+    [snapshot.profileId, currentSpecKey, manualSpecId],
+  );
+
+  const { containerRef, getCamera, subscribeCamera, fitBounds, focusPoint, zoomBy, pointerHandlers } =
+    usePanZoomViewport({
+      initialBounds,
+      initialCameraOverride: restoredCamera,
+      onTapWorldPoint: handleTapWorldPoint,
+      onCameraSettled: handleCameraSettled,
+    });
+
+  useTreeViewportPersistence({
+    profileId: snapshot.profileId,
+    currentSpecKey,
+    manualSpecId,
+    hasRestoredCamera: Boolean(restoredCamera),
+    getNextBounds,
+    fitBounds,
+    getCamera,
+  });
+
+  const handleSelectManualSpec = useCallback((id: string | null) => {
+    setManualSpecId(id);
+    setSelectedNodeId(null);
+  }, []);
+
+  const handleToggleShowFuture = useCallback(() => setShowFuture((v) => !v), []);
+
+  const handleFitBracket = useCallback(
+    () => fitBounds(computeBracketOverviewBounds(diff.targetSet, geometry.nodes)),
+    [fitBounds, diff.targetSet, geometry.nodes],
+  );
+
+  const handleFocusNextTarget = useCallback(() => {
+    fitBounds(getNextBounds());
+    setSelectedNodeId(diff.nextNotableTargets[0]?.nodeId ?? null);
+  }, [fitBounds, getNextBounds, diff.nextNotableTargets]);
+
+  const handleFocusAscendancy = useCallback(
+    () => fitBounds(computeNodeSetBounds(ascendancyNodeIds, geometry.nodes)),
+    [fitBounds, ascendancyNodeIds, geometry.nodes],
+  );
+
+  const focusNode = useCallback(
+    (nodeId: string) => {
+      const node = geometry.nodes[nodeId];
+      if (!node) return;
+      setSelectedNodeId(nodeId);
+      focusPoint(node.x, node.y, Math.min(getCamera().width, 3200));
+    },
+    [geometry.nodes, focusPoint, getCamera],
+  );
+
+  const handleZoomIn = useCallback(() => zoomBy(0.75), [zoomBy]);
+  const handleZoomOut = useCallback(() => zoomBy(1.33), [zoomBy]);
 
   return (
     <main className="max-w-7xl mx-auto px-3 sm:px-5 pt-3 space-y-3">
@@ -195,44 +238,30 @@ export function PassiveTreeCommandView({
         searchMatchCount={searchMatchIds.size}
         showFuture={showFuture}
         hasAscendancyNodes={ascendancyNodeIds.length > 0}
-        onSelectManualSpec={(id) => {
-          setManualSpecId(id);
-          setSelectedNodeId(null);
-        }}
+        onSelectManualSpec={handleSelectManualSpec}
         onSearchChange={setSearchQuery}
-        onToggleShowFuture={() => setShowFuture((v) => !v)}
-        onFitBracket={() => viewport.fitBounds(computeBracketOverviewBounds(diff.targetSet, geometry.nodes))}
-        onFocusNextTarget={() => {
-          viewport.fitBounds(
-            computeNextPassivesBounds({
-              diff,
-              allocatedIds,
-              characterClass: snapshot.characterClass,
-              geometry,
-            }),
-          );
-          setSelectedNodeId(diff.nextNotableTargets[0]?.nodeId ?? null);
-        }}
-        onFocusAscendancy={() => viewport.fitBounds(computeNodeSetBounds(ascendancyNodeIds, geometry.nodes))}
+        onToggleShowFuture={handleToggleShowFuture}
+        onFitBracket={handleFitBracket}
+        onFocusNextTarget={handleFocusNextTarget}
+        onFocusAscendancy={handleFocusAscendancy}
       />
 
       <div className="flex flex-col lg:flex-row gap-3 items-stretch">
-        <PassiveTreeCanvasSvg
+        <PassiveTreeCanvas
           geometry={geometry}
-          visibleEdges={visibleEdges}
-          visibleNodes={visibleNodes}
+          spatialIndex={spatialIndex}
+          highlightLookup={highlightLookup}
           diff={diff}
           allocatedIds={allocatedIds}
           characterClass={snapshot.characterClass}
-          showFuture={showFuture}
-          searchMatchIds={searchMatchIds}
           selectedNodeId={selectedNodeId}
-          containerRef={viewport.containerRef}
-          viewBox={viewport.viewBox}
+          containerRef={containerRef}
+          getCamera={getCamera}
+          subscribeCamera={subscribeCamera}
           onSelectNode={setSelectedNodeId}
-          onZoomIn={() => viewport.zoomBy(0.75)}
-          onZoomOut={() => viewport.zoomBy(1.33)}
-          pointerHandlers={viewport.pointerHandlers}
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          pointerHandlers={pointerHandlers}
         />
 
         <PassiveTreeSidebarDrawer

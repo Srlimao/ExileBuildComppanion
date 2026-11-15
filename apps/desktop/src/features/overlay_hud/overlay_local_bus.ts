@@ -91,14 +91,17 @@ export function useHostOverlayBroadcastBridge(
   snapshot: HudSessionSnapshot | null,
   snapshotRef: MutableRefObject<HudSessionSnapshot | null>,
   onOverlayCommand: (command: ViewerToRoomMessage) => void,
+  getLatestSnapshot?: () => HudSessionSnapshot | null,
 ): void {
   const serverRef = useRef<ReturnType<typeof createHostOverlayBusServer> | null>(null);
   const cmdRef = useRef(onOverlayCommand);
+  const getLatestRef = useRef(getLatestSnapshot);
   cmdRef.current = onOverlayCommand;
+  getLatestRef.current = getLatestSnapshot;
 
   useEffect(() => {
     const server = createHostOverlayBusServer({
-      getLatestSnapshot: () => snapshotRef.current,
+      getLatestSnapshot: () => getLatestRef.current?.() ?? snapshotRef.current,
       onOverlayCommand: (cmd) => cmdRef.current(cmd),
     });
     serverRef.current = server;

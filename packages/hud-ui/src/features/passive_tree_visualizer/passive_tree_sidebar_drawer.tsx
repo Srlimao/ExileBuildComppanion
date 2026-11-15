@@ -2,6 +2,7 @@ import type { PassiveTreeBracketDiff } from "@exile-hud/core";
 import { resolveMasteryEffectStats } from "@exile-hud/core";
 import { poe1GameAdapter, type PassiveTreeNodeMetadata } from "@exile-hud/game-data";
 import { RefreshCw } from "lucide-react";
+import { memo, useMemo } from "react";
 
 interface PassiveTreeSidebarDrawerProps {
   diff: PassiveTreeBracketDiff;
@@ -11,15 +12,29 @@ interface PassiveTreeSidebarDrawerProps {
   onTriggerManualSync: () => void;
 }
 
-export function PassiveTreeSidebarDrawer({
+export const PassiveTreeSidebarDrawer = memo(function PassiveTreeSidebarDrawer({
   diff,
   nodes,
   allocatedIds,
   onFocusNode,
   onTriggerManualSync,
 }: PassiveTreeSidebarDrawerProps) {
-  const masteryEntries = Object.entries(diff.selectedSpec?.masteries ?? {});
-  const respecIds = [...new Set([...diff.respecFromPrevIds, ...diff.offSpecAllocatedIds])];
+  const masteryEntries = useMemo(
+    () =>
+      Object.entries(diff.selectedSpec?.masteries ?? {}).map(([nodeId, effectId]) => ({
+        nodeId,
+        effectId,
+        meta: nodes[nodeId],
+        stats: resolveMasteryEffectStats(nodeId, effectId, poe1GameAdapter),
+        done: allocatedIds.has(nodeId),
+      })),
+    [diff.selectedSpec?.masteries, nodes, allocatedIds],
+  );
+
+  const respecIds = useMemo(
+    () => [...new Set([...diff.respecFromPrevIds, ...diff.offSpecAllocatedIds])],
+    [diff.respecFromPrevIds, diff.offSpecAllocatedIds],
+  );
 
   return (
     <aside className="w-full lg:w-80 xl:w-96 flex flex-col gap-6">
@@ -81,29 +96,24 @@ export function PassiveTreeSidebarDrawer({
             Bracket Masteries ({masteryEntries.length})
           </h3>
           <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
-            {masteryEntries.map(([nodeId, effectId]) => {
-              const meta = nodes[nodeId];
-              const stats = resolveMasteryEffectStats(nodeId, effectId, poe1GameAdapter);
-              const done = allocatedIds.has(nodeId);
-              return (
-                <button
-                  key={nodeId}
-                  type="button"
-                  onClick={() => onFocusNode(nodeId)}
-                  className="w-full text-left px-2 py-1.5 -mx-2 rounded-md hover:bg-hud-subtle text-xs cursor-pointer transition-colors"
-                >
-                  <div className="font-semibold flex items-baseline justify-between gap-2">
-                    <span className={done ? "text-hud-ok" : "text-hud-text"}>
-                      {meta?.name ?? `Mastery ${nodeId}`}
-                    </span>
-                    {done && <span className="text-[10px] font-mono text-hud-ok">ALLOCATED</span>}
-                  </div>
-                  <div className="text-[11px] text-hud-muted mt-0.5">
-                    {stats?.join(" · ") ?? `Effect #${effectId}`}
-                  </div>
-                </button>
-              );
-            })}
+            {masteryEntries.map(({ nodeId, effectId, meta, stats, done }) => (
+              <button
+                key={nodeId}
+                type="button"
+                onClick={() => onFocusNode(nodeId)}
+                className="w-full text-left px-2 py-1.5 -mx-2 rounded-md hover:bg-hud-subtle text-xs cursor-pointer transition-colors"
+              >
+                <div className="font-semibold flex items-baseline justify-between gap-2">
+                  <span className={done ? "text-hud-ok" : "text-hud-text"}>
+                    {meta?.name ?? `Mastery ${nodeId}`}
+                  </span>
+                  {done && <span className="text-[10px] font-mono text-hud-ok">ALLOCATED</span>}
+                </div>
+                <div className="text-[11px] text-hud-muted mt-0.5">
+                  {stats?.join(" · ") ?? `Effect #${effectId}`}
+                </div>
+              </button>
+            ))}
           </div>
         </section>
       )}
@@ -129,4 +139,4 @@ export function PassiveTreeSidebarDrawer({
       )}
     </aside>
   );
-}
+});

@@ -2,6 +2,7 @@ import type { PassiveTreeBracketDiff } from "@exile-hud/core";
 import { computeShortestPathToNode, resolveMasteryEffectStats } from "@exile-hud/core";
 import { poe1GameAdapter } from "@exile-hud/game-data";
 import { Minus, Plus, X } from "lucide-react";
+import { memo, useMemo } from "react";
 import type { BuiltPoe1TreeGeometry } from "./passive_tree_geometry_builder.js";
 
 interface PassiveTreeCanvasOverlaysProps {
@@ -15,8 +16,8 @@ interface PassiveTreeCanvasOverlaysProps {
   onZoomOut: () => void;
 }
 
-/** Legend, zoom controls, and read-only node inspector tooltip overlaid on the passive tree SVG. */
-export function PassiveTreeCanvasOverlays({
+/** Legend, zoom controls, and read-only node inspector tooltip overlaid on the passive tree canvas. */
+export const PassiveTreeCanvasOverlays = memo(function PassiveTreeCanvasOverlays({
   geometry,
   diff,
   allocatedIds,
@@ -32,22 +33,25 @@ export function PassiveTreeCanvasOverlays({
   const inspectedMasteryStats = inspectedNode?.isMastery
     ? resolveMasteryEffectStats(inspectedNode.id, specMasteries[inspectedNode.id], poe1GameAdapter)
     : null;
-  const inspectedPath =
-    inspectedNode && !inspectedAllocated && diff.targetSet.has(inspectedNode.id)
-      ? computeShortestPathToNode({
-          targetNodeId: inspectedNode.id,
-          targetSet: diff.targetSet,
-          allocatedIds,
-          characterClass,
-          adapter: poe1GameAdapter,
-        })
-      : [];
+  const inspectedPath = useMemo(
+    () =>
+      inspectedNode && !inspectedAllocated && diff.targetSet.has(inspectedNode.id)
+        ? computeShortestPathToNode({
+            targetNodeId: inspectedNode.id,
+            targetSet: diff.targetSet,
+            allocatedIds,
+            characterClass,
+            adapter: poe1GameAdapter,
+          })
+        : [],
+    [inspectedNode, inspectedAllocated, diff.targetSet, allocatedIds, characterClass],
+  );
 
   return (
     <>
       <div
         data-tree-overlay-ui="true"
-        className="absolute bottom-3 left-3 flex flex-wrap gap-2.5 rounded-lg bg-hud-surface/90 border border-hud-hairline px-3 py-1.5 text-[11px] text-hud-muted backdrop-blur"
+        className="absolute bottom-3 left-3 flex flex-wrap gap-2.5 rounded-lg bg-hud-surface/95 border border-hud-hairline px-3 py-1.5 text-[11px] text-hud-muted"
       >
         <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" />Allocated</span>
         <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" />New Bracket</span>
@@ -60,7 +64,7 @@ export function PassiveTreeCanvasOverlays({
         <button
           type="button"
           onClick={onZoomIn}
-          className="p-2 rounded-lg bg-hud-surface/90 border border-hud-hairline hover:bg-hud-subtle text-hud-text cursor-pointer"
+          className="p-2 rounded-lg bg-hud-surface/95 border border-hud-hairline hover:bg-hud-subtle text-hud-text cursor-pointer"
           title="Zoom In"
         >
           <Plus className="h-4 w-4" />
@@ -68,7 +72,7 @@ export function PassiveTreeCanvasOverlays({
         <button
           type="button"
           onClick={onZoomOut}
-          className="p-2 rounded-lg bg-hud-surface/90 border border-hud-hairline hover:bg-hud-subtle text-hud-text cursor-pointer"
+          className="p-2 rounded-lg bg-hud-surface/95 border border-hud-hairline hover:bg-hud-subtle text-hud-text cursor-pointer"
           title="Zoom Out"
         >
           <Minus className="h-4 w-4" />
@@ -78,7 +82,7 @@ export function PassiveTreeCanvasOverlays({
       {inspectedNode && (
         <div
           data-tree-overlay-ui="true"
-          className="absolute top-3 left-3 max-w-xs sm:max-w-sm rounded-xl bg-hud-surface/95 border border-hud-hairline p-3.5 shadow-2xl space-y-2 backdrop-blur"
+          className="absolute top-3 left-3 max-w-xs sm:max-w-sm rounded-xl bg-hud-surface/95 border border-hud-hairline p-3.5 shadow-2xl space-y-2"
         >
           <div className="flex items-start justify-between gap-2">
             <div>
@@ -145,4 +149,4 @@ export function PassiveTreeCanvasOverlays({
       )}
     </>
   );
-}
+});

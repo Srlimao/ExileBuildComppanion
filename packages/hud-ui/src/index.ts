@@ -29,12 +29,45 @@ export {
 } from "./features/theme/theme_tokens_and_palettes.js";
 export { PassiveTreeCommandView } from "./features/passive_tree_visualizer/passive_tree_command_view.js";
 export {
+  resolveAdaptiveCanvasDpr,
+  type AdaptiveDprEnv,
+} from "./features/passive_tree_visualizer/passive_tree_canvas_painter.js";
+export {
   computeBracketOverviewBounds,
   computeNextPassivesBounds,
   computeNodeSetBounds,
   getBuiltPoe1TreeGeometry,
   resolveVisibleAscendancies,
+  type BuiltPoe1TreeGeometry,
+  type BuiltTreeEdge,
+  type TreeWorldBounds,
 } from "./features/passive_tree_visualizer/passive_tree_geometry_builder.js";
+export {
+  buildSpatialTreeIndex,
+  buildTreeHighlightLookup,
+  EDGE_STYLE_ALLOCATED,
+  EDGE_STYLE_EARLIER,
+  EDGE_STYLE_FUTURE,
+  EDGE_STYLE_NEW_BRACKET,
+  EDGE_STYLE_NONE,
+  EDGE_STYLE_RESPEC,
+  hitTestPassiveTreeNode,
+  NODE_FLAG_POB_MASTERY,
+  NODE_FLAG_RESPEC_DASH,
+  NODE_FLAG_SEARCH,
+  NODE_FLAG_SELECTED,
+  NODE_ROLE_ALLOCATED,
+  NODE_ROLE_EARLIER,
+  NODE_ROLE_FUTURE,
+  NODE_ROLE_MASTERY_ACTIVE,
+  NODE_ROLE_NEW_BRACKET,
+  NODE_ROLE_RESPEC,
+  NODE_ROLE_WIREFRAME,
+  queryVisibleTreePrimitives,
+  type SpatialTreeIndex,
+  type SpatialTreeQueryResult,
+  type TreeHighlightLookup,
+} from "./features/passive_tree_visualizer/passive_tree_spatial_index.js";
 export {
   clearSavedTreeViewportCache,
   loadSavedTreeViewport,
@@ -48,8 +81,10 @@ export {
   createPinchAnchor,
   MAX_VIEW_WIDTH,
   MIN_VIEW_WIDTH,
+  screenPointToWorld,
   type ViewportCamera,
   type ViewportRect,
+  type WorldPointHit,
 } from "./features/passive_tree_visualizer/pinch_zoom_math.js";
 export { AddWidgetDrawer } from "./features/widget_grid_engine/add_widget_drawer.js";
 export {
@@ -73,6 +108,15 @@ export { LabCompassWidget } from "./features/widgets/lab_compass_widget.js";
 export { PassiveTreeWidget } from "./features/widgets/passive_tree_widget.js";
 export { RegexSyncWidget } from "./features/widgets/regex_sync_widget.js";
 export { ResistanceCapWidget } from "./features/widgets/resistance_cap_widget.js";
+export {
+  clearRunTimerAnchorCache,
+  computeLiveRunElapsedMs,
+  formatRunTimerClock,
+  reconcileRunTimerAnchor,
+  syncRunTimerSnapshot,
+  useLiveRunElapsedMs,
+  type RunTimerClockAnchor,
+} from "./features/widgets/run_timer_clock_tracker.js";
 export { RunTimerWidget } from "./features/widgets/run_timer_widget.js";
 export { SocketLinksWidget } from "./features/widgets/socket_links_widget.js";
 export { VendorShoppingWidget } from "./features/widgets/vendor_shopping_widget.js";

@@ -1,5 +1,6 @@
 import type { PassiveTreeBracketDiff, PassiveTreeSpecSummary } from "@exile-hud/core";
 import { Crosshair, Eye, LocateFixed, Search, Sparkles, X } from "lucide-react";
+import { memo, useMemo } from "react";
 
 interface PassiveTreeLevelStepperBarProps {
   characterLevel: number;
@@ -20,7 +21,7 @@ interface PassiveTreeLevelStepperBarProps {
   onFocusAscendancy: () => void;
 }
 
-export function PassiveTreeLevelStepperBar({
+export const PassiveTreeLevelStepperBar = memo(function PassiveTreeLevelStepperBar({
   characterLevel,
   specs,
   selectedIndex,
@@ -38,6 +39,11 @@ export function PassiveTreeLevelStepperBar({
   onFocusNextTarget,
   onFocusAscendancy,
 }: PassiveTreeLevelStepperBarProps) {
+  const allocCounts = useMemo(
+    () => specs.map((spec) => spec.nodeIds.filter((id) => allocatedIds.has(id)).length),
+    [specs, allocatedIds],
+  );
+
   return (
     <div className="space-y-2.5 pb-2 border-b border-hud-hairline">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
@@ -57,7 +63,7 @@ export function PassiveTreeLevelStepperBar({
 
           {specs.map((spec, idx) => {
             const active = idx === selectedIndex;
-            const allocCount = spec.nodeIds.filter((id) => allocatedIds.has(id)).length;
+            const allocCount = allocCounts[idx] ?? 0;
             return (
               <button
                 key={spec.id}
@@ -163,4 +169,4 @@ export function PassiveTreeLevelStepperBar({
       </div>
     </div>
   );
-}
+});

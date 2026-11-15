@@ -135,4 +135,31 @@ describe("Checkpoint Graph, Zone Disambiguator & Progression Reducer", () => {
     expect(state.characterName).toBe("LumiLumiWill");
     expect(state.characterLevel).toBe(13);
   });
+
+  it("ticks runElapsedMs only while running and avoids epoch timestamps on Act splits when elapsed is 0", async () => {
+    let paused = await createTestSnapshot();
+    expect(reduceTelemetrySession(paused, { type: "tick_timer", deltaMs: 5_000 }, poe1GameAdapter).runElapsedMs).toBe(0);
+
+    // Act transition while runElapsedMs === 0 leaves actSplitsMs.act_1 unset (never Date.now())
+    paused = reduceTelemetrySession(paused, { type: "process_state", running: true }, poe1GameAdapter);
+    const act2Zero = reduceTelemetrySession(
+      paused,
+      { type: "client_log", event: { type: "area_generated", areaLevel: 13, areaId: "1_2_1", areaSeed: "s2" }, autoDetectCharacter: false, nowMs: 1_700_000_000_000 },
+      poe1GameAdapter,
+    );
+    expect(act2Zero.actSplitsMs.act_1).toBeUndefined();
+
+    // Non-zero runElapsedMs records the exact runElapsedMs as act_1 split
+    let timed = await createTestSnapshot();
+    timed = reduceTelemetrySession(timed, { type: "process_state", running: true }, poe1GameAdapter);
+    timed = reduceTelemetrySession(timed, { type: "tick_timer", deltaMs: 95_000 }, poe1GameAdapter);
+    expect(timed.runElapsedMs).toBe(95_000);
+
+    const act2Timed = reduceTelemetrySession(
+      timed,
+      { type: "client_log", event: { type: "area_generated", areaLevel: 13, areaId: "1_2_1", areaSeed: "s3" }, autoDetectCharacter: false },
+      poe1GameAdapter,
+    );
+    expect(act2Timed.actSplitsMs.act_1).toBe(95_000);
+  });
 });

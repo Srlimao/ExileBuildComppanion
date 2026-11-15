@@ -42,7 +42,6 @@ function transitionToZone(
   isTown: boolean,
   isLab: boolean,
   adapter: GameAdapter,
-  nowMs: number,
 ): HudSessionSnapshot {
   const prevWasTown = isTownOrHideoutArea(state.currentAreaId, adapter);
   const isHideout = /hideout/i.test(areaId);
@@ -67,8 +66,13 @@ function transitionToZone(
   }
 
   const actSplitsMs = { ...state.actSplitsMs };
-  if (areaAct > state.highestUnlockedAct && state.highestUnlockedAct >= 1 && !actSplitsMs[`act_${state.highestUnlockedAct}`]) {
-    actSplitsMs[`act_${state.highestUnlockedAct}`] = state.runElapsedMs || nowMs;
+  if (
+    areaAct > state.highestUnlockedAct &&
+    state.highestUnlockedAct >= 1 &&
+    !actSplitsMs[`act_${state.highestUnlockedAct}`] &&
+    state.runElapsedMs > 0
+  ) {
+    actSplitsMs[`act_${state.highestUnlockedAct}`] = state.runElapsedMs;
   }
 
   let resumeZoneBanner = state.resumeZoneBanner;
@@ -190,7 +194,6 @@ export function reduceTelemetrySession(
     };
   }
 
-  const nowMs = action.nowMs ?? Date.now();
   const ev = action.event;
 
   if (ev.type === "area_generated") {
@@ -199,7 +202,7 @@ export function reduceTelemetrySession(
     const areaAct = known?.act && known.act > 0 ? known.act : state.currentAct;
     const isTown = isTownOrHideoutArea(ev.areaId, adapter);
     const isLab = isLabyrinthArea(ev.areaId);
-    return transitionToZone(state, ev.areaId, areaName, ev.areaLevel, areaAct, ev.areaSeed, isTown, isLab, adapter, nowMs);
+    return transitionToZone(state, ev.areaId, areaName, ev.areaLevel, areaAct, ev.areaSeed, isTown, isLab, adapter);
   }
 
   if (ev.type === "zone_entered") {
@@ -235,7 +238,6 @@ export function reduceTelemetrySession(
       isTown,
       isLab,
       adapter,
-      nowMs,
     );
   }
 

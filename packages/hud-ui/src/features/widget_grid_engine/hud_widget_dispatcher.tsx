@@ -6,6 +6,7 @@ import { LabCompassWidget } from "../widgets/lab_compass_widget.js";
 import { PassiveTreeWidget } from "../widgets/passive_tree_widget.js";
 import { RegexSyncWidget } from "../widgets/regex_sync_widget.js";
 import { ResistanceCapWidget } from "../widgets/resistance_cap_widget.js";
+import { syncRunTimerSnapshot } from "../widgets/run_timer_clock_tracker.js";
 import { RunTimerWidget } from "../widgets/run_timer_widget.js";
 import { SocketLinksWidget } from "../widgets/socket_links_widget.js";
 import { VendorShoppingWidget } from "../widgets/vendor_shopping_widget.js";
@@ -23,6 +24,7 @@ export interface HudWidgetDispatchHandlers {
 /** Central widget renderer shared by the web PWA HUD and the local PC overlay. */
 export function renderHudWidget(widgetId: WidgetId, handlers: HudWidgetDispatchHandlers) {
   const { snapshot } = handlers;
+  syncRunTimerSnapshot(snapshot);
   switch (widgetId) {
     case "zone_layout":
       return <ZoneLayoutWidget snapshot={snapshot} />;

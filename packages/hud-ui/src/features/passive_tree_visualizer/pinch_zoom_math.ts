@@ -35,20 +35,36 @@ export interface GestureState {
   pointers: Map<number, PointerPoint>;
   pan: PanAnchor | null;
   pinch: PinchAnchor | null;
-  tapCandidateNodeId: string | null;
+  tapStartX: number;
+  tapStartY: number;
   moved: boolean;
   hadMultiTouch: boolean;
 }
 
+export interface WorldPointHit {
+  worldX: number;
+  worldY: number;
+  worldPerPx: number;
+}
+
 export function createGestureState(): GestureState {
-  return { pointers: new Map(), pan: null, pinch: null, tapCandidateNodeId: null, moved: false, hadMultiTouch: false };
+  return {
+    pointers: new Map(),
+    pan: null,
+    pinch: null,
+    tapStartX: 0,
+    tapStartY: 0,
+    moved: false,
+    hadMultiTouch: false,
+  };
 }
 
 export function resetGestureState(g: GestureState): void {
   g.pointers.clear();
   g.pan = null;
   g.pinch = null;
-  g.tapCandidateNodeId = null;
+  g.tapStartX = 0;
+  g.tapStartY = 0;
   g.moved = false;
   g.hadMultiTouch = false;
 }
@@ -162,5 +178,25 @@ export function computeCursorZoomCamera(
     centerX: prev.centerX + fx * (prev.width - nextW),
     centerY: prev.centerY + fy * (curH - nextH),
     width: nextW,
+  };
+}
+
+/** Converts a client-space pointer coordinate into passive-tree world coordinates and scale. */
+export function screenPointToWorld(
+  clientX: number,
+  clientY: number,
+  camera: ViewportCamera,
+  rect: ViewportRect,
+): WorldPointHit {
+  const w = Math.max(1, rect.width);
+  const h = Math.max(1, rect.height);
+  const worldPerPx = camera.width / w;
+  const fx = (clientX - rect.left) / w - 0.5;
+  const fy = (clientY - rect.top) / h - 0.5;
+  const viewHeight = camera.width * (h / w);
+  return {
+    worldX: camera.centerX + fx * camera.width,
+    worldY: camera.centerY + fy * viewHeight,
+    worldPerPx,
   };
 }

@@ -86,13 +86,9 @@ export function createEmptyCampaignProgress(nowMs?: number): SavedCampaignProgre
   };
 }
 
-/** Resets all checkpoint, gem, and completed trial flags and recomputes vendor budget/regex. */
+/** Resets all checkpoint, gem, completed trial, timer, and Act split state and recomputes budget/regex. */
 export function resetSnapshotProgress(snapshot: HudSessionSnapshot): HudSessionSnapshot {
-  const checkpoints = snapshot.checkpoints.map((cp) => ({
-    ...cp,
-    completed: false,
-    softCompleted: false,
-  }));
+  const checkpoints = snapshot.checkpoints.map((cp) => ({ ...cp, completed: false, softCompleted: false }));
   const gemSteps = snapshot.gemSteps.map((gs) => ({
     ...gs,
     manualCompleted: false,
@@ -105,20 +101,15 @@ export function resetSnapshotProgress(snapshot: HudSessionSnapshot): HudSessionS
   return {
     ...snapshot,
     version: snapshot.version + 1,
+    runElapsedMs: 0,
+    actSplitsMs: {},
     visitedAreaIds: [],
     clearedAreaIds: [],
     checkpoints,
     gemSteps,
-    lab: {
-      ...snapshot.lab,
-      completedTrialAreaIds: [],
-    },
+    lab: { ...snapshot.lab, completedTrialAreaIds: [] },
     nextTownCurrencyBudget: computeNextTownCurrencyBudget(gemSteps, currentAct),
-    activeVendorRegex: buildVendorSearchRegex({
-      gemSteps,
-      linkGroups: snapshot.linkGroups,
-      currentAct,
-    }),
+    activeVendorRegex: buildVendorSearchRegex({ gemSteps, linkGroups: snapshot.linkGroups, currentAct }),
   };
 }
 

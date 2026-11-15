@@ -10,32 +10,12 @@ import {
 } from "@exile-hud/core";
 import { poe1GameAdapter } from "@exile-hud/game-data";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  initializeHostSessionWithProgress,
-  persistSnapshotProgressIfNeeded,
-} from "./campaign_progress_persistence_client.js";
-import {
-  generateRoomPin,
-  loadHostIdentityPrefs,
-  saveHostIdentityPrefs,
-} from "./desktop_host_settings_storage.js";
-import {
-  applyLogLinesToSnapshot,
-  hookAndBootstrapLogPath,
-  syncBuildSetsForLevel,
-} from "./client_log_sync_helper.js";
-import {
-  applyGggCharacterResponseToSnapshot,
-  applyViewerCommandToSnapshot,
-  compilePobProfileToSnapshot,
-  DEFAULT_STARTER_POB_XML,
-  deriveTrayIndicator,
-  inspectPobBuildSets,
-} from "./desktop_telemetry_bridge.js";
-import {
-  compileAndSavePobProfile,
-  openPobStorageFolder,
-} from "./pob_profile_persistence_client.js";
+import { initializeHostSessionWithProgress, persistSnapshotProgressIfNeeded } from "./campaign_progress_persistence_client.js";
+import { generateRoomPin, loadHostIdentityPrefs, saveHostIdentityPrefs } from "./desktop_host_settings_storage.js";
+import { applyLogLinesToSnapshot, hookAndBootstrapLogPath, syncBuildSetsForLevel } from "./client_log_sync_helper.js";
+import { applyGggCharacterResponseToSnapshot, applyViewerCommandToSnapshot, compilePobProfileToSnapshot, DEFAULT_STARTER_POB_XML, deriveTrayIndicator, inspectPobBuildSets } from "./desktop_telemetry_bridge.js";
+import { compileAndSavePobProfile, openPobStorageFolder } from "./pob_profile_persistence_client.js";
+import { createHostRunTimerClock } from "./host_run_timer_clock.js";
 import { createHostRelaySession, type HostRelaySession } from "./relay_host_connection.js";
 import {
   clearPoesessid,
@@ -81,11 +61,13 @@ export function useDesktopHostController() {
 
   const relayRef = useRef<HostRelaySession | null>(null);
   const snapshotRef = useRef<HudSessionSnapshot | null>(null);
+  const timerClockRef = useRef(createHostRunTimerClock());
   const activeBuildRef = useRef<ValidatedPobBuild | null>(null);
   const syncPrefsRef = useRef({ accountName, characterName, hasStoredSession, simulatedOutage });
-  snapshotRef.current = snapshot;
   activeBuildRef.current = activeBuild;
   syncPrefsRef.current = { accountName, characterName, hasStoredSession, simulatedOutage };
+
+  const getLiveSnapshot = useCallback(() => timerClockRef.current.advanceSnapshotRef(snapshotRef), []);
 
   useEffect(() => {
     saveHostIdentityPrefs({ roomId, hostSecret, pin, relayUrl, accountName, characterName, passiveTreeHotkey });
@@ -95,7 +77,8 @@ export function useDesktopHostController() {
     void setPassiveTreeHotkeyIpc(passiveTreeHotkey);
   }, [passiveTreeHotkey]);
 
-  const pushPatch = useCallback((next: HudSessionSnapshot, eventTag: string) => {
+  const pushPatch = useCallback((rawNext: HudSessionSnapshot, eventTag: string) => {
+    const next = timerClockRef.current.reconcileOutgoingSnapshot(snapshotRef.current, rawNext, eventTag);
     persistSnapshotProgressIfNeeded(snapshotRef.current, next, eventTag);
     setSnapshot(next);
     snapshotRef.current = next;
@@ -108,30 +91,31 @@ export function useDesktopHostController() {
         force,
         ...syncPrefsRef.current,
         activeBuild: activeBuildRef.current,
-        getLatestSnapshot: () => snapshotRef.current,
+        getLatestSnapshot: getLiveSnapshot,
         pushPatch,
         setSyncMessage,
       });
     },
-    [pushPatch],
+    [getLiveSnapshot, pushPatch],
   );
 
   const handleViewerCommand = useCallback(
     (cmd: ViewerToRoomMessage) => {
-      if (!snapshotRef.current) return;
-      const outcome = applyViewerCommandToSnapshot(snapshotRef.current, cmd);
+      const cur = getLiveSnapshot();
+      if (!cur) return;
+      const outcome = applyViewerCommandToSnapshot(cur, cmd);
       if (outcome.copyRegex) void writeVendorRegexClipboard(outcome.copyRegex);
       if (outcome.requestSync) runGggSync(true);
       if (outcome.nextSnapshot && outcome.eventTag) pushPatch(outcome.nextSnapshot, outcome.eventTag);
     },
-    [pushPatch, runGggSync],
+    [getLiveSnapshot, pushPatch, runGggSync],
   );
 
-  useHostOverlayBroadcastBridge(snapshot, snapshotRef, handleViewerCommand);
+  useHostOverlayBroadcastBridge(snapshot, snapshotRef, handleViewerCommand, getLiveSnapshot);
 
   const connectRelay = useCallback(
     (overrideSnap?: HudSessionSnapshot, overridePin?: string, overrideRelayUrl?: string) => {
-      const targetSnap = overrideSnap ?? snapshotRef.current;
+      const targetSnap = overrideSnap ?? getLiveSnapshot();
       if (!targetSnap) return;
       setRelayError(null);
       relayRef.current?.close();
@@ -141,7 +125,7 @@ export function useDesktopHostController() {
         hostSecret,
         pin: overridePin ?? pin,
         snapshot: targetSnap,
-        getLatestSnapshot: () => snapshotRef.current,
+        getLatestSnapshot: getLiveSnapshot,
         onConnected: () => {
           setRelayConnected(true);
           setRelayError(null);
@@ -152,7 +136,7 @@ export function useDesktopHostController() {
         onViewerCommand: handleViewerCommand,
       });
     },
-    [handleViewerCommand, hostSecret, pin, relayUrl, roomId],
+    [getLiveSnapshot, handleViewerCommand, hostSecret, pin, relayUrl, roomId],
   );
 
   useEffect(() => {
@@ -174,6 +158,7 @@ export function useDesktopHostController() {
         setCharacterName(hydratedSnapshot.characterName);
       }
 
+      timerClockRef.current.syncBaseSnapshot(hydratedSnapshot);
       setSnapshot(hydratedSnapshot);
       snapshotRef.current = hydratedSnapshot;
       activeBuildRef.current = compiled.build;
@@ -197,7 +182,7 @@ export function useDesktopHostController() {
 
   const processLogLines = useCallback(
     (lines: string[]) => {
-      const cur = snapshotRef.current;
+      const cur = getLiveSnapshot();
       if (!cur || lines.length === 0) return;
       const logged = applyLogLinesToSnapshot(cur, lines);
       if (logged === cur) return;
@@ -215,7 +200,7 @@ export function useDesktopHostController() {
       if (cur.currentAreaId !== next.currentAreaId) runGggSync(false);
       pushPatch(next, "client_log_batch");
     },
-    [pushPatch, runGggSync],
+    [getLiveSnapshot, pushPatch, runGggSync],
   );
 
   useTauriHostEventBridge({
@@ -232,7 +217,7 @@ export function useDesktopHostController() {
     setCompileError(null);
     try {
       const { compiled, syncedSnapshot } = await compileAndSavePobProfile(
-        { roomId, characterName, previousSnapshot: snapshot, ...nextCfg },
+        { roomId, characterName, previousSnapshot: getLiveSnapshot(), ...nextCfg },
         compilePobProfileToSnapshot,
         syncBuildSetsForLevel,
       );
@@ -252,7 +237,7 @@ export function useDesktopHostController() {
 
   const applySelectedLogPath = async (p: string, manual: boolean, eventTag: string) => {
     setClientLogPathState(p);
-    const { hooked, nextSnapshot } = await hookAndBootstrapLogPath(p, manual, snapshotRef.current);
+    const { hooked, nextSnapshot } = await hookAndBootstrapLogPath(p, manual, getLiveSnapshot());
     setClientLogFound(hooked);
     if (nextSnapshot) {
       if (nextSnapshot.characterName) setCharacterName(nextSnapshot.characterName);
@@ -284,7 +269,7 @@ export function useDesktopHostController() {
     clearPoesessid: async () => { await clearPoesessid(); setHasStoredSession(false); },
     setLogPath: (p: string) => applySelectedLogPath(p, true, "log_path"),
     autoDetectPath: async () => { const res = await detectClientLogPath(); if (res.detectedPath) await applySelectedLogPath(res.detectedPath, false, "log_auto_detect"); },
-    toggleAutoClipboard: () => { if (snapshot) pushPatch({ ...snapshot, autoClipboardEnabled: !snapshot.autoClipboardEnabled }, "toggle_clip"); },
+    toggleAutoClipboard: () => { const cur = getLiveSnapshot(); if (cur) pushPatch({ ...cur, autoClipboardEnabled: !cur.autoClipboardEnabled }, "toggle_clip"); },
     copyRegexNow: async () => { if (snapshot?.activeVendorRegex) await writeVendorRegexClipboard(snapshot.activeVendorRegex); },
     toggleSimPoeRunning: () => { const cur = snapshotRef.current; if (cur) pushPatch(reduceTelemetrySession(cur, { type: "process_state", running: !cur.poeRunning }, poe1GameAdapter), "sim_poe"); },
     toggleSimulatedOutage: () => { const next = !simulatedOutage; setSimulatedOutage(next); const cur = snapshotRef.current; if (cur && next) pushPatch({ ...cur, version: cur.version + 1, characterSyncStatus: "OFFLINE_FALLBACK" }, "sim_outage_on"); },

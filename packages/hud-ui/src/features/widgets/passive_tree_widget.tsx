@@ -1,6 +1,7 @@
 import type { HudSessionSnapshot } from "@exile-hud/core";
 import { poe1GameAdapter } from "@exile-hud/game-data";
 import { Maximize2 } from "lucide-react";
+import { memo, useMemo } from "react";
 import { useHudTheme } from "../theme/hud_theme_provider.js";
 
 interface PassiveTreeWidgetProps {
@@ -8,42 +9,61 @@ interface PassiveTreeWidgetProps {
   onOpenFullTree?: () => void;
 }
 
-export function PassiveTreeWidget({ snapshot, onOpenFullTree }: PassiveTreeWidgetProps) {
+export const PassiveTreeWidget = memo(function PassiveTreeWidget({
+  snapshot,
+  onOpenFullTree,
+}: PassiveTreeWidgetProps) {
   const { treePalette } = useHudTheme();
   const tree = snapshot.passiveTree;
   const pts = tree.targetNodesPreview;
-  const graphNodes = poe1GameAdapter.getPassiveTreeNodes();
-  const ptById = new Map(pts.map((pt) => [pt.id, pt]));
 
-  const edges: { key: string; x1: number; y1: number; x2: number; y2: number; allocated: boolean }[] = [];
-  for (const pt of pts) {
-    const meta = graphNodes[pt.id];
-    if (!meta?.out) continue;
-    for (const nbrId of meta.out) {
-      if (pt.id >= nbrId) continue;
-      const nbr = ptById.get(nbrId);
-      if (!nbr) continue;
-      edges.push({
-        key: `${pt.id}_${nbrId}`,
-        x1: pt.x,
-        y1: pt.y,
-        x2: nbr.x,
-        y2: nbr.y,
-        allocated: pt.allocated && nbr.allocated,
-      });
+  const { edges, viewBox } = useMemo(() => {
+    const graphNodes = poe1GameAdapter.getPassiveTreeNodes();
+    const ptById = new Map(pts.map((pt) => [pt.id, pt]));
+    const builtEdges: { key: string; x1: number; y1: number; x2: number; y2: number; allocated: boolean }[] = [];
+
+    let minX = -100;
+    let maxX = 100;
+    let minY = -100;
+    let maxY = 100;
+    if (pts.length > 0) {
+      minX = Number.POSITIVE_INFINITY;
+      maxX = Number.NEGATIVE_INFINITY;
+      minY = Number.POSITIVE_INFINITY;
+      maxY = Number.NEGATIVE_INFINITY;
+      for (const pt of pts) {
+        if (pt.x < minX) minX = pt.x;
+        if (pt.x > maxX) maxX = pt.x;
+        if (pt.y < minY) minY = pt.y;
+        if (pt.y > maxY) maxY = pt.y;
+
+        const meta = graphNodes[pt.id];
+        if (!meta?.out) continue;
+        for (const nbrId of meta.out) {
+          if (pt.id >= nbrId) continue;
+          const nbr = ptById.get(nbrId);
+          if (!nbr) continue;
+          builtEdges.push({
+            key: `${pt.id}_${nbrId}`,
+            x1: pt.x,
+            y1: pt.y,
+            x2: nbr.x,
+            y2: nbr.y,
+            allocated: pt.allocated && nbr.allocated,
+          });
+        }
+      }
+      minX -= 400;
+      maxX += 400;
+      minY -= 400;
+      maxY += 400;
     }
-  }
 
-  let minX = -100;
-  let maxX = 100;
-  let minY = -100;
-  let maxY = 100;
-  if (pts.length > 0) {
-    minX = Math.min(...pts.map((p) => p.x)) - 400;
-    maxX = Math.max(...pts.map((p) => p.x)) + 400;
-    minY = Math.min(...pts.map((p) => p.y)) - 400;
-    maxY = Math.max(...pts.map((p) => p.y)) + 400;
-  }
+    return {
+      edges: builtEdges,
+      viewBox: `${minX} ${minY} ${Math.max(100, maxX - minX)} ${Math.max(100, maxY - minY)}`,
+    };
+  }, [pts]);
 
   return (
     <div className="flex flex-col h-full gap-2.5">
@@ -74,10 +94,7 @@ export function PassiveTreeWidget({ snapshot, onOpenFullTree }: PassiveTreeWidge
           className="rounded-md p-2 flex items-center justify-center min-h-[120px]"
           style={{ backgroundColor: treePalette.canvasBg }}
         >
-          <svg
-            viewBox={`${minX} ${minY} ${Math.max(100, maxX - minX)} ${Math.max(100, maxY - minY)}`}
-            className="w-full h-36"
-          >
+          <svg viewBox={viewBox} className="w-full h-36">
             {edges.map((edge) => (
               <line
                 key={edge.key}
@@ -126,4 +143,4 @@ export function PassiveTreeWidget({ snapshot, onOpenFullTree }: PassiveTreeWidge
       </div>
     </div>
   );
-}
+});

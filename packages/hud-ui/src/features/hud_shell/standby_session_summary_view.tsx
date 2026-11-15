@@ -1,12 +1,5 @@
 import type { HudSessionSnapshot } from "@exile-hud/core";
-
-function formatElapsed(ms: number): string {
-  const totalSec = Math.floor(ms / 1000);
-  const h = Math.floor(totalSec / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const s = totalSec % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-}
+import { formatRunTimerClock, useLiveRunElapsedMs } from "../widgets/run_timer_clock_tracker.js";
 
 export function StandbySessionSummaryView({
   snapshot,
@@ -15,6 +8,7 @@ export function StandbySessionSummaryView({
   snapshot: HudSessionSnapshot;
   onOverridePreview: () => void;
 }) {
+  const liveElapsedMs = useLiveRunElapsedMs(snapshot);
   const completedCount = snapshot.checkpoints.filter((c) => c.completed).length;
   const pct = snapshot.checkpoints.length > 0 ? Math.round((completedCount / snapshot.checkpoints.length) * 100) : 0;
 
@@ -43,7 +37,7 @@ export function StandbySessionSummaryView({
             Total Run Time (Paused)
           </div>
           <p className="text-4xl font-mono tabular-nums font-bold text-hud-text">
-            {formatElapsed(snapshot.runElapsedMs)}
+            {formatRunTimerClock(liveElapsedMs)}
           </p>
         </div>
 
@@ -70,7 +64,7 @@ export function StandbySessionSummaryView({
               <div key={act}>
                 <div className="text-xs text-hud-muted">Act {act}</div>
                 <div className="text-base font-mono tabular-nums text-hud-text mt-0.5">
-                  {splitMs ? formatElapsed(splitMs) : "--:--:--"}
+                  {splitMs ? formatRunTimerClock(splitMs) : "--:--:--"}
                 </div>
               </div>
             );
