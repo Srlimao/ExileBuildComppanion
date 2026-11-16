@@ -1,11 +1,13 @@
 import { Contrast, Moon, Sun } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useHudI18n } from "../i18n/hud_i18n_provider.js";
 import { useHudTheme } from "./hud_theme_provider.js";
 import { ThemeAppearanceControls } from "./theme_appearance_controls.js";
 
-/** Compact Whisper theme popover for toggling OLED / Soft Dark / Light Mode and accent colors. */
+/** Compact Whisper theme popover for toggling language, OLED / Soft Dark / Light Mode, and accent colors. */
 export function ThemeSelectorPopover({ compact = false }: { compact?: boolean }) {
   const { theme } = useHudTheme();
+  const { msg } = useHudI18n();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
@@ -35,12 +37,12 @@ export function ThemeSelectorPopover({ compact = false }: { compact?: boolean })
         type="button"
         data-testid="hud-theme-trigger"
         aria-expanded={open}
-        aria-label="Theme and appearance settings"
+        aria-label={msg.theme.triggerLabel}
         onClick={() => setOpen((v) => !v)}
         className={`inline-flex items-center gap-1.5 rounded-md transition-colors cursor-pointer hover:bg-hud-subtle text-hud-muted hover:text-hud-text ${
           compact ? "px-1.5 py-1 text-[11px]" : "px-2 py-1 text-xs"
         }`}
-        title="Appearance & Accent Color"
+        title={msg.theme.triggerTitle}
       >
         <ModeIcon className="h-3.5 w-3.5" />
         <span
@@ -50,7 +52,7 @@ export function ThemeSelectorPopover({ compact = false }: { compact?: boolean })
             boxShadow: "0 0 0 1px var(--hud-hairline)",
           }}
         />
-        {!compact && <span className="hidden sm:inline font-medium">Theme</span>}
+        {!compact && <span className="hidden sm:inline font-medium">{msg.theme.themeButton}</span>}
       </button>
 
       {open && (

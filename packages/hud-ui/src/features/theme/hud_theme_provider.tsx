@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { HudI18nProvider } from "../i18n/hud_i18n_provider.js";
 import {
   applyHudThemeToDocument,
   loadSavedHudTheme,
@@ -82,7 +83,11 @@ export function HudThemeProvider({ children }: { children: ReactNode }) {
     [theme, treePalette, setMode, setAccentId, setCustomHex, resetTheme],
   );
 
-  return <HudThemeContext.Provider value={value}>{children}</HudThemeContext.Provider>;
+  return (
+    <HudI18nProvider>
+      <HudThemeContext.Provider value={value}>{children}</HudThemeContext.Provider>
+    </HudI18nProvider>
+  );
 }
 
 /** Reads the active per-device HUD theme and mutators. */

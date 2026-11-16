@@ -1,4 +1,5 @@
 import { RotateCcw, Skull } from "lucide-react";
+import { useHudI18n } from "../i18n/hud_i18n_provider.js";
 
 interface DeathRespawnResumeBannerProps {
   areaName: string;
@@ -6,6 +7,8 @@ interface DeathRespawnResumeBannerProps {
 }
 
 export function DeathRespawnResumeBanner({ areaName, onDismiss }: DeathRespawnResumeBannerProps) {
+  const { msg } = useHudI18n();
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-3">
       <div className="border-l-2 border-hud-danger pl-3.5 py-2 bg-hud-subtle flex items-center justify-between gap-3">
@@ -13,10 +16,11 @@ export function DeathRespawnResumeBanner({ areaName, onDismiss }: DeathRespawnRe
           <Skull className="h-4 w-4 text-hud-danger shrink-0" />
           <div className="min-w-0">
             <p className="text-sm font-semibold text-hud-danger">
-              Slain — Take Portal Back to <span className="text-hud-text underline">{areaName}</span>
+              {msg.deathBanner.slainPrefix}{" "}
+              <span className="text-hud-text underline">{areaName}</span>
             </p>
             <p className="text-xs text-hud-muted truncate">
-              Town entered via Resurrect in Town; combat progression anchored to {areaName}.
+              {msg.deathBanner.subtextPrefix} {areaName}.
             </p>
           </div>
         </div>
@@ -27,7 +31,7 @@ export function DeathRespawnResumeBanner({ areaName, onDismiss }: DeathRespawnRe
           className="px-2.5 py-1 rounded-md text-xs font-medium text-hud-muted hover:text-hud-text hover:bg-hud-subtle inline-flex items-center gap-1.5 cursor-pointer shrink-0"
         >
           <RotateCcw className="h-3.5 w-3.5" />
-          Dismiss
+          {msg.deathBanner.dismiss}
         </button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import type { HudSessionSnapshot } from "@exile-hud/core";
 import { Check, ClipboardCopy, Send } from "lucide-react";
 import { useState } from "react";
+import { useHudI18n } from "../i18n/hud_i18n_provider.js";
 
 interface RegexSyncWidgetProps {
   snapshot: HudSessionSnapshot;
@@ -8,6 +9,7 @@ interface RegexSyncWidgetProps {
 }
 
 export function RegexSyncWidget({ snapshot, onPushToPcClipboard }: RegexSyncWidgetProps) {
+  const { msg } = useHudI18n();
   const [copiedLocal, setCopiedLocal] = useState(false);
   const regex = snapshot.activeVendorRegex || "g-g-r|b-b-g|nne";
 
@@ -24,9 +26,11 @@ export function RegexSyncWidget({ snapshot, onPushToPcClipboard }: RegexSyncWidg
   return (
     <div className="flex flex-col h-full justify-between gap-3">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">Vendor Regex</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
+          {msg.widgets.vendorRegex}
+        </h2>
         <span className={`text-xs font-mono ${snapshot.autoClipboardEnabled ? "text-hud-ok" : "text-hud-muted"}`}>
-          {snapshot.autoClipboardEnabled ? "Auto-PC Sync" : "Manual"}
+          {snapshot.autoClipboardEnabled ? msg.widgets.autoPcSync : msg.widgets.manual}
         </span>
       </div>
 
@@ -40,7 +44,7 @@ export function RegexSyncWidget({ snapshot, onPushToPcClipboard }: RegexSyncWidg
           onClick={() => onPushToPcClipboard(regex)}
           className="px-3 py-1.5 rounded-md bg-hud-accent text-hud-accent-fg hover:opacity-90 font-semibold inline-flex items-center gap-1.5 cursor-pointer"
         >
-          <Send className="h-3.5 w-3.5" /> Push to PC
+          <Send className="h-3.5 w-3.5" /> {msg.widgets.pushToPc}
         </button>
         <button
           type="button"
@@ -48,7 +52,7 @@ export function RegexSyncWidget({ snapshot, onPushToPcClipboard }: RegexSyncWidg
           className="px-2.5 py-1.5 rounded-md text-hud-muted hover:text-hud-text hover:bg-hud-subtle font-medium inline-flex items-center gap-1.5 cursor-pointer transition-colors"
         >
           {copiedLocal ? <Check className="h-3.5 w-3.5 text-hud-ok" /> : <ClipboardCopy className="h-3.5 w-3.5" />}
-          {copiedLocal ? "Copied" : "Copy"}
+          {copiedLocal ? msg.widgets.copied : msg.widgets.copy}
         </button>
       </div>
     </div>

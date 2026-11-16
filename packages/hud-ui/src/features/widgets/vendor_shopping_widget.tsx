@@ -1,5 +1,6 @@
 import type { GemAcquisitionStep, HudSessionSnapshot } from "@exile-hud/core";
 import { useState } from "react";
+import { useHudI18n } from "../i18n/hud_i18n_provider.js";
 
 interface VendorShoppingWidgetProps {
   snapshot: HudSessionSnapshot;
@@ -17,6 +18,7 @@ function isGemDone(g: GemAcquisitionStep): boolean {
 }
 
 export function VendorShoppingWidget({ snapshot, onToggleGem }: VendorShoppingWidgetProps) {
+  const { msg } = useHudI18n();
   const [showCompleted, setShowCompleted] = useState(false);
   const actGems = snapshot.gemSteps.filter((g) => g.act <= Math.max(snapshot.currentAct + 1, 2));
   const pendingGems = actGems.filter((g) => !isGemDone(g));
@@ -28,7 +30,7 @@ export function VendorShoppingWidget({ snapshot, onToggleGem }: VendorShoppingWi
     <div className="flex flex-col h-full gap-2.5">
       <div className="flex items-baseline justify-between gap-2 flex-wrap">
         <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
-          Town Pickup · Gems
+          {msg.widgets.townPickupGems}
         </h2>
         <div className="flex items-center gap-3 text-xs">
           {doneCount > 0 && (
@@ -38,7 +40,7 @@ export function VendorShoppingWidget({ snapshot, onToggleGem }: VendorShoppingWi
               onClick={() => setShowCompleted((v) => !v)}
               className="text-hud-muted hover:text-hud-text transition-colors cursor-pointer"
             >
-              {showCompleted ? "Hide done" : `${doneCount} done`}
+              {showCompleted ? msg.widgets.hideDone : msg.widgets.doneCount(doneCount)}
             </button>
           )}
           <span className="font-mono tabular-nums text-hud-muted">
@@ -75,9 +77,9 @@ export function VendorShoppingWidget({ snapshot, onToggleGem }: VendorShoppingWi
                     <span className="text-xs font-mono text-hud-muted ml-1.5">Lv{g.requiredLevel}</span>
                   </div>
                   <div className="text-xs text-hud-muted truncate">
-                    Act {g.act} · {g.npcName} ({g.questName})
-                    {g.acquiredLocation === "backpack" && " · Bag"}
-                    {g.acquiredLocation === "weapon_swap" && " · Swap"}
+                    {msg.widgets.actWord} {g.act} · {g.npcName} ({g.questName})
+                    {g.acquiredLocation === "backpack" && ` · ${msg.widgets.bag}`}
+                    {g.acquiredLocation === "weapon_swap" && ` · ${msg.widgets.swap}`}
                   </div>
                 </div>
               </div>
@@ -87,7 +89,7 @@ export function VendorShoppingWidget({ snapshot, onToggleGem }: VendorShoppingWi
                   isQuest ? "text-hud-quest font-semibold" : "text-hud-muted"
                 }`}
               >
-                {isQuest ? "free quest" : `${g.count}x ${g.currencyCost.toLowerCase()}`}
+                {isQuest ? msg.widgets.freeQuest : `${g.count}x ${g.currencyCost.toLowerCase()}`}
               </span>
             </button>
           );
@@ -102,8 +104,8 @@ export function VendorShoppingWidget({ snapshot, onToggleGem }: VendorShoppingWi
             }`}
           >
             {actGems.length > 0 && pendingGems.length === 0 && !showCompleted
-              ? "All Act gems acquired"
-              : "No pending Act gems or build gems loaded."}
+              ? msg.widgets.allActGemsAcquired
+              : msg.widgets.noPendingGems}
           </p>
         )}
       </div>

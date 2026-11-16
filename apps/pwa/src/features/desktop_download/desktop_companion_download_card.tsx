@@ -1,8 +1,10 @@
+import { useHudI18n } from "@exile-hud/hud-ui";
 import { Download, ExternalLink, Monitor } from "lucide-react";
 import { useLatestDesktopReleaseInfo } from "./github_latest_release_client.js";
 
 /** Windows PC host download card wired to the latest GitHub release assets. */
 export function DesktopCompanionDownloadCard() {
+  const { appMsg } = useHudI18n();
   const release = useLatestDesktopReleaseInfo();
 
   return (
@@ -11,17 +13,19 @@ export function DesktopCompanionDownloadCard() {
         <div className="flex items-center gap-2 min-w-0">
           <Monitor className="h-4 w-4 text-hud-ok shrink-0" />
           <span className="text-sm font-semibold text-hud-text truncate">
-            Exile Relay PC Host (Windows x64)
+            {appMsg.pwa.pcHostCardTitle}
           </span>
         </div>
         <span className="shrink-0 text-xs font-mono tabular-nums text-hud-ok">
-          {release.tagName ?? "Latest"}
+          {release.tagName ?? appMsg.pwa.latestTag}
           {release.portableSizeLabel ? ` · ${release.portableSizeLabel}` : ""}
         </span>
       </div>
 
       <p className="text-xs leading-relaxed text-hud-muted">
-        Lightweight System Tray app — auto-detects Path of Exile <code className="text-hud-text">Client.txt</code>, decodes PoB offline, and drives both your <kbd className="font-mono text-hud-text">F7</kbd> PC overlay and phone HUD.
+        {appMsg.pwa.pcHostCardDescPrefix} <code className="text-hud-text">Client.txt</code>
+        {appMsg.pwa.pcHostCardDescMid} <kbd className="font-mono text-hud-text">F7</kbd>{" "}
+        {appMsg.pwa.pcHostCardDescSuffix}
       </p>
 
       <a
@@ -29,12 +33,12 @@ export function DesktopCompanionDownloadCard() {
         className="w-full rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 font-semibold py-2.5 px-3.5 text-sm transition-colors flex items-center justify-center gap-2"
       >
         <Download className="h-4 w-4 shrink-0" />
-        <span>Download ExileRelay.exe (Portable)</span>
+        <span>{appMsg.pwa.downloadPortable}</span>
       </a>
 
       <div className="flex items-center justify-between text-xs text-hud-muted pt-0.5">
         <a href={release.setupUrl} className="hover:text-hud-text underline underline-offset-4">
-          Windows Installer (Setup.exe)
+          {appMsg.pwa.windowsInstaller}
         </a>
         <a
           href={release.releasePageUrl}
@@ -42,7 +46,7 @@ export function DesktopCompanionDownloadCard() {
           rel="noreferrer"
           className="hover:text-hud-text inline-flex items-center gap-1"
         >
-          <span>Release Notes</span>
+          <span>{appMsg.pwa.releaseNotes}</span>
           <ExternalLink className="h-3 w-3" />
         </a>
       </div>

@@ -124,6 +124,11 @@ pub fn set_tray_telemetry_status(
 }
 
 #[tauri::command]
+pub fn set_tray_locale(app: AppHandle, locale: String) -> Result<(), String> {
+    tray_icon_and_menu_controller::set_tray_locale(&app, &locale)
+}
+
+#[tauri::command]
 pub fn set_passive_tree_hotkey(hotkey: String, state: State<'_, HostSharedState>) -> bool {
     state
         .tree_hotkey_tracker

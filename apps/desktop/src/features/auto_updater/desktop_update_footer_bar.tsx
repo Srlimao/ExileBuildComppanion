@@ -1,3 +1,4 @@
+import { useHudI18n } from "@exile-hud/hud-ui";
 import { AlertTriangle, CheckCircle2, Download, RefreshCw } from "lucide-react";
 import { useDesktopAutoUpdater } from "./use_desktop_auto_updater.js";
 
@@ -7,8 +8,12 @@ function formatMegabytes(bytes: number | null): string | null {
 }
 
 export function DesktopUpdateFooterBar() {
+  const { appMsg } = useHudI18n();
   const { state, checkNow, installNow } = useDesktopAutoUpdater();
-  const variantLabel = state.installVariant === "nsisSetup" ? "Installer" : "Standalone";
+  const variantLabel =
+    state.installVariant === "nsisSetup"
+      ? appMsg.desktop.installerVariant
+      : appMsg.desktop.standaloneVariant;
   const sizeLabel = formatMegabytes(state.assetSizeBytes);
   const isChecking = state.phase === "checking";
   const isDownloading = state.phase === "downloading";
@@ -17,7 +22,7 @@ export function DesktopUpdateFooterBar() {
   const pct = state.progressPercent ?? 0;
 
   if (state.updateAvailable) {
-    const versionTag = state.latestVersion ?? "New Release";
+    const versionTag = state.latestVersion ?? appMsg.desktop.newRelease;
     return (
       <footer className="mt-auto pt-3 border-t border-hud-hairline space-y-2">
         {state.error && (
@@ -43,13 +48,11 @@ export function DesktopUpdateFooterBar() {
           <span className="relative z-10 inline-flex items-center gap-2 min-w-0 truncate">
             <Download className={`h-3.5 w-3.5 shrink-0 ${isBusy ? "animate-pulse" : ""}`} />
             {isInstalling ? (
-              <span>Verifying SHA-256 &amp; Restarting…</span>
+              <span>{appMsg.desktop.verifyingRestarting}</span>
             ) : isDownloading ? (
-              <span>
-                Downloading {versionTag} (<span className="font-mono tabular-nums">{pct}%</span>)…
-              </span>
+              <span>{appMsg.desktop.downloadingTag(versionTag, pct)}</span>
             ) : (
-              <span className="truncate">Update to {versionTag} &amp; Restart</span>
+              <span className="truncate">{appMsg.desktop.updateRestartTag(versionTag)}</span>
             )}
           </span>
 
@@ -76,7 +79,7 @@ export function DesktopUpdateFooterBar() {
           <CheckCircle2 className="h-3.5 w-3.5 text-hud-ok shrink-0" />
           <span className="font-mono tabular-nums text-hud-text">v{state.currentVersion}</span>
           <span>· {variantLabel} ·</span>
-          <span>{isChecking ? "Checking…" : "Up to date"}</span>
+          <span>{isChecking ? appMsg.desktop.checkingUpdates : appMsg.desktop.upToDate}</span>
         </span>
 
         <button
@@ -86,7 +89,7 @@ export function DesktopUpdateFooterBar() {
           className="inline-flex items-center gap-1 rounded-md hover:bg-hud-subtle hover:text-hud-text px-2 py-1 text-[11px] text-hud-muted cursor-pointer disabled:opacity-60 disabled:cursor-wait shrink-0"
         >
           <RefreshCw className={`h-3 w-3 ${isChecking ? "animate-spin" : ""}`} />
-          <span>Check</span>
+          <span>{appMsg.desktop.checkUpdatesBtn}</span>
         </button>
       </div>
     </footer>

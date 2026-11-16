@@ -13,6 +13,7 @@ import {
   PassiveTreeCommandView,
   renderHudWidget,
   StandbySessionSummaryView,
+  useHudI18n,
 } from "@exile-hud/hud-ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getDefaultOverlayLayoutForMode } from "./overlay_default_grid_presets.js";
@@ -30,6 +31,7 @@ import {
 
 /** Standalone transparent overlay window rendered from index.html?window=overlay (zero Cloudflare). */
 export function OverlayHudApp() {
+  const { appMsg } = useHudI18n();
   const [config, setConfig] = useState<SavedOverlayConfig>(DEFAULT_OVERLAY_CONFIG);
   const [snapshot, setSnapshot] = useState<HudSessionSnapshot | null>(null);
   const [previewModeOverride, setPreviewModeOverride] = useState<HudContextMode | null>(null);
@@ -163,7 +165,7 @@ export function OverlayHudApp() {
       <div className={`flex-1 min-h-0 overflow-y-auto ${config.clickThroughLocked ? "pointer-events-none" : ""}`}>
         {!snapshot ? (
           <div className="p-4 text-xs text-hud-muted">
-            Waiting for local telemetry snapshot from Exile Relay Control Center...
+            {appMsg.desktop.waitingOverlaySnapshot}
           </div>
         ) : (
           <>

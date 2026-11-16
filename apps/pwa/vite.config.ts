@@ -12,7 +12,8 @@ export default defineConfig({
       manifest: {
         name: "Exile Relay",
         short_name: "ExileRelay",
-        description: "Real-time second-screen & overlay telemetry relay for Path of Exile",
+        description: "Companheiro de segunda tela e overlay em tempo real para Path of Exile",
+        lang: "pt-BR",
         theme_color: "#000000",
         background_color: "#000000",
         display: "standalone",

@@ -1,4 +1,6 @@
 import type { DeviceFormFactor, HudContextMode, WidgetGridItemLayout, WidgetId } from "@exile-hud/core";
+import { HUD_SHELL_AND_TREE_MESSAGES } from "../i18n/hud_shell_messages.js";
+import type { HudLocale } from "../i18n/locale_storage_and_types.js";
 
 export interface WidgetCatalogEntry {
   widgetId: WidgetId;
@@ -6,19 +8,31 @@ export interface WidgetCatalogEntry {
   description: string;
 }
 
-export const WIDGET_CATALOG: WidgetCatalogEntry[] = [
-  { widgetId: "zone_layout", label: "Zone Layout", description: "Exile-UI map seed variants & compass direction" },
-  { widgetId: "active_checklist", label: "Active Checklist", description: "Zone steps, quest objectives & soft-progress" },
-  { widgetId: "vendor_shopping", label: "Vendor & Gems", description: "Quest vs vendor gems & Act 1-3 currency budget" },
-  { widgetId: "socket_links", label: "Socket & Links", description: "Target links, unlinked support & aura alerts" },
-  { widgetId: "passive_tree", label: "Passive Tree", description: "Unallocated PoB notables & respec counter" },
-  { widgetId: "regex_sync", label: "Vendor Regex", description: "Live PC clipboard regex sync & re-push" },
-  { widgetId: "deferred_backlog", label: "Cleanup Backlog", description: "Skipped skill books & Lab trials" },
-  { widgetId: "resistance_cap", label: "Resistances", description: "Live ele/chaos vs Act & Kitava targets" },
-  { widgetId: "gear_hygiene", label: "Gear & Flasks", description: "0% MS boots, flask tier & weapon alerts" },
-  { widgetId: "run_timer", label: "Run Timer", description: "Total timer, Act splits & pace delta" },
-  { widgetId: "lab_compass", label: "Lab Compass", description: "Daily PoELab room tracker, Trials & Izaro" },
+const ORDERED_WIDGET_IDS: readonly WidgetId[] = [
+  "zone_layout",
+  "active_checklist",
+  "vendor_shopping",
+  "socket_links",
+  "passive_tree",
+  "regex_sync",
+  "deferred_backlog",
+  "resistance_cap",
+  "gear_hygiene",
+  "run_timer",
+  "lab_compass",
 ];
+
+/** Returns localized widget catalog metadata for the active HUD locale. */
+export function getLocalizedWidgetCatalog(locale: HudLocale): WidgetCatalogEntry[] {
+  const dict = HUD_SHELL_AND_TREE_MESSAGES[locale].grid.widgetCatalog;
+  return ORDERED_WIDGET_IDS.map((widgetId) => ({
+    widgetId,
+    label: dict[widgetId].label,
+    description: dict[widgetId].description,
+  }));
+}
+
+export const WIDGET_CATALOG: WidgetCatalogEntry[] = getLocalizedWidgetCatalog("en");
 
 export function getDefaultLayoutForMode(
   formFactor: DeviceFormFactor,

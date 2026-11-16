@@ -1,8 +1,9 @@
 import type { DeviceFormFactor, HudContextMode, WidgetGridItemLayout, WidgetId } from "@exile-hud/core";
 import { ArrowDown, ArrowUp, Maximize2, Plus, Trash2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { useHudI18n } from "../i18n/hud_i18n_provider.js";
 import { AddWidgetDrawer } from "./add_widget_drawer.js";
-import { WIDGET_CATALOG } from "./default_mode_grid_presets.js";
+import { getLocalizedWidgetCatalog } from "./default_mode_grid_presets.js";
 
 export type WidgetGridMode = HudContextMode | "TREE_COMPACT";
 export type WidgetGridFormFactor = DeviceFormFactor | "pc-overlay";
@@ -40,9 +41,12 @@ export function CustomizableModeWidgetGrid({
   onUpdateLayout,
   onResetDefaults,
 }: CustomizableModeWidgetGridProps) {
+  const { locale, msg } = useHudI18n();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [draggedId, setDraggedId] = useState<WidgetId | null>(null);
 
+  const catalog = getLocalizedWidgetCatalog(locale);
+  const modeLabel = mode === "TREE_COMPACT" ? msg.modes.TREE : msg.modes[mode];
   const sorted = [...items].sort((a, b) => a.order - b.order);
 
   const cycleSpan = (widgetId: WidgetId) => {
@@ -108,21 +112,23 @@ export function CustomizableModeWidgetGrid({
       {editMode && (
         <div className="border-b border-dashed border-hud-accent/55 pb-2.5 flex items-center justify-between gap-2 flex-wrap">
           <p className="text-xs sm:text-sm text-hud-muted">
-            Editing <span className="font-semibold text-hud-text">{mode === "TREE_COMPACT" ? "TREE" : mode}</span> layout ({formFactor})
+            {msg.grid.editingPrefix}{" "}
+            <span className="font-semibold text-hud-text">{modeLabel}</span>{" "}
+            {msg.grid.layoutSuffix ? `${msg.grid.layoutSuffix} ` : ""}({formFactor})
           </p>
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
             className="px-3 py-1.5 rounded-md bg-hud-accent text-hud-accent-fg hover:opacity-90 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
           >
-            <Plus className="h-3.5 w-3.5" /> Add Widget
+            <Plus className="h-3.5 w-3.5" /> {msg.grid.addWidget}
           </button>
         </div>
       )}
 
       <div className={`grid ${gridColsClass} ${gridGapClass}`}>
         {sorted.map((item, idx) => {
-          const title = WIDGET_CATALOG.find((c) => c.widgetId === item.widgetId)?.label ?? item.widgetId;
+          const title = catalog.find((c) => c.widgetId === item.widgetId)?.label ?? item.widgetId;
           return (
             <div
               key={item.widgetId}

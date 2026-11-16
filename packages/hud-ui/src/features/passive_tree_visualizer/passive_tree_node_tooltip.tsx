@@ -3,6 +3,7 @@ import { computeShortestPathToNode, resolveMasteryEffectStats } from "@exile-hud
 import { poe1GameAdapter } from "@exile-hud/game-data";
 import { Minus, Plus, X } from "lucide-react";
 import { memo, useMemo } from "react";
+import { useHudI18n } from "../i18n/hud_i18n_provider.js";
 import type { BuiltPoe1TreeGeometry } from "./passive_tree_geometry_builder.js";
 
 interface PassiveTreeCanvasOverlaysProps {
@@ -27,6 +28,7 @@ export const PassiveTreeCanvasOverlays = memo(function PassiveTreeCanvasOverlays
   onZoomIn,
   onZoomOut,
 }: PassiveTreeCanvasOverlaysProps) {
+  const { msg } = useHudI18n();
   const specMasteries = diff.selectedSpec?.masteries ?? {};
   const inspectedNode = selectedNodeId ? geometry.nodes[selectedNodeId] ?? null : null;
   const inspectedAllocated = inspectedNode ? allocatedIds.has(inspectedNode.id) : false;
@@ -53,11 +55,11 @@ export const PassiveTreeCanvasOverlays = memo(function PassiveTreeCanvasOverlays
         data-tree-overlay-ui="true"
         className="absolute bottom-3 left-3 flex flex-wrap gap-2.5 rounded-lg bg-hud-surface/95 border border-hud-hairline px-3 py-1.5 text-[11px] text-hud-muted"
       >
-        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" />Allocated</span>
-        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" />New Bracket</span>
-        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-cyan-500" />Earlier</span>
-        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-500" />Respec</span>
-        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-indigo-500" />Mastery</span>
+        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" />{msg.tree.legendAllocated}</span>
+        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" />{msg.tree.legendNewBracket}</span>
+        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-cyan-500" />{msg.tree.legendEarlier}</span>
+        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-500" />{msg.tree.legendRespec}</span>
+        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-indigo-500" />{msg.tree.legendMastery}</span>
       </div>
 
       <div data-tree-overlay-ui="true" className="absolute bottom-3 right-3 flex flex-col gap-1">
@@ -65,7 +67,7 @@ export const PassiveTreeCanvasOverlays = memo(function PassiveTreeCanvasOverlays
           type="button"
           onClick={onZoomIn}
           className="p-2 rounded-lg bg-hud-surface/95 border border-hud-hairline hover:bg-hud-subtle text-hud-text cursor-pointer"
-          title="Zoom In"
+          title={msg.tree.zoomIn}
         >
           <Plus className="h-4 w-4" />
         </button>
@@ -73,7 +75,7 @@ export const PassiveTreeCanvasOverlays = memo(function PassiveTreeCanvasOverlays
           type="button"
           onClick={onZoomOut}
           className="p-2 rounded-lg bg-hud-surface/95 border border-hud-hairline hover:bg-hud-subtle text-hud-text cursor-pointer"
-          title="Zoom Out"
+          title={msg.tree.zoomOut}
         >
           <Minus className="h-4 w-4" />
         </button>
@@ -90,21 +92,21 @@ export const PassiveTreeCanvasOverlays = memo(function PassiveTreeCanvasOverlays
               <div className="text-[11px] font-mono text-hud-muted">
                 {inspectedNode.ascendancyName ? `${inspectedNode.ascendancyName} · ` : ""}
                 {inspectedNode.isKeystone
-                  ? "Keystone"
+                  ? msg.tree.nodeKinds.keystone
                   : inspectedNode.isMastery
-                    ? "Mastery"
+                    ? msg.tree.nodeKinds.mastery
                     : inspectedNode.isNotable
-                      ? "Notable"
+                      ? msg.tree.nodeKinds.notable
                       : inspectedNode.isJewelSocket
-                        ? "Jewel Socket"
-                        : "Passive"}
+                        ? msg.tree.nodeKinds.jewel
+                        : msg.tree.nodeKinds.passive}
               </div>
             </div>
             <button
               type="button"
               onClick={() => onSelectNode(null)}
               className="text-hud-muted hover:text-hud-text cursor-pointer"
-              title="Close Inspector"
+              title={msg.tree.closeInspector}
             >
               <X className="h-4 w-4" />
             </button>
@@ -113,7 +115,7 @@ export const PassiveTreeCanvasOverlays = memo(function PassiveTreeCanvasOverlays
           {inspectedMasteryStats && (
             <div className="border-l-2 border-hud-accent pl-2.5 py-0.5 text-xs text-hud-text space-y-0.5">
               <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-hud-accent">
-                PoB Chosen Mastery
+                {msg.tree.pobChosenMastery}
               </div>
               {inspectedMasteryStats.map((st, idx) => (
                 <div key={idx}>{st}</div>
@@ -135,13 +137,13 @@ export const PassiveTreeCanvasOverlays = memo(function PassiveTreeCanvasOverlays
             diff.offSpecAllocatedIds.includes(inspectedNode.id)) && (
             <div className="pt-1.5 border-t border-hud-hairline text-xs font-semibold">
               {inspectedAllocated ? (
-                <span className="text-hud-ok">Allocated</span>
+                <span className="text-hud-ok">{msg.tree.allocated}</span>
               ) : diff.targetSet.has(inspectedNode.id) ? (
                 <span className={diff.addedInBracketIds.includes(inspectedNode.id) ? "text-hud-warn" : "text-hud-cold"}>
-                  Unallocated · {inspectedPath.length} pt{inspectedPath.length === 1 ? "" : "s"} away
+                  {msg.tree.unallocatedAway(inspectedPath.length)}
                 </span>
               ) : (
-                <span className="text-hud-danger">Respec Target</span>
+                <span className="text-hud-danger">{msg.tree.respecTarget}</span>
               )}
             </div>
           )}

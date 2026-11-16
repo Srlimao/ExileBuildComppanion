@@ -1,4 +1,4 @@
-import { ExileRelayBrandIcon, ThemeSelectorPopover } from "@exile-hud/hud-ui";
+import { ExileRelayBrandIcon, ThemeSelectorPopover, useHudI18n } from "@exile-hud/hud-ui";
 import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { DesktopUpdateFooterBar } from "./features/auto_updater/desktop_update_footer_bar.js";
@@ -22,6 +22,7 @@ import { PobBuildLoaderCard } from "./features/pob_profile_panel/pob_build_loade
 type TabKey = "pairing" | "overlay" | "build" | "simulator";
 
 export function App() {
+  const { msg, appMsg } = useHudI18n();
   const [tab, setTab] = useState<TabKey>("pairing");
   const ctl = useDesktopHostController();
   const [overlayConfig, setOverlayConfig] = useState<SavedOverlayConfig>(DEFAULT_OVERLAY_CONFIG);
@@ -48,7 +49,9 @@ export function App() {
           <div className="min-w-0">
             <h1 className="text-base font-bold tracking-tight text-hud-text truncate">Exile Relay</h1>
             <p className="text-[11px] font-mono text-hud-muted truncate">
-              {ctl.snapshot ? `${ctl.snapshot.mode} · ${ctl.snapshot.currentAreaName}` : "Initializing..."}
+              {ctl.snapshot
+                ? `${msg.modes[ctl.snapshot.mode]} · ${ctl.snapshot.currentAreaName}`
+                : appMsg.desktop.initializing}
             </p>
           </div>
         </div>
@@ -57,7 +60,7 @@ export function App() {
           <button
             type="button"
             onClick={() => void toggleOverlayVisibilityIpc()}
-            title={`Toggle local PC overlay (${overlayConfig.toggleVisibilityHotkey})`}
+            title={appMsg.desktop.toggleOverlayTitle(overlayConfig.toggleVisibilityHotkey)}
             className={`px-2 py-1 rounded-md text-[11px] font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors ${
               overlayConfig.enabled
                 ? "text-hud-ok bg-hud-subtle"
@@ -74,13 +77,13 @@ export function App() {
                 key={key}
                 type="button"
                 onClick={() => setTab(key)}
-                className={`pb-0.5 border-b-2 capitalize cursor-pointer transition-colors ${
+                className={`pb-0.5 border-b-2 cursor-pointer transition-colors ${
                   tab === key
                     ? "border-hud-accent text-hud-accent font-semibold"
                     : "border-transparent text-hud-muted hover:text-hud-text"
                 }`}
               >
-                {key === "build" ? "PoB" : key === "simulator" ? "Sim" : key === "overlay" ? "Overlay" : "Pair"}
+                {appMsg.desktop.tabs[key]}
               </button>
             ))}
           </nav>

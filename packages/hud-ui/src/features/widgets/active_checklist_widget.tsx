@@ -1,5 +1,7 @@
 import type { CheckpointStepItem, HudSessionSnapshot } from "@exile-hud/core";
 import { useState } from "react";
+import { useHudI18n } from "../i18n/hud_i18n_provider.js";
+import { localizeRouteStepTitle } from "../i18n/route_step_title_localizer.js";
 
 interface ActiveChecklistWidgetProps {
   snapshot: HudSessionSnapshot;
@@ -109,6 +111,7 @@ export function selectChecklistWindow(snapshot: HudSessionSnapshot): ChecklistWi
 }
 
 export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveChecklistWidgetProps) {
+  const { locale, msg } = useHudI18n();
   const [showCompleted, setShowCompleted] = useState(false);
   const { currentActSteps, visibleSteps, doneCount, allActDone, earlierPendingCount } =
     selectChecklistWindow(snapshot);
@@ -118,7 +121,7 @@ export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveCh
     <div className="flex flex-col h-full gap-2.5">
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
-          Act {snapshot.currentAct} Steps
+          {msg.widgets.actStepsTitle(snapshot.currentAct)}
         </h2>
         <div className="flex items-center gap-3 text-xs">
           {(doneCount > 0 || earlierPendingCount > 0) && (
@@ -129,10 +132,10 @@ export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveCh
               className="text-hud-muted hover:text-hud-text transition-colors cursor-pointer"
             >
               {showCompleted
-                ? "Pending only"
+                ? msg.widgets.pendingOnly
                 : earlierPendingCount > 0
-                  ? `Show all (${earlierPendingCount} earlier)`
-                  : "Show all"}
+                  ? msg.widgets.showAllEarlier(earlierPendingCount)
+                  : msg.widgets.showAll}
             </button>
           )}
           <span className="font-mono text-hud-muted tabular-nums">
@@ -177,7 +180,7 @@ export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveCh
                           : "text-hud-text/80"
                     }`}
                   >
-                    {cp.title}
+                    {localizeRouteStepTitle(cp.title, locale)}
                   </div>
                   <div className="text-xs text-hud-muted mt-0.5 truncate">{cp.areaName}</div>
                 </div>
@@ -185,10 +188,10 @@ export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveCh
 
               <div className="flex items-center gap-2 shrink-0 text-xs font-medium">
                 {cp.category === "SKILL_BOOK" && (
-                  <span className="text-hud-quest">+1 Skill</span>
+                  <span className="text-hud-quest">{msg.widgets.plusOneSkill}</span>
                 )}
                 {cp.category === "LAB_TRIAL" && (
-                  <span className="text-hud-ok">Trial</span>
+                  <span className="text-hud-ok">{msg.widgets.trial}</span>
                 )}
               </div>
             </button>
@@ -197,7 +200,7 @@ export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveCh
 
         {allActDone && !showCompleted && (
           <p className="text-sm text-hud-ok py-4 font-medium">
-            All Act {snapshot.currentAct} steps complete
+            {msg.widgets.allActStepsComplete(snapshot.currentAct)}
           </p>
         )}
       </div>

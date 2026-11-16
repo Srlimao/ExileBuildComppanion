@@ -1,6 +1,8 @@
 import type { PassiveTreeBracketDiff, PassiveTreeSpecSummary } from "@exile-hud/core";
 import { Crosshair, Eye, LocateFixed, Search, Sparkles, X } from "lucide-react";
 import { memo, useMemo } from "react";
+import { useHudI18n } from "../i18n/hud_i18n_provider.js";
+import { localizePobFallbackText } from "../i18n/telemetry_advisor_localizer.js";
 
 interface PassiveTreeLevelStepperBarProps {
   characterLevel: number;
@@ -39,6 +41,7 @@ export const PassiveTreeLevelStepperBar = memo(function PassiveTreeLevelStepperB
   onFocusNextTarget,
   onFocusAscendancy,
 }: PassiveTreeLevelStepperBarProps) {
+  const { locale, msg } = useHudI18n();
   const allocCounts = useMemo(
     () => specs.map((spec) => spec.nodeIds.filter((id) => allocatedIds.has(id)).length),
     [specs, allocatedIds],
@@ -58,7 +61,7 @@ export const PassiveTreeLevelStepperBar = memo(function PassiveTreeLevelStepperB
             }`}
           >
             <Sparkles className="h-3 w-3" />
-            Auto (Lv {characterLevel})
+            {msg.tree.autoLevel(characterLevel)}
           </button>
 
           {specs.map((spec, idx) => {
@@ -75,7 +78,7 @@ export const PassiveTreeLevelStepperBar = memo(function PassiveTreeLevelStepperB
                     : "border-transparent text-hud-muted hover:text-hud-text"
                 }`}
               >
-                <span>{spec.title}</span>
+                <span>{localizePobFallbackText(spec.title, locale)}</span>
                 <span className="text-[11px] font-mono tabular-nums text-hud-muted">
                   Lv{spec.minLevel} · {allocCount}/{spec.nodeIds.length}
                 </span>
@@ -86,13 +89,13 @@ export const PassiveTreeLevelStepperBar = memo(function PassiveTreeLevelStepperB
 
         <div className="flex items-center gap-3 flex-wrap text-xs font-mono tabular-nums">
           <span className="text-hud-ok">
-            Alloc {diff.allocatedInTargetIds.length}/{diff.selectedSpec?.nodeIds.length ?? 0}
+            {msg.tree.allocLabel} {diff.allocatedInTargetIds.length}/{diff.selectedSpec?.nodeIds.length ?? 0}
           </span>
           {diff.unallocatedAddedIds.length > 0 && (
-            <span className="text-hud-warn">+{diff.unallocatedAddedIds.length} Bracket</span>
+            <span className="text-hud-warn">{msg.tree.bracketLabel(diff.unallocatedAddedIds.length)}</span>
           )}
           {diff.earlierMissedIds.length > 0 && (
-            <span className="text-hud-cold">{diff.earlierMissedIds.length} Earlier</span>
+            <span className="text-hud-cold">{msg.tree.earlierLabel(diff.earlierMissedIds.length)}</span>
           )}
           {(diff.respecFromPrevIds.length > 0 || diff.offSpecAllocatedIds.length > 0) && (
             <span className="text-hud-danger">
@@ -109,7 +112,7 @@ export const PassiveTreeLevelStepperBar = memo(function PassiveTreeLevelStepperB
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search nodes or stats (e.g. Fire, Life, Mastery)..."
+            placeholder={msg.tree.searchPlaceholder}
             className="w-full rounded-md bg-hud-subtle border-b border-hud-hairline pl-8 pr-16 py-1.5 text-xs text-hud-text placeholder:text-hud-muted focus:outline-none focus:border-hud-accent"
           />
           {searchQuery && (
@@ -133,7 +136,7 @@ export const PassiveTreeLevelStepperBar = memo(function PassiveTreeLevelStepperB
             className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
           >
             <LocateFixed className="h-3.5 w-3.5 text-hud-accent" />
-            Fit Bracket
+            {msg.tree.fitBracket}
           </button>
           <button
             type="button"
@@ -142,7 +145,7 @@ export const PassiveTreeLevelStepperBar = memo(function PassiveTreeLevelStepperB
             className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-hud-muted hover:text-hud-text hover:bg-hud-subtle disabled:opacity-40 cursor-pointer"
           >
             <Crosshair className="h-3.5 w-3.5 text-hud-quest" />
-            Next Point
+            {msg.tree.nextPoint}
           </button>
           {hasAscendancyNodes && (
             <button
@@ -150,7 +153,7 @@ export const PassiveTreeLevelStepperBar = memo(function PassiveTreeLevelStepperB
               onClick={onFocusAscendancy}
               className="px-2 py-1 rounded-md text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
             >
-              Ascendancy
+              {msg.tree.ascendancy}
             </button>
           )}
           <button
@@ -163,7 +166,7 @@ export const PassiveTreeLevelStepperBar = memo(function PassiveTreeLevelStepperB
             }`}
           >
             <Eye className="h-3.5 w-3.5" />
-            Future Path
+            {msg.tree.futurePath}
           </button>
         </div>
       </div>

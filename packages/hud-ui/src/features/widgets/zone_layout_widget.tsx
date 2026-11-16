@@ -1,8 +1,11 @@
 import type { HudSessionSnapshot } from "@exile-hud/core";
 import { Compass, ZoomIn } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useHudI18n } from "../i18n/hud_i18n_provider.js";
+import { localizeRouteSubNote } from "../i18n/route_subnote_localizer.js";
 
 export function ZoneLayoutWidget({ snapshot }: { snapshot: HudSessionSnapshot }) {
+  const { locale, msg } = useHudI18n();
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [zoomed, setZoomed] = useState(false);
 
@@ -22,7 +25,9 @@ export function ZoneLayoutWidget({ snapshot }: { snapshot: HudSessionSnapshot })
   return (
     <div className="flex flex-col h-full gap-2.5">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">Zone Layout</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
+          {msg.widgets.zoneLayout}
+        </h2>
         <div className="flex items-center gap-2.5 text-xs font-mono text-hud-muted">
           {directions.map((deg) => (
             <span key={deg} className="inline-flex items-center gap-1 text-hud-accent">
@@ -42,7 +47,7 @@ export function ZoneLayoutWidget({ snapshot }: { snapshot: HudSessionSnapshot })
         <div className="relative flex-1 min-h-[150px] rounded-md bg-hud-subtle overflow-hidden flex items-center justify-center">
           <img
             src={activeSrc}
-            alt={`${snapshot.currentAreaName} layout seed ${selectedIdx + 1}`}
+            alt={msg.widgets.layoutAlt(snapshot.currentAreaName, selectedIdx + 1)}
             className="max-h-64 w-full object-contain cursor-pointer"
             onClick={() => setZoomed(true)}
           />
@@ -55,9 +60,7 @@ export function ZoneLayoutWidget({ snapshot }: { snapshot: HudSessionSnapshot })
           </button>
         </div>
       ) : (
-        <p className="text-xs text-hud-muted py-4">
-          Linear / Town zone — follow quest &amp; exit direction markers below.
-        </p>
+        <p className="text-xs text-hud-muted py-4">{msg.widgets.linearZoneHint}</p>
       )}
 
       {variants.length > 1 && (
@@ -73,7 +76,7 @@ export function ZoneLayoutWidget({ snapshot }: { snapshot: HudSessionSnapshot })
                   : "border-transparent text-hud-muted hover:text-hud-text"
               }`}
             >
-              Seed {idx + 1}
+              {msg.widgets.seedLabel(idx + 1)}
             </button>
           ))}
         </div>
@@ -84,7 +87,7 @@ export function ZoneLayoutWidget({ snapshot }: { snapshot: HudSessionSnapshot })
           {subNotes.map((note, idx) => (
             <li key={`${note}-${idx}`} className="flex items-start gap-2">
               <span className="text-hud-accent font-bold">·</span>
-              <span>{note}</span>
+              <span>{localizeRouteSubNote(note, locale)}</span>
             </li>
           ))}
         </ul>

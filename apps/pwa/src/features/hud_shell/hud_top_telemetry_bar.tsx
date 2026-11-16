@@ -1,5 +1,5 @@
 import type { DeviceFormFactor, HudContextMode, HudSessionSnapshot } from "@exile-hud/core";
-import { ExileRelayBrandIcon } from "@exile-hud/hud-ui";
+import { ExileRelayBrandIcon, useHudI18n } from "@exile-hud/hud-ui";
 import { Pin, Settings, ShieldAlert, Unlock, Wifi, WifiOff } from "lucide-react";
 import { useState } from "react";
 import type { ConnectionPhase } from "../pairing_and_connection/edge_websocket_room_client.js";
@@ -45,6 +45,7 @@ export function HudTopTelemetryBar({
   onResetProgress,
   onOpenPairingModal,
 }: HudTopTelemetryBarProps) {
+  const { msg, appMsg } = useHudI18n();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const xp = getXpRangeLabel(snapshot.characterLevel, snapshot.currentAreaLevel);
@@ -60,8 +61,8 @@ export function HudTopTelemetryBar({
               <button
                 type="button"
                 onClick={onOpenPairingModal}
-                title="Exile Relay — Pairing & Home"
-                aria-label="Exile Relay — Pairing & Home"
+                title={appMsg.pwa.homeTooltip}
+                aria-label={appMsg.pwa.homeTooltip}
                 className="shrink-0 rounded-lg hover:opacity-85 transition-opacity cursor-pointer"
               >
                 <ExileRelayBrandIcon className="h-7 w-7" />
@@ -82,12 +83,12 @@ export function HudTopTelemetryBar({
 
               <div className="flex items-center gap-2 text-xs text-hud-muted mt-0.5 flex-wrap">
                 <span>
-                  Act {snapshot.currentAct} · Lv {snapshot.characterLevel} {snapshot.characterClass}
+                  {appMsg.pwa.actSummary(snapshot.currentAct, snapshot.characterLevel, snapshot.characterClass)}
                 </span>
                 {snapshot.characterName && <span className="text-hud-dim">({snapshot.characterName})</span>}
                 {snapshot.isEndgameOnlyFallback && (
                   <span className="inline-flex items-center gap-1 text-hud-warn font-medium">
-                    <ShieldAlert className="h-3 w-3" /> Fallback Leveling
+                    <ShieldAlert className="h-3 w-3" /> {appMsg.pwa.fallbackLeveling}
                   </span>
                 )}
               </div>
@@ -100,11 +101,12 @@ export function HudTopTelemetryBar({
                 const selected = activeDisplayMode === m;
                 const isPinned = previewModeOverride === m;
                 const treePulse = m === "TREE" && Boolean(snapshot.inGameTreeOpen);
+                const modeLabel = msg.modes[m];
                 return (
                   <button
                     key={m}
                     type="button"
-                    title={isPinned ? `${m} pinned — auto-switch paused (click to unpin)` : `View ${m}`}
+                    title={appMsg.pwa.pinModeTitle(modeLabel, isPinned)}
                     onClick={() => onSelectPreviewMode(previewModeOverride === m ? null : m)}
                     className={`inline-flex items-center gap-1.5 pb-0.5 border-b-2 text-xs font-semibold tracking-wide transition-colors cursor-pointer ${
                       selected
@@ -115,12 +117,12 @@ export function HudTopTelemetryBar({
                     {treePulse && (
                       <span className="h-1.5 w-1.5 rounded-full bg-hud-ok animate-pulse" aria-hidden="true" />
                     )}
-                    <span>{m}</span>
+                    <span>{modeLabel}</span>
                     {isPinned && (
                       <span
                         data-testid={`mode-pin-${m.toLowerCase()}`}
                         className="inline-flex items-center justify-center text-hud-danger"
-                        aria-label="Pinned mode"
+                        aria-label={appMsg.pwa.pinnedModeAria}
                       >
                         <Pin className="h-3 w-3 rotate-45" />
                       </span>
@@ -138,11 +140,11 @@ export function HudTopTelemetryBar({
                   type="button"
                   data-testid="hud-finish-layout-btn"
                   onClick={onToggleEditLayout}
-                  title={`Finish editing ${formFactor} layout`}
+                  title={appMsg.pwa.finishLayoutTitle(formFactor)}
                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-hud-accent text-hud-accent-fg text-xs font-semibold cursor-pointer"
                 >
                   <Unlock className="h-3.5 w-3.5" />
-                  <span>Done</span>
+                  <span>{appMsg.pwa.done}</span>
                 </button>
               )}
 
@@ -160,16 +162,16 @@ export function HudTopTelemetryBar({
                 ) : (
                   <WifiOff className="h-3.5 w-3.5" />
                 )}
-                <span>{isDemo ? "DEMO" : connectionPhase.toUpperCase()}</span>
-                {wakeLocked && <span className="text-hud-ok">· AWAKE</span>}
+                <span>{isDemo ? appMsg.pwa.demoTag : appMsg.pwa.connectionPhases[connectionPhase]}</span>
+                {wakeLocked && <span className="text-hud-ok">· {appMsg.pwa.awakeTag}</span>}
               </span>
 
               <button
                 type="button"
                 data-testid="hud-settings-trigger"
-                aria-label="Open settings"
+                aria-label={appMsg.pwa.openSettings}
                 aria-expanded={settingsOpen}
-                title="Settings"
+                title={appMsg.pwa.settingsTitle}
                 onClick={() => setSettingsOpen(true)}
                 className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-hud-muted hover:text-hud-text hover:bg-hud-subtle transition-colors cursor-pointer"
               >

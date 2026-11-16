@@ -1,5 +1,5 @@
 import type { DeviceFormFactor, HudContextMode, HudSessionSnapshot } from "@exile-hud/core";
-import { ThemeAppearanceControls } from "@exile-hud/hud-ui";
+import { ThemeAppearanceControls, useHudI18n } from "@exile-hud/hud-ui";
 import { Download, LayoutGrid, QrCode, RefreshCw, RotateCcw, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { LATEST_PORTABLE_EXE_URL } from "../desktop_download/github_latest_release_client.js";
@@ -37,6 +37,7 @@ export function HudSettingsDrawer({
   onResetProgress,
   onOpenPairingModal,
 }: HudSettingsDrawerProps) {
+  const { appMsg } = useHudI18n();
   const [confirmingReset, setConfirmingReset] = useState(false);
   const [syncRequested, setSyncRequested] = useState(false);
 
@@ -81,22 +82,24 @@ export function HudSettingsDrawer({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Settings"
+        aria-label={appMsg.pwa.settingsTitle}
         data-testid="hud-settings-drawer"
         className="relative z-10 h-full w-full max-w-xs sm:max-w-sm bg-hud-surface border-l border-hud-hairline px-5 py-4 overflow-y-auto flex flex-col gap-5 shadow-2xl"
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold tracking-tight text-hud-text">Settings</h2>
+            <h2 className="text-base font-semibold tracking-tight text-hud-text">
+              {appMsg.pwa.settingsTitle}
+            </h2>
             <p className="text-[11px] font-mono text-hud-muted mt-0.5">
-              {isDemo ? "DEMO" : connectionPhase.toUpperCase()}
-              {wakeLocked && <span className="text-hud-ok"> · AWAKE</span>}
+              {isDemo ? appMsg.pwa.demoTag : appMsg.pwa.connectionPhases[connectionPhase]}
+              {wakeLocked && <span className="text-hud-ok"> · {appMsg.pwa.awakeTag}</span>}
             </p>
           </div>
           <button
             type="button"
             data-testid="hud-settings-close"
-            aria-label="Close settings"
+            aria-label={appMsg.pwa.closeSettings}
             onClick={onClose}
             className="p-1.5 -mr-1 rounded-md text-hud-muted hover:text-hud-text hover:bg-hud-subtle transition-colors cursor-pointer"
           >
@@ -110,7 +113,7 @@ export function HudSettingsDrawer({
 
         <section className="border-t border-hud-hairline pt-4 space-y-2">
           <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-hud-muted">
-            Actions
+            {appMsg.pwa.actionsSection}
           </div>
 
           <div className="divide-y divide-hud-hairline">
@@ -131,15 +134,15 @@ export function HudSettingsDrawer({
                 />
                 <span className="min-w-0">
                   <span className="block text-xs font-medium text-hud-text group-hover:text-hud-accent transition-colors">
-                    {isOfflineFallback ? "Sync Character Gear (Fallback)" : "Sync Character Gear"}
+                    {isOfflineFallback ? appMsg.pwa.syncGearFallback : appMsg.pwa.syncGear}
                   </span>
                   <span className="block text-[11px] text-hud-muted mt-0.5">
-                    Fetch equipped items &amp; allocated passives
+                    {appMsg.pwa.syncGearDesc}
                   </span>
                 </span>
               </span>
               {syncRequested && (
-                <span className="text-[11px] font-mono text-hud-ok shrink-0">Requested</span>
+                <span className="text-[11px] font-mono text-hud-ok shrink-0">{appMsg.pwa.requested}</span>
               )}
             </button>
 
@@ -166,17 +169,15 @@ export function HudSettingsDrawer({
                 />
                 <span className="min-w-0">
                   <span className="block text-xs font-medium text-hud-text group-hover:text-hud-accent transition-colors">
-                    {editLayoutMode && canEditLayout ? "Finish Editing Layout" : "Edit Widget Layout"}
+                    {editLayoutMode && canEditLayout ? appMsg.pwa.finishEditingLayout : appMsg.pwa.editWidgetLayout}
                   </span>
                   <span className="block text-[11px] text-hud-muted mt-0.5">
-                    {canEditLayout
-                      ? `Reorder & resize widgets for ${formFactor}`
-                      : "Switch to FIELD, TOWN, or LAB to edit layout"}
+                    {canEditLayout ? appMsg.pwa.editLayoutDesc(formFactor) : appMsg.pwa.editLayoutDisabledDesc}
                   </span>
                 </span>
               </span>
               {editLayoutMode && canEditLayout && (
-                <span className="text-[11px] font-mono text-hud-accent shrink-0">ACTIVE</span>
+                <span className="text-[11px] font-mono text-hud-accent shrink-0">{appMsg.pwa.activeTag}</span>
               )}
             </button>
 
@@ -193,10 +194,10 @@ export function HudSettingsDrawer({
                 <QrCode className="h-4 w-4 mt-0.5 shrink-0 text-hud-accent" />
                 <span className="min-w-0">
                   <span className="block text-xs font-medium text-hud-text group-hover:text-hud-accent transition-colors">
-                    {isDemo ? "Pair PC" : "Switch PC Room"}
+                    {isDemo ? appMsg.pwa.pairPc : appMsg.pwa.switchPcRoom}
                   </span>
                   <span className="block text-[11px] text-hud-muted mt-0.5">
-                    Connect with 6-character Room ID + PIN
+                    {appMsg.pwa.pairPcDesc}
                   </span>
                 </span>
               </button>
@@ -209,10 +210,10 @@ export function HudSettingsDrawer({
               <Download className="h-4 w-4 mt-0.5 shrink-0 text-hud-ok" />
               <span className="min-w-0">
                 <span className="block text-xs font-medium text-hud-text group-hover:text-hud-ok transition-colors">
-                  Download Windows PC App
+                  {appMsg.pwa.downloadWinApp}
                 </span>
                 <span className="block text-[11px] text-hud-muted mt-0.5">
-                  Portable .exe · Client.txt &amp; live sync
+                  {appMsg.pwa.downloadWinAppDesc}
                 </span>
               </span>
             </a>
@@ -221,12 +222,12 @@ export function HudSettingsDrawer({
 
         <section className="border-t border-hud-hairline pt-4 space-y-2">
           <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-hud-muted">
-            Progress
+            {appMsg.pwa.progressSection}
           </div>
 
           {confirmingReset ? (
             <div className="py-1 space-y-2.5">
-              <p className="text-xs text-hud-text">Reset all checks to zero?</p>
+              <p className="text-xs text-hud-text">{appMsg.pwa.confirmResetQuestion}</p>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -237,7 +238,7 @@ export function HudSettingsDrawer({
                   }}
                   className="px-3 py-1.5 rounded-md bg-hud-danger text-white text-xs font-semibold cursor-pointer"
                 >
-                  Confirm Reset
+                  {appMsg.pwa.confirmResetBtn}
                 </button>
                 <button
                   type="button"
@@ -245,7 +246,7 @@ export function HudSettingsDrawer({
                   onClick={() => setConfirmingReset(false)}
                   className="px-3 py-1.5 rounded-md text-xs text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
                 >
-                  Cancel
+                  {appMsg.pwa.cancel}
                 </button>
               </div>
             </div>
@@ -259,10 +260,10 @@ export function HudSettingsDrawer({
               <RotateCcw className="h-4 w-4 mt-0.5 shrink-0 text-hud-muted group-hover:text-hud-danger transition-colors" />
               <span className="min-w-0">
                 <span className="block text-xs font-medium text-hud-text group-hover:text-hud-danger transition-colors">
-                  Reset Run Progress
+                  {appMsg.pwa.resetRunProgress}
                 </span>
                 <span className="block text-[11px] text-hud-muted mt-0.5">
-                  Clear all checklist and gem checks
+                  {appMsg.pwa.resetRunProgressDesc}
                 </span>
               </span>
             </button>

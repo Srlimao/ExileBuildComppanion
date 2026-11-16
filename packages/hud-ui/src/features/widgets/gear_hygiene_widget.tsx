@@ -1,5 +1,11 @@
 import type { HudSessionSnapshot, TargetItemSetSummary, TargetItemSlotSummary } from "@exile-hud/core";
 import { useEffect, useState } from "react";
+import { useHudI18n } from "../i18n/hud_i18n_provider.js";
+import {
+  localizeBenchPrescription,
+  localizeBenchProblemSummary,
+  localizeGearHygieneMessage,
+} from "../i18n/telemetry_advisor_localizer.js";
 
 const RARITY_COLOR_CLASS: Record<TargetItemSlotSummary["rarity"], string> = {
   unique: "text-hud-warn",
@@ -20,6 +26,7 @@ function selectDefaultItemSet(itemSets: TargetItemSetSummary[], characterLevel: 
 
 /** Displays gear/flask hygiene alerts alongside imported PoB Item Sets and target slots. */
 export function GearHygieneWidget({ snapshot }: { snapshot: HudSessionSnapshot }) {
+  const { locale, msg } = useHudI18n();
   const issues = snapshot.gearHygiene;
   const craftSuggestions = (snapshot.benchCraftSuggestions ?? []).filter(
     (s) => !(s.id === "bench_boots_ms" && issues.some((i) => i.id === "boots_0ms")),
@@ -40,10 +47,11 @@ export function GearHygieneWidget({ snapshot }: { snapshot: HudSessionSnapshot }
   return (
     <div className="flex flex-col h-full gap-2.5 min-h-0">
       <div className="flex items-baseline justify-between gap-2 shrink-0">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">Gear &amp; Flasks</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
+          {msg.widgets.gearAndFlasks}
+        </h2>
         <span className="text-xs font-mono text-hud-muted tabular-nums">
-          {activeSet ? `${activeSet.slots.length} slots · ` : ""}
-          {issues.length + craftSuggestions.length} alerts
+          {msg.widgets.slotsAndAlerts(activeSet ? activeSet.slots.length : null, issues.length + craftSuggestions.length)}
         </span>
       </div>
 
@@ -56,21 +64,22 @@ export function GearHygieneWidget({ snapshot }: { snapshot: HudSessionSnapshot }
             }`}
           >
             <span className="h-1.5 w-1.5 rounded-full bg-current shrink-0 self-center" />
-            <span>{issue.message}</span>
+            <span>{localizeGearHygieneMessage(issue, locale)}</span>
           </div>
         ))}
 
         {craftSuggestions.map((s) => (
           <div key={s.id} className="text-xs flex items-baseline justify-between gap-2">
             <span className="text-hud-text/90">
-              <span className="text-hud-accent font-medium">Bench:</span> {s.problemSummary} → {s.prescription}
+              <span className="text-hud-accent font-medium">{msg.widgets.benchPrefix}</span>{" "}
+              {localizeBenchProblemSummary(s.problemSummary, locale)} → {localizeBenchPrescription(s.prescription, locale)}
             </span>
             <span className="shrink-0 font-mono text-hud-quest">{s.costLabel}</span>
           </div>
         ))}
 
         {issues.length === 0 && craftSuggestions.length === 0 && (
-          <p className="text-xs text-hud-ok">Boots, flasks, and weapon tiers look good.</p>
+          <p className="text-xs text-hud-ok">{msg.widgets.gearLooksGood}</p>
         )}
       </div>
 
@@ -98,14 +107,14 @@ export function GearHygieneWidget({ snapshot }: { snapshot: HudSessionSnapshot }
 
           <div className="divide-y divide-hud-hairline overflow-y-auto pr-0.5 flex-1">
             {activeSet.slots.length === 0 ? (
-              <div className="text-xs text-hud-muted py-2">No item slots populated in this set.</div>
+              <div className="text-xs text-hud-muted py-2">{msg.widgets.noItemsInSet}</div>
             ) : (
               activeSet.slots.map((slot) => (
                 <div key={`${slot.slotName}:${slot.itemId}`} className="py-2 first:pt-0 space-y-0.5">
                   <div className="flex items-baseline justify-between gap-2 text-[11px]">
                     <span className="uppercase tracking-wider font-semibold text-hud-muted">{slot.slotName}</span>
                     <div className="flex items-center gap-2 font-mono">
-                      {slot.verifiedEquipped && <span className="text-hud-ok font-sans font-medium">Equipped</span>}
+                      {slot.verifiedEquipped && <span className="text-hud-ok font-sans font-medium">{msg.widgets.equipped}</span>}
                       {slot.sockets && <span className="text-hud-muted">{slot.sockets}</span>}
                       <span className="text-hud-dim">Lv {slot.levelReq}</span>
                     </div>

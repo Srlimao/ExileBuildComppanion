@@ -1,7 +1,8 @@
 import type { WidgetGridItemLayout, WidgetId } from "@exile-hud/core";
 import { Plus, X } from "lucide-react";
+import { useHudI18n } from "../i18n/hud_i18n_provider.js";
 import type { WidgetGridFormFactor, WidgetGridMode } from "./customizable_mode_widget_grid.js";
-import { WIDGET_CATALOG } from "./default_mode_grid_presets.js";
+import { getLocalizedWidgetCatalog } from "./default_mode_grid_presets.js";
 
 interface AddWidgetDrawerProps {
   open: boolean;
@@ -22,18 +23,19 @@ export function AddWidgetDrawer({
   onResetDefaults,
   onClose,
 }: AddWidgetDrawerProps) {
+  const { locale, msg } = useHudI18n();
   if (!open) return null;
   const activeSet = new Set(activeItems.map((i) => i.widgetId));
+  const catalog = getLocalizedWidgetCatalog(locale);
+  const modeLabel = mode === "TREE_COMPACT" ? msg.modes.TREE : msg.modes[mode];
 
   return (
     <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
       <div className="w-full max-w-2xl bg-hud-surface border border-hud-hairline rounded-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl">
         <div className="flex items-center justify-between gap-3 pb-3 border-b border-hud-hairline">
           <div>
-            <h2 className="text-lg font-bold text-hud-text">
-              Customize {mode === "TREE_COMPACT" ? "TREE" : mode} Widgets
-            </h2>
-            <p className="text-xs text-hud-muted">Saved specifically for {formFactor} viewport</p>
+            <h2 className="text-lg font-bold text-hud-text">{msg.grid.customizeTitle(modeLabel)}</h2>
+            <p className="text-xs text-hud-muted">{msg.grid.savedForViewport(formFactor)}</p>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -41,7 +43,7 @@ export function AddWidgetDrawer({
               onClick={onResetDefaults}
               className="px-2.5 py-1 rounded-md text-xs text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
             >
-              Reset Defaults
+              {msg.grid.resetDefaults}
             </button>
             <button
               type="button"
@@ -54,7 +56,7 @@ export function AddWidgetDrawer({
         </div>
 
         <div className="divide-y divide-hud-hairline">
-          {WIDGET_CATALOG.map((entry) => {
+          {catalog.map((entry) => {
             const added = activeSet.has(entry.widgetId);
             return (
               <div key={entry.widgetId} className="py-3 flex items-center justify-between gap-3">
@@ -73,7 +75,7 @@ export function AddWidgetDrawer({
                   }`}
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  {added ? "Active" : "Add"}
+                  {added ? msg.grid.active : msg.grid.add}
                 </button>
               </div>
             );

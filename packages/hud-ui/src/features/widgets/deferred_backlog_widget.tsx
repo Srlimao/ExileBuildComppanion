@@ -1,4 +1,6 @@
 import type { HudSessionSnapshot } from "@exile-hud/core";
+import { useHudI18n } from "../i18n/hud_i18n_provider.js";
+import { localizeRouteStepTitle } from "../i18n/route_step_title_localizer.js";
 
 interface DeferredBacklogWidgetProps {
   snapshot: HudSessionSnapshot;
@@ -6,6 +8,7 @@ interface DeferredBacklogWidgetProps {
 }
 
 export function DeferredBacklogWidget({ snapshot, onToggleCheckpoint }: DeferredBacklogWidgetProps) {
+  const { locale, msg } = useHudI18n();
   const skipped = snapshot.checkpoints.filter(
     (cp) =>
       !cp.completed &&
@@ -16,8 +19,12 @@ export function DeferredBacklogWidget({ snapshot, onToggleCheckpoint }: Deferred
   return (
     <div className="flex flex-col h-full gap-2.5">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">Cleanup Backlog</h2>
-        <span className="text-xs font-mono tabular-nums text-hud-muted">{skipped.length} open</span>
+        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
+          {msg.widgets.cleanupBacklog}
+        </h2>
+        <span className="text-xs font-mono tabular-nums text-hud-muted">
+          {msg.widgets.openCount(skipped.length)}
+        </span>
       </div>
 
       <div className="space-y-0.5 overflow-y-auto pr-1">
@@ -29,9 +36,11 @@ export function DeferredBacklogWidget({ snapshot, onToggleCheckpoint }: Deferred
             className="w-full text-left px-2 py-1.5 -mx-2 rounded-md hover:bg-hud-subtle flex items-baseline justify-between gap-3 cursor-pointer"
           >
             <div className="min-w-0">
-              <div className="text-sm font-medium text-hud-text truncate">{cp.title}</div>
+              <div className="text-sm font-medium text-hud-text truncate">
+                {localizeRouteStepTitle(cp.title, locale)}
+              </div>
               <div className="text-xs text-hud-muted">
-                Act {cp.sectionAct} · {cp.areaName}
+                {msg.widgets.actWord} {cp.sectionAct} · {cp.areaName}
               </div>
             </div>
             <span
@@ -39,13 +48,13 @@ export function DeferredBacklogWidget({ snapshot, onToggleCheckpoint }: Deferred
                 cp.category === "SKILL_BOOK" ? "text-hud-quest" : "text-hud-ok"
               }`}
             >
-              {cp.category === "SKILL_BOOK" ? "Book" : "Trial"}
+              {cp.category === "SKILL_BOOK" ? msg.widgets.book : msg.widgets.trial}
             </span>
           </button>
         ))}
 
         {skipped.length === 0 && (
-          <p className="text-sm text-hud-ok py-3">No skipped skill books or Lab trials.</p>
+          <p className="text-sm text-hud-ok py-3">{msg.widgets.noSkippedBacklog}</p>
         )}
       </div>
     </div>

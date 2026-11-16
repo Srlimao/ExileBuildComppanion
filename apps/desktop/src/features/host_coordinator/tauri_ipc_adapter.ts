@@ -84,6 +84,11 @@ export async function setTrayTelemetryStatus(
   await callInvoke("set_tray_telemetry_status", { status, tooltip });
 }
 
+export async function setTrayLocaleIpc(locale: "pt-BR" | "en"): Promise<void> {
+  if (!isTauriRuntime()) return;
+  await callInvoke("set_tray_locale", { locale });
+}
+
 export interface TauriSavedPobSetSelection {
   passiveSpecIds: string[];
   skillSetIds: string[];

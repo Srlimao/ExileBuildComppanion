@@ -2,6 +2,31 @@ export { DeathRespawnResumeBanner } from "./features/hud_shell/death_respawn_res
 export { ExileRelayBrandIcon } from "./features/hud_shell/exile_relay_brand_icon.js";
 export { StandbySessionSummaryView } from "./features/hud_shell/standby_session_summary_view.js";
 export { HudThemeProvider, useHudTheme } from "./features/theme/hud_theme_provider.js";
+export { HudI18nProvider, useHudI18n, type AppMessagesBundle, type DesktopSurfaceMessages, type HudI18nContextValue, type HudMessagesBundle } from "./features/i18n/hud_i18n_provider.js";
+export {
+  applyHudLocaleToDocument,
+  DEFAULT_HUD_LOCALE,
+  HUD_LOCALE_STORAGE_KEY,
+  initHudLocaleOnDom,
+  loadSavedHudLocale,
+  parseSavedHudLocale,
+  saveHudLocale,
+  subscribeHudLocaleChanges,
+  type HudLocale,
+} from "./features/i18n/locale_storage_and_types.js";
+export { localizeHudModeLabel, type PwaSurfaceMessages } from "./features/i18n/pwa_surface_messages.js";
+export { localizeRouteStepTitle } from "./features/i18n/route_step_title_localizer.js";
+export { localizeRouteSubNote } from "./features/i18n/route_subnote_localizer.js";
+export {
+  localizeBenchPrescription,
+  localizeBenchProblemSummary,
+  localizeBossWarning,
+  localizeConnectionOrSyncMessage,
+  localizeGearHygieneMessage,
+  localizeIzaroGuide,
+  localizePobFallbackText,
+  localizePobSetDetail,
+} from "./features/i18n/telemetry_advisor_localizer.js";
 export {
   applyHudThemeToDocument,
   HUD_THEME_STORAGE_KEY,
@@ -94,6 +119,7 @@ export {
 } from "./features/widget_grid_engine/customizable_mode_widget_grid.js";
 export {
   getDefaultLayoutForMode,
+  getLocalizedWidgetCatalog,
   WIDGET_CATALOG,
   type WidgetCatalogEntry,
 } from "./features/widget_grid_engine/default_mode_grid_presets.js";

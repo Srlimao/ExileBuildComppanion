@@ -1,4 +1,5 @@
 import { countCompletedProgress, type HudSessionSnapshot } from "@exile-hud/core";
+import { useHudI18n } from "@exile-hud/hud-ui";
 import { RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -14,6 +15,7 @@ export function CampaignProgressResetBar({
   snapshot,
   onResetProgress,
 }: CampaignProgressResetBarProps) {
+  const { appMsg } = useHudI18n();
   const [confirming, setConfirming] = useState(false);
   const counts = countCompletedProgress(snapshot);
 
@@ -28,11 +30,15 @@ export function CampaignProgressResetBar({
       <div className="flex items-center gap-2 min-w-0">
         <span className="h-1.5 w-1.5 rounded-full bg-hud-ok shrink-0" />
         <span className="font-mono tabular-nums text-hud-text truncate">
-          {counts.completedCheckpoints}/{counts.totalCheckpoints} steps ·{" "}
-          {counts.completedGems}/{counts.totalGems} gems
+          {appMsg.desktop.progressCounts(
+            counts.completedCheckpoints,
+            counts.totalCheckpoints,
+            counts.completedGems,
+            counts.totalGems,
+          )}
         </span>
         <span className="hidden sm:inline-block text-[11px] font-mono text-hud-ok shrink-0">
-          · Saved on PC
+          {appMsg.desktop.savedOnPc}
         </span>
       </div>
 
@@ -47,7 +53,7 @@ export function CampaignProgressResetBar({
             }}
             className="rounded-md bg-hud-danger px-2.5 py-1 text-[11px] font-semibold text-white cursor-pointer"
           >
-            Confirm Reset
+            {appMsg.desktop.confirmReset}
           </button>
           <button
             type="button"
@@ -55,7 +61,7 @@ export function CampaignProgressResetBar({
             onClick={() => setConfirming(false)}
             className="rounded-md px-2 py-1 text-[11px] text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
           >
-            Cancel
+            {appMsg.desktop.cancel}
           </button>
         </div>
       ) : (
@@ -63,11 +69,11 @@ export function CampaignProgressResetBar({
           type="button"
           data-testid="pc-reset-progress-btn"
           onClick={() => setConfirming(true)}
-          title="Reset all checklist steps and gem checks back to zero"
+          title={appMsg.desktop.resetChecksTitle}
           className="rounded-md hover:bg-hud-subtle hover:text-hud-danger px-2 py-1 text-[11px] text-hud-muted inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors"
         >
           <RotateCcw className="h-3 w-3" />
-          Reset Checks
+          {appMsg.desktop.resetChecks}
         </button>
       )}
     </div>

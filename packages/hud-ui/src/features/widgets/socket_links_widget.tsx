@@ -1,4 +1,5 @@
 import type { HudSessionSnapshot } from "@exile-hud/core";
+import { useHudI18n } from "../i18n/hud_i18n_provider.js";
 
 const SOCKET_HEX: Record<"R" | "G" | "B" | "W", string> = {
   R: "#ef4444",
@@ -9,11 +10,17 @@ const SOCKET_HEX: Record<"R" | "G" | "B" | "W", string> = {
 
 /** Frameless Whisper socket link display with inline connected color pips. */
 export function SocketLinksWidget({ snapshot }: { snapshot: HudSessionSnapshot }) {
+  const { msg } = useHudI18n();
+
   return (
     <div className="flex flex-col h-full gap-2.5">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">Links</h2>
-        <span className="text-xs font-mono tabular-nums text-hud-muted">{snapshot.linkGroups.length} groups</span>
+        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
+          {msg.widgets.linksTitle}
+        </h2>
+        <span className="text-xs font-mono tabular-nums text-hud-muted">
+          {msg.widgets.groupsCount(snapshot.linkGroups.length)}
+        </span>
       </div>
 
       <div className="space-y-3 overflow-y-auto pr-1">
@@ -22,7 +29,7 @@ export function SocketLinksWidget({ snapshot }: { snapshot: HudSessionSnapshot }
             <div className="flex items-baseline justify-between gap-2">
               <span className="text-xs font-medium text-hud-muted">{group.title}</span>
               {group.missingAuraWarning && (
-                <span className="text-xs font-medium text-hud-warn">Missing Aura</span>
+                <span className="text-xs font-medium text-hud-warn">{msg.widgets.missingAura}</span>
               )}
             </div>
 
@@ -49,7 +56,7 @@ export function SocketLinksWidget({ snapshot }: { snapshot: HudSessionSnapshot }
                     <span>{gem.name}</span>
                     {!gem.verifiedSocketed && gem.reserveLocation && (
                       <span className="text-xs font-mono text-hud-warn">
-                        ({gem.reserveLocation === "backpack" ? "BAG" : "SWAP"})
+                        ({gem.reserveLocation === "backpack" ? msg.widgets.bag.toUpperCase() : msg.widgets.swap.toUpperCase()})
                       </span>
                     )}
                     {gem.unlinkedWarning && <span className="text-xs font-mono text-hud-danger">!</span>}

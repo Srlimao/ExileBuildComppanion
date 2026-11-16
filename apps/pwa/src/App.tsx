@@ -12,16 +12,17 @@ import {
   parsePoelabDailyJson,
   reduceTelemetrySession,
   resetSnapshotProgress,
-  type SavedCampaignProgress,
 } from "@exile-hud/core";
 import { poe1GameAdapter } from "@exile-hud/game-data";
 import {
   CustomizableModeWidgetGrid,
   DeathRespawnResumeBanner,
   getDefaultLayoutForMode,
+  localizeConnectionOrSyncMessage,
   PassiveTreeCommandView,
   renderHudWidget,
   StandbySessionSummaryView,
+  useHudI18n,
 } from "@exile-hud/hud-ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { HudTopTelemetryBar } from "./features/hud_shell/hud_top_telemetry_bar.js";
@@ -32,41 +33,18 @@ import {
   EdgeWebSocketRoomClient,
   type ConnectionPhase,
 } from "./features/pairing_and_connection/edge_websocket_room_client.js";
+import {
+  loadCachedLayouts,
+  loadDemoProgress,
+  LOCAL_LAYOUT_KEY,
+  saveDemoProgress,
+} from "./features/pairing_and_connection/pwa_local_persistence.js";
 import { QrPinJoinModal } from "./features/pairing_and_connection/qr_pin_join_modal.js";
 import { saveRecentRoomId } from "./features/pairing_and_connection/recent_room_storage.js";
 import { useScreenWakeLock } from "./features/pairing_and_connection/screen_wake_lock_controller.js";
 
-const LOCAL_LAYOUT_KEY = "exile_hud_widget_layouts_v1";
-const DEMO_PROGRESS_KEY = "exile_hud_demo_progress_v1";
-
-function loadDemoProgress(): SavedCampaignProgress | null {
-  try {
-    const raw = localStorage.getItem(DEMO_PROGRESS_KEY);
-    return raw ? (JSON.parse(raw) as SavedCampaignProgress) : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveDemoProgress(record: SavedCampaignProgress): void {
-  try {
-    localStorage.setItem(DEMO_PROGRESS_KEY, JSON.stringify(record));
-  } catch {
-    // Ignore storage error
-  }
-}
-
-function loadCachedLayouts(): ModeWidgetGrids {
-  try {
-    const raw = localStorage.getItem(LOCAL_LAYOUT_KEY);
-    if (raw) return JSON.parse(raw) as ModeWidgetGrids;
-  } catch {
-    // Ignore storage error
-  }
-  return { "tablet-landscape": {}, "tablet-portrait": {}, phone: {} };
-}
-
 export function App() {
+  const { locale, appMsg } = useHudI18n();
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const [roomId, setRoomId] = useState(() => params.get("room")?.toUpperCase() ?? "");
   const [pin, setPin] = useState(() => params.get("pin") ?? "");
@@ -201,7 +179,7 @@ export function App() {
         initialRoomId={roomId}
         initialPin={pin}
         connectionPhase={connectionPhase}
-        errorMessage={errorMsg}
+        errorMessage={localizeConnectionOrSyncMessage(errorMsg, locale)}
         onJoinRoom={(r, p) => {
           setErrorMsg(null);
           setIsDemo(false);
@@ -285,7 +263,7 @@ export function App() {
       )}
 
       <footer className="max-w-7xl mx-auto px-4 pt-6 pb-2 text-center text-[11px] text-hud-dim">
-        Exile Relay — This product isn&apos;t affiliated with or endorsed by Grinding Gear Games in any way.
+        {appMsg.legalDisclaimer}
       </footer>
     </div>
   );

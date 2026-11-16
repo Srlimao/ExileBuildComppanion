@@ -1,5 +1,5 @@
 import type { DeviceFormFactor, HudContextMode } from "@exile-hud/core";
-import { ExileRelayBrandIcon } from "@exile-hud/hud-ui";
+import { ExileRelayBrandIcon, useHudI18n } from "@exile-hud/hud-ui";
 import { Compass, History, MonitorSmartphone, Play, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { DesktopCompanionDownloadCard } from "../desktop_download/desktop_companion_download_card.js";
@@ -17,12 +17,7 @@ interface QrPinJoinModalProps {
 }
 
 const DEMO_QUICK_MODES: ReadonlyArray<HudContextMode> = ["FIELD", "TOWN", "TREE", "LAB"];
-
-const FEATURE_HIGHLIGHTS = [
-  { icon: Compass, title: "Campaign Guidance", detail: "Live zone compass, quest steps & trials" },
-  { icon: Sparkles, title: "Live Tree & Gear Diff", detail: "PoB passive path, regex & crafting bench" },
-  { icon: SlidersHorizontal, title: "Fully Modifiable UI", detail: "Drag widgets, themes & F7 PC overlay" },
-] as const;
+const HIGHLIGHT_ICONS = [Compass, Sparkles, SlidersHorizontal] as const;
 
 export function QrPinJoinModal({
   initialRoomId,
@@ -32,6 +27,7 @@ export function QrPinJoinModal({
   onJoinRoom,
   onStartDemo,
 }: QrPinJoinModalProps) {
+  const { msg, appMsg } = useHudI18n();
   const [roomId, setRoomId] = useState(initialRoomId);
   const [pin, setPin] = useState(initialPin);
   const [recentRoomId, setRecentRoomId] = useState<string | null>(() => loadRecentRoomId());
@@ -78,12 +74,10 @@ export function QrPinJoinModal({
               <div className="flex items-center gap-2">
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-hud-text">Exile Relay</h1>
                 <span className="rounded-md bg-hud-subtle border border-hud-hairline px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-hud-muted">
-                  PoE 1 Companion
+                  {appMsg.pwa.pairingBadge}
                 </span>
               </div>
-              <p className="text-xs text-hud-muted mt-0.5">
-                Interactive phone, tablet &amp; in-game overlay companion connected live to your Path of Exile session.
-              </p>
+              <p className="text-xs text-hud-muted mt-0.5">{appMsg.pwa.landingSubtitle}</p>
             </div>
           </div>
 
@@ -97,15 +91,18 @@ export function QrPinJoinModal({
             }`}
           >
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-              {FEATURE_HIGHLIGHTS.map(({ icon: Icon, title, detail }) => (
-                <div key={title} className="rounded-lg bg-hud-subtle border border-hud-hairline px-3 py-2">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-hud-text">
-                    <Icon className="h-3.5 w-3.5 text-hud-accent shrink-0" />
-                    <span className="truncate">{title}</span>
+              {appMsg.pwa.highlights.map((item, idx) => {
+                const Icon = HIGHLIGHT_ICONS[idx] ?? Compass;
+                return (
+                  <div key={item.title} className="rounded-lg bg-hud-subtle border border-hud-hairline px-3 py-2">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-hud-text">
+                      <Icon className="h-3.5 w-3.5 text-hud-accent shrink-0" />
+                      <span className="truncate">{item.title}</span>
+                    </div>
+                    <p className="text-[11px] text-hud-muted mt-0.5 leading-snug">{item.detail}</p>
                   </div>
-                  <p className="text-[11px] text-hud-muted mt-0.5 leading-snug">{detail}</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <DesktopCompanionDownloadCard />
@@ -117,7 +114,7 @@ export function QrPinJoinModal({
                 className="flex-1 min-w-[200px] rounded-lg bg-hud-accent text-hud-accent-fg hover:opacity-90 font-semibold py-2 px-3.5 text-sm transition-opacity flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Play className="h-4 w-4 shrink-0" />
-                <span>Launch Interactive Demo HUD</span>
+                <span>{appMsg.pwa.launchDemo}</span>
               </button>
 
               <div className="inline-flex items-center gap-1 rounded-lg bg-hud-subtle border border-hud-hairline p-1">
@@ -128,7 +125,7 @@ export function QrPinJoinModal({
                     onClick={() => onStartDemo(mode)}
                     className="px-2.5 py-1 rounded-md text-[11px] font-semibold tracking-wide text-hud-muted hover:text-hud-text hover:bg-hud-surface transition-colors cursor-pointer"
                   >
-                    {mode}
+                    {msg.modes[mode]}
                   </button>
                 ))}
               </div>
@@ -138,11 +135,11 @@ export function QrPinJoinModal({
               type="button"
               onClick={() => onStartDemo()}
               className="group relative rounded-xl border border-hud-hairline hover:border-hud-accent/50 overflow-hidden bg-hud-bg transition-colors text-left cursor-pointer"
-              title="Open Interactive Demo"
+              title={appMsg.pwa.openDemoTitle}
             >
               <img
                 src="/preview-modes-showcase.png"
-                alt="Exile Relay FIELD, TOWN and TREE telemetry showcase"
+                alt={appMsg.pwa.showcaseAlt}
                 className="w-full h-auto block"
               />
             </button>
@@ -156,13 +153,11 @@ export function QrPinJoinModal({
             <div className="space-y-4">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <h2 className="text-base font-bold text-hud-text">Connect Second Screen</h2>
-                  <p className="text-xs text-hud-muted mt-0.5">
-                    Enter the Room Code &amp; 4-digit PIN from your PC Control Center.
-                  </p>
+                  <h2 className="text-base font-bold text-hud-text">{appMsg.pwa.connectSecondScreen}</h2>
+                  <p className="text-xs text-hud-muted mt-0.5">{appMsg.pwa.connectSecondScreenDesc}</p>
                 </div>
                 <span className="shrink-0 rounded-md bg-hud-accent-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-hud-accent">
-                  {isMobileOrDeepLink ? "Mobile Quick-Pair" : "Second-Screen Sync"}
+                  {isMobileOrDeepLink ? appMsg.pwa.mobileQuickPair : appMsg.pwa.secondScreenSync}
                 </span>
               </div>
 
@@ -174,14 +169,14 @@ export function QrPinJoinModal({
                     className="inline-flex items-center gap-1.5 text-hud-text hover:text-hud-accent transition-colors cursor-pointer"
                   >
                     <History className="h-3.5 w-3.5 text-hud-muted" />
-                    <span className="text-hud-muted">Recent Room:</span>
+                    <span className="text-hud-muted">{appMsg.pwa.recentRoom}</span>
                     <span className="font-mono font-semibold tracking-wider">{recentRoomId}</span>
                   </button>
                   <button
                     type="button"
                     onClick={handleClearRecentRoom}
-                    aria-label="Clear recent room"
-                    title="Clear recent room"
+                    aria-label={appMsg.pwa.clearRecentRoom}
+                    title={appMsg.pwa.clearRecentRoom}
                     className="p-1 rounded text-hud-muted hover:text-hud-text hover:bg-hud-surface transition-colors cursor-pointer"
                   >
                     <X className="h-3 w-3" />
@@ -196,20 +191,20 @@ export function QrPinJoinModal({
               <form onSubmit={handleSubmit} className="space-y-3.5">
                 <label className="block space-y-1.5">
                   <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-hud-muted">
-                    Room Code
+                    {appMsg.pwa.roomCode}
                   </span>
                   <input
                     type="text"
                     value={roomId}
                     onChange={(e) => setRoomId(normalizeRoomCode(e.target.value))}
-                    placeholder="e.g. EXILE9"
+                    placeholder={appMsg.pwa.roomCodePlaceholder}
                     className="w-full rounded-lg bg-hud-subtle border border-hud-hairline px-3 py-2.5 text-base font-mono tracking-widest text-hud-text focus:outline-none focus:border-hud-accent"
                   />
                 </label>
 
                 <label className="block space-y-1.5">
                   <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-hud-muted">
-                    4-Digit PIN
+                    {appMsg.pwa.fourDigitPin}
                   </span>
                   <input
                     ref={pinInputRef}
@@ -228,29 +223,30 @@ export function QrPinJoinModal({
                   className="w-full rounded-lg bg-hud-accent text-hud-accent-fg hover:opacity-90 font-semibold py-2.5 text-sm transition-opacity flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <MonitorSmartphone className="h-4 w-4 shrink-0" />
-                  <span>{isConnecting ? "Connecting to PC Host..." : "Connect to PC Host"}</span>
+                  <span>{isConnecting ? appMsg.pwa.connectingPc : appMsg.pwa.connectPc}</span>
                 </button>
               </form>
             </div>
 
             <ol className="pt-4 border-t border-hud-hairline space-y-1.5 text-xs text-hud-muted">
               <li>
-                <span className="font-mono text-hud-text mr-1.5">1.</span>Run{" "}
-                <span className="text-hud-text font-medium">ExileRelay.exe</span> &amp; load your PoB build
+                <span className="font-mono text-hud-text mr-1.5">1.</span>
+                {appMsg.pwa.step1Prefix} <span className="text-hud-text font-medium">ExileRelay.exe</span>{" "}
+                {appMsg.pwa.step1Suffix}
               </li>
               <li>
-                <span className="font-mono text-hud-text mr-1.5">2.</span>Scan the QR code or enter Room Code + PIN
+                <span className="font-mono text-hud-text mr-1.5">2.</span>
+                {appMsg.pwa.step2}
               </li>
               <li>
-                <span className="font-mono text-hud-text mr-1.5">3.</span>Screen stays awake automatically while you play
+                <span className="font-mono text-hud-text mr-1.5">3.</span>
+                {appMsg.pwa.step3}
               </li>
             </ol>
           </section>
         </main>
 
-        <footer className="text-center text-[11px] text-hud-dim">
-          Exile Relay — This product isn&apos;t affiliated with or endorsed by Grinding Gear Games in any way.
-        </footer>
+        <footer className="text-center text-[11px] text-hud-dim">{appMsg.legalDisclaimer}</footer>
       </div>
     </div>
   );

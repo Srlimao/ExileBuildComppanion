@@ -1,5 +1,5 @@
 import type { HudContextMode, HudSessionSnapshot } from "@exile-hud/core";
-import { ThemeSelectorPopover } from "@exile-hud/hud-ui";
+import { ThemeSelectorPopover, useHudI18n } from "@exile-hud/hud-ui";
 import { GripHorizontal, Lock, Maximize2, Minimize2, Pencil, Pin, Unlock, X } from "lucide-react";
 import { useState } from "react";
 import {
@@ -47,20 +47,24 @@ export function OverlayTopDockBar({
   onUpdateConfig,
   onHideOverlay,
 }: OverlayTopDockBarProps) {
+  const { msg, appMsg } = useHudI18n();
   const [showPositionMenu, setShowPositionMenu] = useState(false);
+  const modeLabel = msg.modes[activeDisplayMode];
 
   if (config.clickThroughLocked) {
     return (
       <div className="px-3 py-1.5 border-b border-hud-hairline flex items-center justify-between gap-2 text-[11px] select-none pointer-events-none">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-hud-accent font-semibold tracking-wide">{activeDisplayMode}</span>
+          <span className="text-hud-accent font-semibold tracking-wide">{modeLabel}</span>
           <span className="text-hud-text/90 truncate font-medium">
-            {snapshot ? `${snapshot.currentAreaName} (Lv ${snapshot.currentAreaLevel})` : "Waiting for PC host..."}
+            {snapshot ? `${snapshot.currentAreaName} (Lv ${snapshot.currentAreaLevel})` : appMsg.desktop.waitingHost}
           </span>
         </div>
         <span className="inline-flex items-center gap-1 text-hud-muted font-mono shrink-0">
           <Lock className="h-3 w-3 text-hud-warn" />
-          {config.toggleLockHotkey !== "OFF" ? `${config.toggleLockHotkey} unlock` : "Locked"}
+          {config.toggleLockHotkey !== "OFF"
+            ? appMsg.desktop.unlockKeyHint(config.toggleLockHotkey)
+            : appMsg.desktop.lockedLabel}
         </span>
       </div>
     );
@@ -79,11 +83,11 @@ export function OverlayTopDockBar({
         <button
           type="button"
           onMouseDown={handleDragStart}
-          title="Drag overlay window"
+          title={appMsg.desktop.dragOverlayTitle}
           className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded hover:bg-hud-subtle text-[11px] text-hud-muted hover:text-hud-text cursor-move shrink-0"
         >
           <GripHorizontal className="h-3.5 w-3.5 text-hud-accent" />
-          <span className="font-semibold text-hud-text">{activeDisplayMode}</span>
+          <span className="font-semibold text-hud-text">{modeLabel}</span>
         </button>
 
         <div className="flex items-center gap-2 text-[11px]">
@@ -100,7 +104,7 @@ export function OverlayTopDockBar({
                     : "border-transparent text-hud-muted hover:text-hud-text"
                 }`}
               >
-                {m}
+                {msg.modes[m]}
               </button>
             );
           })}
@@ -118,7 +122,7 @@ export function OverlayTopDockBar({
               }`}
             >
               {fullTreeExpanded ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
-              {fullTreeExpanded ? "Compact" : "Expand"}
+              {fullTreeExpanded ? appMsg.desktop.compactLabel : appMsg.desktop.expandLabel}
             </button>
           )}
 
@@ -131,13 +135,13 @@ export function OverlayTopDockBar({
                 : "text-hud-muted hover:text-hud-text hover:bg-hud-subtle"
             }`}
           >
-            Dock
+            {appMsg.desktop.dockButton}
           </button>
 
           <button
             type="button"
             onClick={onToggleEditMode}
-            title="Edit overlay widgets"
+            title={appMsg.desktop.editOverlayWidgets}
             className={`p-1 rounded cursor-pointer ${
               editMode
                 ? "bg-hud-accent text-hud-accent-fg"
@@ -150,7 +154,7 @@ export function OverlayTopDockBar({
           <button
             type="button"
             onClick={() => onUpdateConfig({ ...config, pinOnDesktop: !config.pinOnDesktop })}
-            title={config.pinOnDesktop ? "Pinned across Alt-Tab" : "Auto-hides on Alt-Tab"}
+            title={config.pinOnDesktop ? appMsg.desktop.pinAltTabOn : appMsg.desktop.pinAltTabOff}
             className={`p-1 rounded cursor-pointer ${
               config.pinOnDesktop ? "text-hud-ok bg-hud-subtle" : "text-hud-muted hover:text-hud-text hover:bg-hud-subtle"
             }`}
@@ -163,16 +167,16 @@ export function OverlayTopDockBar({
           <button
             type="button"
             onClick={() => onUpdateConfig({ ...config, clickThroughLocked: true })}
-            title={`Lock click-through (${config.toggleLockHotkey})`}
+            title={appMsg.desktop.lockClickThroughTitle(config.toggleLockHotkey)}
             className="px-1.5 py-0.5 rounded text-hud-warn hover:bg-hud-subtle text-[10px] font-semibold inline-flex items-center gap-1 cursor-pointer"
           >
-            <Unlock className="h-3 w-3" /> Lock
+            <Unlock className="h-3 w-3" /> {appMsg.desktop.lockBtn}
           </button>
 
           <button
             type="button"
             onClick={onHideOverlay}
-            title={`Hide overlay (${config.toggleVisibilityHotkey})`}
+            title={appMsg.desktop.hideOverlayTitle(config.toggleVisibilityHotkey)}
             className="p-1 rounded text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
           >
             <X className="h-3 w-3" />

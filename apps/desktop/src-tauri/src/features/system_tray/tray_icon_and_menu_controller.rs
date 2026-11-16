@@ -7,6 +7,10 @@ use tauri::{
 };
 
 use crate::github_release_checker::{AppUpdatePhase, AppUpdateStateSnapshot};
+use crate::tray_menu_labels::{
+    default_standby_tooltip, format_update_menu_label, is_default_standby_tooltip, menu_labels,
+    update_tooltip_suffix, TrayLocale,
+};
 
 pub const TRAY_ID: &str = "exile-tray";
 
@@ -18,23 +22,26 @@ const ICON_GREEN_UPDATE: &[u8] = include_bytes!("../../../icons/tray-green-updat
 const ICON_AMBER_UPDATE: &[u8] = include_bytes!("../../../icons/tray-amber-update.png");
 
 struct TrayVisualState {
+    locale: TrayLocale,
     status: String,
     tooltip: String,
     update_tag: Option<String>,
-    update_menu_label: Option<String>,
-    update_menu_enabled: bool,
+    update_phase: Option<AppUpdatePhase>,
+    update_progress: Option<u8>,
     applied_menu_sig: String,
 }
 
 impl Default for TrayVisualState {
     fn default() -> Self {
+        let locale = TrayLocale::default();
         Self {
+            locale,
             status: "gray".to_string(),
-            tooltip: "Exile Relay — Standby".to_string(),
+            tooltip: default_standby_tooltip(locale).to_string(),
             update_tag: None,
-            update_menu_label: None,
-            update_menu_enabled: false,
-            applied_menu_sig: "none:false".to_string(),
+            update_phase: None,
+            update_progress: None,
+            applied_menu_sig: format!("{}:none:false", locale.code()),
         }
     }
 }
@@ -55,31 +62,23 @@ pub fn show_main_window(app: &AppHandle) {
 
 fn build_tray_menu(
     app: &AppHandle,
+    locale: TrayLocale,
     update_label: Option<&str>,
     update_enabled: bool,
 ) -> tauri::Result<Menu<tauri::Wry>> {
+    let labels = menu_labels(locale);
     let open_item =
-        MenuItem::with_id(app, "open_control_center", "Open Control Center", true, None::<&str>)?;
-    let overlay_item = MenuItem::with_id(
-        app,
-        "toggle_overlay",
-        "Toggle In-Game Overlay (F7)",
-        true,
-        None::<&str>,
-    )?;
-    let overlay_lock_item = MenuItem::with_id(
-        app,
-        "toggle_overlay_lock",
-        "Lock/Unlock Overlay Clicks (F8)",
-        true,
-        None::<&str>,
-    )?;
+        MenuItem::with_id(app, "open_control_center", labels.open_control_center, true, None::<&str>)?;
+    let overlay_item =
+        MenuItem::with_id(app, "toggle_overlay", labels.toggle_overlay, true, None::<&str>)?;
+    let overlay_lock_item =
+        MenuItem::with_id(app, "toggle_overlay_lock", labels.toggle_overlay_lock, true, None::<&str>)?;
     let sync_item =
-        MenuItem::with_id(app, "force_sync", "Force Character Sync", true, None::<&str>)?;
+        MenuItem::with_id(app, "force_sync", labels.force_sync, true, None::<&str>)?;
     let copy_item =
-        MenuItem::with_id(app, "copy_regex", "Copy Active Vendor Regex", true, None::<&str>)?;
+        MenuItem::with_id(app, "copy_regex", labels.copy_regex, true, None::<&str>)?;
     let sep = PredefinedMenuItem::separator(app)?;
-    let quit_item = MenuItem::with_id(app, "quit", "Quit Exile Relay", true, None::<&str>)?;
+    let quit_item = MenuItem::with_id(app, "quit", labels.quit, true, None::<&str>)?;
 
     if let Some(label) = update_label {
         let update_item =
@@ -116,12 +115,13 @@ fn build_tray_menu(
 }
 
 pub fn setup_tray(app: &AppHandle) -> tauri::Result<()> {
-    let menu = build_tray_menu(app, None, false)?;
+    let initial_locale = TrayLocale::default();
+    let menu = build_tray_menu(app, initial_locale, None, false)?;
     let initial_icon = Image::from_bytes(ICON_GRAY)?;
 
     TrayIconBuilder::with_id(TRAY_ID)
         .icon(initial_icon)
-        .tooltip("Exile Relay — Standby")
+        .tooltip(default_standby_tooltip(initial_locale))
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id.as_ref() {
@@ -189,25 +189,34 @@ fn apply_tray_visual_state(app: &AppHandle, state: &mut TrayVisualState) -> Resu
     tray.set_icon(Some(icon)).map_err(|e| e.to_string())?;
 
     let combined_tooltip = if let Some(tag) = state.update_tag.as_deref() {
-        format!("{}\n[Update {tag} Available]", state.tooltip)
+        format!("{}\n{}", state.tooltip, update_tooltip_suffix(state.locale, tag))
     } else {
         state.tooltip.clone()
     };
     tray.set_tooltip(Some(combined_tooltip))
         .map_err(|e| e.to_string())?;
 
+    let resolved_update = match (state.update_tag.as_deref(), state.update_phase.as_ref()) {
+        (Some(tag), Some(phase)) => Some(format_update_menu_label(
+            state.locale,
+            phase,
+            tag,
+            state.update_progress,
+        )),
+        _ => None,
+    };
+    let update_label = resolved_update.as_ref().map(|(l, _)| l.as_str());
+    let update_enabled = resolved_update.as_ref().map(|(_, e)| *e).unwrap_or(false);
+
     let next_sig = format!(
-        "{}:{}",
-        state.update_menu_label.as_deref().unwrap_or("none"),
-        state.update_menu_enabled
+        "{}:{}:{}",
+        state.locale.code(),
+        update_label.unwrap_or("none"),
+        update_enabled
     );
     if next_sig != state.applied_menu_sig {
-        let menu = build_tray_menu(
-            app,
-            state.update_menu_label.as_deref(),
-            state.update_menu_enabled,
-        )
-        .map_err(|e| e.to_string())?;
+        let menu = build_tray_menu(app, state.locale, update_label, update_enabled)
+            .map_err(|e| e.to_string())?;
         tray.set_menu(Some(menu)).map_err(|e| e.to_string())?;
         state.applied_menu_sig = next_sig;
     }
@@ -221,6 +230,21 @@ pub fn update_tray_status(app: &AppHandle, status: &str, tooltip: &str) -> Resul
         .map_err(|_| "Tray visual state lock poisoned".to_string())?;
     guard.status = status.to_string();
     guard.tooltip = tooltip.to_string();
+    apply_tray_visual_state(app, &mut guard)
+}
+
+pub fn set_tray_locale(app: &AppHandle, locale_str: &str) -> Result<(), String> {
+    let mut guard = visual_state()
+        .lock()
+        .map_err(|_| "Tray visual state lock poisoned".to_string())?;
+    let next_locale = TrayLocale::from_code(locale_str);
+    if guard.locale == next_locale {
+        return Ok(());
+    }
+    guard.locale = next_locale;
+    if is_default_standby_tooltip(&guard.tooltip) {
+        guard.tooltip = default_standby_tooltip(next_locale).to_string();
+    }
     apply_tray_visual_state(app, &mut guard)
 }
 
@@ -238,23 +262,12 @@ pub fn set_tray_update_state(
             .as_deref()
             .unwrap_or("New Release");
         guard.update_tag = Some(tag.to_string());
-        let (label, enabled) = match snapshot.phase {
-            AppUpdatePhase::Downloading => (
-                Some(format!(
-                    "Downloading {tag} ({}%)...",
-                    snapshot.progress_percent.unwrap_or(0)
-                )),
-                false,
-            ),
-            AppUpdatePhase::Installing => (Some(format!("Installing {tag}...")), false),
-            _ => (Some(format!("Update to {tag} & Restart")), true),
-        };
-        guard.update_menu_label = label;
-        guard.update_menu_enabled = enabled;
+        guard.update_phase = Some(snapshot.phase.clone());
+        guard.update_progress = snapshot.progress_percent;
     } else {
         guard.update_tag = None;
-        guard.update_menu_label = None;
-        guard.update_menu_enabled = false;
+        guard.update_phase = None;
+        guard.update_progress = None;
     }
 
     apply_tray_visual_state(app, &mut guard)

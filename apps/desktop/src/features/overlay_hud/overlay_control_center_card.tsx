@@ -1,3 +1,4 @@
+import { useHudI18n } from "@exile-hud/hud-ui";
 import { Eye, EyeOff, Lock, Pin, RotateCcw, Unlock } from "lucide-react";
 import {
   applyOverlayDockPresetIpc,
@@ -5,13 +6,13 @@ import {
   type SavedOverlayConfig,
 } from "./overlay_types_and_ipc.js";
 
-const DOCK_OPTIONS: Array<{ id: Exclude<OverlayDockPreset, "free">; label: string }> = [
-  { id: "top-left", label: "Top-Left" },
-  { id: "top-right", label: "Top-Right" },
-  { id: "bottom-left", label: "Bottom-Left" },
-  { id: "bottom-right", label: "Bottom-Right" },
-  { id: "left-edge", label: "Left Strip" },
-  { id: "right-edge", label: "Right Strip" },
+const DOCK_IDS: ReadonlyArray<Exclude<OverlayDockPreset, "free">> = [
+  "top-left",
+  "top-right",
+  "bottom-left",
+  "bottom-right",
+  "left-edge",
+  "right-edge",
 ];
 
 interface OverlayControlCenterCardProps {
@@ -30,19 +31,19 @@ export function OverlayControlCenterCard({
   onToggleLock,
   onResetOverlayLayouts,
 }: OverlayControlCenterCardProps) {
+  const { appMsg } = useHudI18n();
+
   return (
     <div className="space-y-4">
       <div className="flex items-baseline justify-between gap-2">
         <div>
           <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
-            Local PC Game Overlay
+            {appMsg.desktop.overlayCardTitle}
           </h2>
-          <p className="text-xs text-hud-muted mt-0.5">
-            Floating HUD over Path of Exile — saved locally on PC, zero Cloudflare sync.
-          </p>
+          <p className="text-xs text-hud-muted mt-0.5">{appMsg.desktop.overlayCardDesc}</p>
         </div>
         <span className={`text-xs font-mono shrink-0 ${config.enabled ? "text-hud-ok" : "text-hud-muted"}`}>
-          {config.enabled ? "ACTIVE" : "HIDDEN"}
+          {config.enabled ? appMsg.desktop.activeBadge : appMsg.desktop.hiddenBadge}
         </span>
       </div>
 
@@ -57,7 +58,7 @@ export function OverlayControlCenterCard({
           }`}
         >
           {config.enabled ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-          {config.enabled ? "Hide Overlay" : "Open Overlay"}
+          {config.enabled ? appMsg.desktop.hideOverlay : appMsg.desktop.openOverlay}
         </button>
 
         <button
@@ -70,15 +71,15 @@ export function OverlayControlCenterCard({
           }`}
         >
           {config.clickThroughLocked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
-          {config.clickThroughLocked ? "Click-Through Locked" : "Interactive Unlocked"}
+          {config.clickThroughLocked ? appMsg.desktop.clickThroughLocked : appMsg.desktop.interactiveUnlocked}
         </button>
       </div>
 
       <label className="flex items-center justify-between gap-3 py-1 cursor-pointer">
         <span className="flex items-center gap-2 text-xs text-hud-text">
           <Pin className="h-3.5 w-3.5 text-hud-ok" />
-          Pin Always Visible on Desktop
-          <span className="text-[11px] text-hud-muted">(off = auto-hide on Alt-Tab)</span>
+          {appMsg.desktop.pinOnDesktop}
+          <span className="text-[11px] text-hud-muted">{appMsg.desktop.pinOnDesktopHint}</span>
         </span>
         <input
           type="checkbox"
@@ -91,24 +92,26 @@ export function OverlayControlCenterCard({
 
       <div className="space-y-1.5 pt-2 border-t border-hud-hairline">
         <div className="flex items-center justify-between text-xs text-hud-muted">
-          <span>Snap Dock Position</span>
+          <span>{appMsg.desktop.snapDockPosition}</span>
           <span className="font-mono text-[11px]">
-            {config.dockPreset === "free" ? "Free Floating" : `Docked: ${config.dockPreset}`}
+            {config.dockPreset === "free"
+              ? appMsg.desktop.freeFloating
+              : `${appMsg.desktop.dockedPrefix} ${appMsg.desktop.dockLabels[config.dockPreset]}`}
           </span>
         </div>
         <div className="grid grid-cols-3 gap-1.5">
-          {DOCK_OPTIONS.map((opt) => (
+          {DOCK_IDS.map((dockId) => (
             <button
-              key={opt.id}
+              key={dockId}
               type="button"
-              onClick={() => void applyOverlayDockPresetIpc(opt.id)}
+              onClick={() => void applyOverlayDockPresetIpc(dockId)}
               className={`px-2 py-1.5 rounded-md text-xs cursor-pointer transition-colors ${
-                config.dockPreset === opt.id
+                config.dockPreset === dockId
                   ? "bg-hud-accent text-hud-accent-fg font-semibold"
                   : "bg-hud-subtle text-hud-muted hover:text-hud-text"
               }`}
             >
-              {opt.label}
+              {appMsg.desktop.dockLabels[dockId]}
             </button>
           ))}
         </div>
@@ -116,7 +119,7 @@ export function OverlayControlCenterCard({
 
       <div className="space-y-1">
         <div className="flex items-center justify-between text-xs text-hud-muted">
-          <span>Backdrop Opacity</span>
+          <span>{appMsg.desktop.backdropOpacity}</span>
           <span className="font-mono text-hud-text">{config.opacityPercent}%</span>
         </div>
         <input
@@ -132,7 +135,7 @@ export function OverlayControlCenterCard({
 
       <div className="grid grid-cols-2 gap-3">
         <label className="space-y-1 text-xs text-hud-muted">
-          <span>Toggle Overlay Key</span>
+          <span>{appMsg.desktop.toggleOverlayKey}</span>
           <input
             type="text"
             value={config.toggleVisibilityHotkey}
@@ -144,7 +147,7 @@ export function OverlayControlCenterCard({
           />
         </label>
         <label className="space-y-1 text-xs text-hud-muted">
-          <span>Click-Through Lock Key</span>
+          <span>{appMsg.desktop.clickThroughLockKey}</span>
           <input
             type="text"
             value={config.toggleLockHotkey}
@@ -158,15 +161,13 @@ export function OverlayControlCenterCard({
       </div>
 
       <div className="flex items-center justify-between gap-2 pt-2 border-t border-hud-hairline">
-        <p className="text-[11px] text-hud-muted">
-          Requires Path of Exile in Windowed Fullscreen or Windowed mode.
-        </p>
+        <p className="text-[11px] text-hud-muted">{appMsg.desktop.windowedNote}</p>
         <button
           type="button"
           onClick={onResetOverlayLayouts}
           className="px-2 py-1 rounded-md text-[11px] text-hud-muted hover:text-hud-text hover:bg-hud-subtle inline-flex items-center gap-1 shrink-0 cursor-pointer"
         >
-          <RotateCcw className="h-3 w-3" /> Reset Layouts
+          <RotateCcw className="h-3 w-3" /> {appMsg.desktop.resetLayouts}
         </button>
       </div>
     </div>

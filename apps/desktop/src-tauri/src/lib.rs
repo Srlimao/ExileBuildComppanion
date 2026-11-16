@@ -2,6 +2,9 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use tauri::{Manager, WindowEvent};
 
+#[path = "features/system_tray/tray_menu_labels.rs"]
+pub(crate) mod tray_menu_labels;
+
 #[path = "features/system_tray/tray_icon_and_menu_controller.rs"]
 pub(crate) mod tray_icon_and_menu_controller;
 
@@ -133,6 +136,7 @@ pub fn run() {
             tauri_host_ipc_commands::write_vendor_regex_clipboard,
             tauri_host_ipc_commands::poll_character_window,
             tauri_host_ipc_commands::set_tray_telemetry_status,
+            tauri_host_ipc_commands::set_tray_locale,
             tauri_host_ipc_commands::get_pob_profile_storage_path,
             tauri_host_ipc_commands::load_saved_pob_profile,
             tauri_host_ipc_commands::save_pob_profile,

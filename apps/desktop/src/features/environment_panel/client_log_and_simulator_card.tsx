@@ -1,3 +1,4 @@
+import { useHudI18n } from "@exile-hud/hud-ui";
 import { ClipboardCopy, Cpu, GitBranch, Skull } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -40,6 +41,7 @@ export function ClientLogAndSimulatorCard({
   onToggleSimInGameTree,
   onToggleSimulatedOutage,
 }: ClientLogAndSimulatorCardProps) {
+  const { msg, appMsg } = useHudI18n();
   const [draftPath, setDraftPath] = useState(clientLogPath);
 
   useEffect(() => {
@@ -51,10 +53,10 @@ export function ClientLogAndSimulatorCard({
       <section className="space-y-3">
         <div className="flex items-baseline justify-between">
           <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
-            Client.txt &amp; Clipboard
+            {appMsg.desktop.clientTxtTitle}
           </h2>
           <span className={`text-[11px] font-medium ${clientLogFound ? "text-hud-ok" : "text-hud-warn"}`}>
-            {clientLogFound ? "Hooked" : "Path not verified"}
+            {clientLogFound ? appMsg.desktop.hooked : appMsg.desktop.pathNotVerified}
           </span>
         </div>
 
@@ -70,14 +72,14 @@ export function ClientLogAndSimulatorCard({
             onClick={() => void onSetLogPath(draftPath)}
             className="rounded-md hover:bg-hud-subtle px-2.5 py-1.5 text-xs text-hud-text cursor-pointer"
           >
-            Set
+            {appMsg.desktop.setBtn}
           </button>
           <button
             type="button"
             onClick={() => void onAutoDetectPath()}
             className="rounded-md hover:bg-hud-subtle px-2 py-1.5 text-xs text-hud-accent font-medium cursor-pointer"
           >
-            Find
+            {appMsg.desktop.findBtn}
           </button>
         </div>
 
@@ -89,7 +91,7 @@ export function ClientLogAndSimulatorCard({
               onChange={onToggleAutoClipboard}
               style={{ accentColor: "var(--hud-accent)" }}
             />
-            Auto-copy vendor regex on Town entry
+            {appMsg.desktop.autoCopyRegex}
           </label>
           <button
             type="button"
@@ -97,18 +99,18 @@ export function ClientLogAndSimulatorCard({
             className="rounded-md hover:bg-hud-subtle px-2 py-1 text-[11px] font-mono text-hud-muted hover:text-hud-text inline-flex items-center gap-1 cursor-pointer"
           >
             <ClipboardCopy className="h-3 w-3" />
-            {activeVendorRegex || "Copy"}
+            {activeVendorRegex || msg.widgets.copy}
           </button>
         </div>
 
         <div className="flex items-center justify-between pt-2 border-t border-hud-hairline text-xs">
           <div className="flex items-center gap-1.5 text-hud-text">
             <GitBranch className="h-3.5 w-3.5 text-hud-accent" />
-            <span>Passive Tree Hotkey (PoE Active)</span>
+            <span>{appMsg.desktop.passiveTreeHotkey}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className={`text-[10px] font-mono ${inGameTreeOpen ? "text-hud-ok" : "text-hud-muted"}`}>
-              {inGameTreeOpen ? "OPEN" : "CLOSED"}
+              {inGameTreeOpen ? appMsg.desktop.openState : appMsg.desktop.closedState}
             </span>
             <select
               value={passiveTreeHotkey}
@@ -117,7 +119,7 @@ export function ClientLogAndSimulatorCard({
             >
               {["P", "T", "K", "Tab", "F1", "F2", "F3", "F4", "Off"].map((k) => (
                 <option key={k} value={k}>
-                  {k}
+                  {k === "Off" ? appMsg.desktop.offOption : k}
                 </option>
               ))}
             </select>
@@ -127,7 +129,7 @@ export function ClientLogAndSimulatorCard({
 
       <section className="space-y-3 border-t border-hud-hairline pt-5">
         <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
-          Campaign &amp; Outage Replay Simulator
+          {appMsg.desktop.simulatorTitle}
         </h2>
 
         <div className="grid grid-cols-2 gap-1.5 text-xs">
@@ -139,7 +141,7 @@ export function ClientLogAndSimulatorCard({
             }`}
           >
             <Cpu className="h-3.5 w-3.5" />
-            PoE {poeRunning ? "Running" : "Stopped"}
+            {poeRunning ? appMsg.desktop.poeRunning : appMsg.desktop.poeStopped}
           </button>
 
           <button
@@ -149,7 +151,7 @@ export function ClientLogAndSimulatorCard({
               simulatedOutage ? "text-hud-warn font-semibold" : "text-hud-muted hover:text-hud-text"
             }`}
           >
-            Sim 429 API Outage: {simulatedOutage ? "ON" : "OFF"}
+            {appMsg.desktop.simOutage(simulatedOutage)}
           </button>
 
           <button
@@ -161,7 +163,7 @@ export function ClientLogAndSimulatorCard({
             }
             className="rounded-md bg-hud-subtle hover:opacity-80 px-2.5 py-1.5 text-left text-hud-text cursor-pointer"
           >
-            1. Twilight Strand
+            {appMsg.desktop.simSteps[0]}
           </button>
 
           <button
@@ -174,7 +176,7 @@ export function ClientLogAndSimulatorCard({
             }
             className="rounded-md bg-hud-subtle hover:opacity-80 px-2.5 py-1.5 text-left text-hud-text cursor-pointer"
           >
-            2. Lioneye&apos;s Watch (Town)
+            {appMsg.desktop.simSteps[1]}
           </button>
 
           <button
@@ -186,7 +188,7 @@ export function ClientLogAndSimulatorCard({
             }
             className="rounded-md bg-hud-subtle hover:opacity-80 px-2.5 py-1.5 text-left text-hud-text cursor-pointer"
           >
-            3. The Coast
+            {appMsg.desktop.simSteps[2]}
           </button>
 
           <button
@@ -198,7 +200,7 @@ export function ClientLogAndSimulatorCard({
             }
             className="rounded-md bg-hud-subtle hover:opacity-80 px-2.5 py-1.5 text-left text-hud-text cursor-pointer"
           >
-            4. Skip Dweller -&gt; Ledge
+            {appMsg.desktop.simSteps[3]}
           </button>
 
           <button
@@ -213,7 +215,7 @@ export function ClientLogAndSimulatorCard({
             className="rounded-md bg-hud-subtle hover:opacity-80 px-2.5 py-1.5 text-left text-hud-danger inline-flex items-center gap-1 cursor-pointer"
           >
             <Skull className="h-3.5 w-3.5" />
-            5. Death at Brutus -&gt; Town
+            {appMsg.desktop.simSteps[4]}
           </button>
 
           <button
@@ -225,7 +227,7 @@ export function ClientLogAndSimulatorCard({
             }
             className="rounded-md bg-hud-subtle hover:opacity-80 px-2.5 py-1.5 text-left text-hud-warn cursor-pointer"
           >
-            6. Enter Labyrinth
+            {appMsg.desktop.simSteps[5]}
           </button>
 
           <button
@@ -237,9 +239,11 @@ export function ClientLogAndSimulatorCard({
           >
             <span className="inline-flex items-center gap-1.5">
               <GitBranch className="h-3.5 w-3.5" />
-              7. Toggle In-Game Passive Tree ({passiveTreeHotkey})
+              {appMsg.desktop.simToggleTree(passiveTreeHotkey)}
             </span>
-            <span className="font-mono text-[10px]">{inGameTreeOpen ? "TREE OPEN" : "CLOSED"}</span>
+            <span className="font-mono text-[10px]">
+              {inGameTreeOpen ? appMsg.desktop.treeOpenState : appMsg.desktop.closedState}
+            </span>
           </button>
         </div>
       </section>

@@ -1,4 +1,5 @@
 import type { PobBuildPreview, PobSetOptionSummary, PobSetSelection } from "@exile-hud/core";
+import { localizePobSetDetail, useHudI18n } from "@exile-hud/hud-ui";
 
 interface PobSetSelectorSectionProps {
   preview: PobBuildPreview;
@@ -14,6 +15,7 @@ interface SetCategoryListProps {
 }
 
 function SetCategoryList({ title, options, selectedIds, onUpdate }: SetCategoryListProps) {
+  const { locale, appMsg } = useHudI18n();
   const selectedSet = new Set(selectedIds);
 
   const toggleId = (id: string) => {
@@ -40,21 +42,21 @@ function SetCategoryList({ title, options, selectedIds, onUpdate }: SetCategoryL
               onClick={() => onUpdate(options.map((opt) => opt.id))}
               className="text-hud-accent hover:underline cursor-pointer"
             >
-              All
+              {appMsg.desktop.all}
             </button>
             <button
               type="button"
               onClick={() => onUpdate([])}
               className="text-hud-muted hover:text-hud-text cursor-pointer"
             >
-              None
+              {appMsg.desktop.none}
             </button>
           </div>
         )}
       </div>
 
       {options.length === 0 ? (
-        <div className="text-[10px] text-hud-muted">None present in this PoB.</div>
+        <div className="text-[10px] text-hud-muted">{appMsg.desktop.noneInPob}</div>
       ) : (
         <div className="max-h-28 overflow-y-auto space-y-0.5 pr-0.5">
           {options.map((opt) => {
@@ -79,7 +81,7 @@ function SetCategoryList({ title, options, selectedIds, onUpdate }: SetCategoryL
                   <span className="truncate">{opt.title}</span>
                 </span>
                 <span className="text-[10px] font-mono text-hud-muted shrink-0">
-                  Lv {opt.minLevel}+ · {opt.detail}
+                  Lv {opt.minLevel}+ · {localizePobSetDetail(opt.detail, locale)}
                 </span>
               </label>
             );
@@ -92,11 +94,13 @@ function SetCategoryList({ title, options, selectedIds, onUpdate }: SetCategoryL
 
 /** Displays selectable Passive Trees, Skill Sets, and Item Sets parsed from a PoB import. */
 export function PobSetSelectorSection({ preview, selection, onChange }: PobSetSelectorSectionProps) {
+  const { appMsg } = useHudI18n();
+
   return (
     <div className="space-y-3 border-t border-hud-hairline pt-3">
       <div className="flex items-center justify-between text-[11px]">
         <span className="font-semibold text-hud-text truncate">
-          Import Selection · {preview.buildName}
+          {appMsg.desktop.importSelectionPrefix} · {preview.buildName}
         </span>
         <span className="font-mono text-[10px] text-hud-muted shrink-0">
           {preview.characterClass} Lv {preview.buildLevel}
@@ -104,19 +108,19 @@ export function PobSetSelectorSection({ preview, selection, onChange }: PobSetSe
       </div>
 
       <SetCategoryList
-        title="Passive Sets"
+        title={appMsg.desktop.passiveSets}
         options={preview.passiveSpecs}
         selectedIds={selection.passiveSpecIds}
         onUpdate={(passiveSpecIds) => onChange({ ...selection, passiveSpecIds })}
       />
       <SetCategoryList
-        title="Skill Sets"
+        title={appMsg.desktop.skillSets}
         options={preview.skillSets}
         selectedIds={selection.skillSetIds}
         onUpdate={(skillSetIds) => onChange({ ...selection, skillSetIds })}
       />
       <SetCategoryList
-        title="Item Sets"
+        title={appMsg.desktop.itemSets}
         options={preview.itemSets}
         selectedIds={selection.itemSetIds}
         onUpdate={(itemSetIds) => onChange({ ...selection, itemSetIds })}

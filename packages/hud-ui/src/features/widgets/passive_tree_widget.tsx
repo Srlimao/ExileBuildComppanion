@@ -2,6 +2,8 @@ import type { HudSessionSnapshot } from "@exile-hud/core";
 import { poe1GameAdapter } from "@exile-hud/game-data";
 import { Maximize2 } from "lucide-react";
 import { memo, useMemo } from "react";
+import { useHudI18n } from "../i18n/hud_i18n_provider.js";
+import { localizePobFallbackText } from "../i18n/telemetry_advisor_localizer.js";
 import { useHudTheme } from "../theme/hud_theme_provider.js";
 
 interface PassiveTreeWidgetProps {
@@ -14,6 +16,7 @@ export const PassiveTreeWidget = memo(function PassiveTreeWidget({
   onOpenFullTree,
 }: PassiveTreeWidgetProps) {
   const { treePalette } = useHudTheme();
+  const { locale, msg } = useHudI18n();
   const tree = snapshot.passiveTree;
   const pts = tree.targetNodesPreview;
 
@@ -68,7 +71,9 @@ export const PassiveTreeWidget = memo(function PassiveTreeWidget({
   return (
     <div className="flex flex-col h-full gap-2.5">
       <div className="flex items-baseline justify-between gap-2 flex-wrap">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">{tree.specName}</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
+          {localizePobFallbackText(tree.specName, locale)}
+        </h2>
         <div className="flex items-center gap-3 text-xs font-mono tabular-nums">
           <span className="text-hud-ok">
             {tree.allocatedTargetCount}/{tree.targetNodeCount}
@@ -83,7 +88,7 @@ export const PassiveTreeWidget = memo(function PassiveTreeWidget({
               className="inline-flex items-center gap-1 text-hud-accent hover:opacity-80 font-sans font-semibold cursor-pointer"
             >
               <Maximize2 className="h-3 w-3" />
-              <span>Full Tree</span>
+              <span>{msg.widgets.fullTree}</span>
             </button>
           )}
         </div>
@@ -125,7 +130,7 @@ export const PassiveTreeWidget = memo(function PassiveTreeWidget({
 
         <div className="space-y-1.5 overflow-y-auto">
           <div className="text-[11px] uppercase tracking-[0.12em] text-hud-muted font-semibold">
-            Next Notables
+            {msg.widgets.nextNotables}
           </div>
           {tree.remainingNotableNames.length > 0 ? (
             <ul className="space-y-1">
@@ -137,7 +142,7 @@ export const PassiveTreeWidget = memo(function PassiveTreeWidget({
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-hud-ok">All target notables allocated.</p>
+            <p className="text-sm text-hud-ok">{msg.widgets.allNotablesAllocated}</p>
           )}
         </div>
       </div>

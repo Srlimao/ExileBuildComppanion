@@ -13,7 +13,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { initializeHostSessionWithProgress, persistSnapshotProgressIfNeeded } from "./campaign_progress_persistence_client.js";
 import { generateRoomPin, loadHostIdentityPrefs, saveHostIdentityPrefs } from "./desktop_host_settings_storage.js";
 import { applyLogLinesToSnapshot, hookAndBootstrapLogPath, syncBuildSetsForLevel } from "./client_log_sync_helper.js";
-import { applyGggCharacterResponseToSnapshot, applyViewerCommandToSnapshot, compilePobProfileToSnapshot, DEFAULT_STARTER_POB_XML, deriveTrayIndicator, inspectPobBuildSets } from "./desktop_telemetry_bridge.js";
+import { applyViewerCommandToSnapshot, compilePobProfileToSnapshot, DEFAULT_STARTER_POB_XML, inspectPobBuildSets } from "./desktop_telemetry_bridge.js";
 import { compileAndSavePobProfile, openPobStorageFolder } from "./pob_profile_persistence_client.js";
 import { createHostRunTimerClock } from "./host_run_timer_clock.js";
 import { createHostRelaySession, type HostRelaySession } from "./relay_host_connection.js";
@@ -21,11 +21,11 @@ import {
   detectClientLogPath,
   setInGameTreeOpenIpc,
   setPassiveTreeHotkeyIpc,
-  setTrayTelemetryStatus,
   writeVendorRegexClipboard,
 } from "./tauri_ipc_adapter.js";
 import { executeGggCharacterSync } from "./passive_tree_hotkey_sync_helper.js";
 import { useTauriHostEventBridge } from "./use_tauri_host_event_bridge.js";
+import { useTrayStatusAndLocaleSync } from "./use_tray_status_and_locale_sync.js";
 import { useHostOverlayBroadcastBridge } from "../overlay_hud/overlay_local_bus.js";
 
 export function useDesktopHostController() {
@@ -169,11 +169,7 @@ export function useDesktopHostController() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (!snapshot) return;
-    const indicator = deriveTrayIndicator(snapshot, relayConnected);
-    void setTrayTelemetryStatus(indicator.status, indicator.tooltip);
-  }, [snapshot, relayConnected]);
+  useTrayStatusAndLocaleSync(snapshot, relayConnected);
 
   const processLogLines = useCallback(
     (lines: string[]) => {

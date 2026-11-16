@@ -24,6 +24,7 @@ import {
   type ViewerToRoomMessage,
 } from "@exile-hud/core";
 import { poe1GameAdapter } from "@exile-hud/game-data";
+import type { HudLocale } from "@exile-hud/hud-ui";
 import { DEFAULT_STARTER_POB_XML } from "./pob_profile_persistence_client.js";
 
 export { DEFAULT_STARTER_POB_XML };
@@ -145,22 +146,39 @@ export async function compilePobProfileToSnapshot(params: {
   };
 }
 
-export function deriveTrayIndicator(snapshot: HudSessionSnapshot, relayConnected: boolean): {
+export function deriveTrayIndicator(
+  snapshot: HudSessionSnapshot,
+  relayConnected: boolean,
+  locale: HudLocale = "pt-BR",
+): {
   status: "gray" | "green" | "amber";
   tooltip: string;
 } {
+  const isPt = locale === "pt-BR";
   if (!snapshot.poeRunning) {
-    return { status: "gray", tooltip: "Exile Relay — PoE Standby" };
+    return {
+      status: "gray",
+      tooltip: isPt ? "Exile Relay — PoE em Espera" : "Exile Relay — PoE Standby",
+    };
   }
   if (!relayConnected || snapshot.characterSyncStatus === "OFFLINE_FALLBACK") {
+    const detail = isPt
+      ? relayConnected
+        ? "Fallback de API"
+        : "Relay Desconectado"
+      : relayConnected
+        ? "API Fallback"
+        : "Relay Disconnected";
     return {
       status: "amber",
-      tooltip: `Exile Relay — Degraded (${relayConnected ? "API Fallback" : "Relay Disconnected"})`,
+      tooltip: isPt ? `Exile Relay — Degradado (${detail})` : `Exile Relay — Degraded (${detail})`,
     };
   }
   return {
     status: "green",
-    tooltip: `Exile Relay — Live (${snapshot.currentAreaName})`,
+    tooltip: isPt
+      ? `Exile Relay — Ao Vivo (${snapshot.currentAreaName})`
+      : `Exile Relay — Live (${snapshot.currentAreaName})`,
   };
 }
 

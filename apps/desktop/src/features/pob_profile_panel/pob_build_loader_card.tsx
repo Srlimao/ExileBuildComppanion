@@ -1,4 +1,5 @@
 import type { HudSessionSnapshot, PobBuildPreview, PobSetSelection } from "@exile-hud/core";
+import { localizePobFallbackText, useHudI18n } from "@exile-hud/hud-ui";
 import { AlertTriangle, FolderOpen, RefreshCw, Route, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { PobSetSelectorSection } from "./pob_set_selector_section.js";
@@ -44,6 +45,7 @@ export function PobBuildLoaderCard({
   onOpenStorageFolder,
   onApplyBuild,
 }: PobBuildLoaderCardProps) {
+  const { locale, appMsg } = useHudI18n();
   const [draftPob, setDraftPob] = useState(pobInput);
   const [draftLeagueStart, setDraftLeagueStart] = useState(leagueStart);
   const [draftRoute, setDraftRoute] = useState(customRouteText);
@@ -97,12 +99,12 @@ export function PobBuildLoaderCard({
     <section className="space-y-3">
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
-          PoB &amp; Campaign Route
+          {appMsg.desktop.pobCardTitle}
         </h2>
         <div className="inline-flex items-center gap-3 text-[11px]">
           {[
-            { label: "League Start", val: true },
-            { label: "Twink", val: false },
+            { label: appMsg.desktop.leagueStart, val: true },
+            { label: appMsg.desktop.twink, val: false },
           ].map((opt) => (
             <button
               key={opt.label}
@@ -125,27 +127,29 @@ export function PobBuildLoaderCard({
           <div className="min-w-0">
             <div className="font-semibold text-hud-text truncate">{snapshot.buildName}</div>
             <div className="text-[11px] text-hud-muted">
-              {snapshot.characterClass} · {snapshot.ascendancyName} · {snapshot.checkpoints.length} steps
+              {snapshot.characterClass} · {snapshot.ascendancyName} · {appMsg.desktop.stepsCount(snapshot.checkpoints.length)}
             </div>
           </div>
-          <span className="font-mono text-[11px] text-hud-ok shrink-0">{snapshot.gemSteps.length} gems</span>
+          <span className="font-mono text-[11px] text-hud-ok shrink-0">
+            {appMsg.desktop.gemsCount(snapshot.gemSteps.length)}
+          </span>
         </div>
       )}
 
       {snapshot?.isEndgameOnlyFallback && snapshot.fallbackNotice && (
         <div className="border-l-2 border-hud-warn pl-2.5 py-0.5 text-[11px] text-hud-warn flex items-start gap-2">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-          <span>{snapshot.fallbackNotice}</span>
+          <span>{localizePobFallbackText(snapshot.fallbackNotice, locale)}</span>
         </div>
       )}
 
       <label className="block space-y-1">
-        <span className="text-[11px] text-hud-muted">pobb.in URL, PoB Export Code, or XML</span>
+        <span className="text-[11px] text-hud-muted">{appMsg.desktop.pobInputLabel}</span>
         <textarea
           rows={3}
           value={draftPob}
           onChange={(e) => setDraftPob(e.target.value)}
-          placeholder="https://pobb.in/... or raw PoB code"
+          placeholder={appMsg.desktop.pobInputPlaceholder}
           className="w-full rounded-md bg-hud-subtle border-b border-hud-hairline p-2.5 text-xs font-mono text-hud-text focus:outline-none focus:border-hud-accent resize-none"
         />
       </label>
@@ -157,7 +161,7 @@ export function PobBuildLoaderCard({
           className="text-[11px] text-hud-muted hover:text-hud-text inline-flex items-center gap-1 cursor-pointer"
         >
           <Route className="h-3.5 w-3.5" />
-          {showCustomRoute ? "Hide custom .txt route" : "Custom route"}
+          {showCustomRoute ? appMsg.desktop.hideCustomRoute : appMsg.desktop.customRoute}
         </button>
 
         <div className="flex items-center gap-2">
@@ -168,7 +172,7 @@ export function PobBuildLoaderCard({
             className="rounded-md hover:bg-hud-subtle disabled:opacity-45 px-2.5 py-1.5 text-[11px] text-hud-text inline-flex items-center gap-1 cursor-pointer"
           >
             <RefreshCw className={`h-3 w-3 ${inspecting ? "animate-spin" : ""}`} />
-            {inspecting ? "Reading..." : "Inspect Sets"}
+            {inspecting ? appMsg.desktop.readingSets : appMsg.desktop.inspectSets}
           </button>
 
           <button
@@ -186,7 +190,7 @@ export function PobBuildLoaderCard({
             className="rounded-md bg-hud-accent text-hud-accent-fg hover:opacity-90 disabled:opacity-50 px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
           >
             <Sparkles className="h-3.5 w-3.5" />
-            {loading ? "Compiling..." : "Compile & Save PoB"}
+            {loading ? appMsg.desktop.compiling : appMsg.desktop.compileAndSavePob}
           </button>
         </div>
       </div>
@@ -200,7 +204,7 @@ export function PobBuildLoaderCard({
           rows={3}
           value={draftRoute}
           onChange={(e) => setDraftRoute(e.target.value)}
-          placeholder="Optional exile-leveling route fragment override..."
+          placeholder={appMsg.desktop.customRoutePlaceholder}
           className="w-full rounded-md bg-hud-subtle border-b border-hud-hairline p-2.5 text-xs font-mono text-hud-text focus:outline-none focus:border-hud-accent resize-none"
         />
       )}
@@ -214,7 +218,7 @@ export function PobBuildLoaderCard({
       {pobStoragePath && (
         <div className="pt-2 flex items-center justify-between gap-2 text-[10px] text-hud-muted">
           <div className="min-w-0 truncate" title={pobStoragePath}>
-            <span>Saved locally: </span>
+            <span>{appMsg.desktop.savedLocally} </span>
             <span className="font-mono text-hud-text">{pobStoragePath}</span>
           </div>
           {canOpenFolder && (
@@ -224,7 +228,7 @@ export function PobBuildLoaderCard({
               className="shrink-0 rounded-md hover:bg-hud-subtle px-2 py-1 text-[10px] text-hud-text inline-flex items-center gap-1 cursor-pointer"
             >
               <FolderOpen className="h-3 w-3 text-hud-accent" />
-              Open Save Folder
+              {appMsg.desktop.openSaveFolder}
             </button>
           )}
         </div>

@@ -2,6 +2,8 @@ import type { HudSessionSnapshot } from "@exile-hud/core";
 import { poe1GameAdapter } from "@exile-hud/game-data";
 import { Upload } from "lucide-react";
 import { useState, type ChangeEvent } from "react";
+import { useHudI18n } from "../i18n/hud_i18n_provider.js";
+import { localizeIzaroGuide } from "../i18n/telemetry_advisor_localizer.js";
 
 interface LabCompassWidgetProps {
   snapshot: HudSessionSnapshot;
@@ -9,9 +11,10 @@ interface LabCompassWidgetProps {
 }
 
 export function LabCompassWidget({ snapshot, onImportPoelabJson }: LabCompassWidgetProps) {
+  const { locale, msg } = useHudI18n();
   const [showPaste, setShowPaste] = useState(false);
   const [pasteText, setPasteText] = useState("");
-  const izaroGuides = poe1GameAdapter.getIzaroMechanics();
+  const izaroGuides = poe1GameAdapter.getIzaroMechanics().map((g) => localizeIzaroGuide(g, locale));
   const trials = poe1GameAdapter.getLabTrials();
 
   const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -24,12 +27,12 @@ export function LabCompassWidget({ snapshot, onImportPoelabJson }: LabCompassWid
     <div className="flex flex-col h-full gap-3">
       <div className="flex items-baseline justify-between gap-2 flex-wrap">
         <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
-          Lab Compass · {snapshot.lab.difficultyLabel}
+          {msg.widgets.labCompass} · {snapshot.lab.difficultyLabel}
         </h2>
         <div className="flex items-center gap-3 text-xs">
           <label className="text-hud-muted hover:text-hud-text inline-flex items-center gap-1 cursor-pointer transition-colors">
             <Upload className="h-3.5 w-3.5" />
-            <span>Import JSON</span>
+            <span>{msg.widgets.importJson}</span>
             <input type="file" accept=".json,application/json" className="hidden" onChange={(e) => void handleFileUpload(e)} />
           </label>
           <button
@@ -37,7 +40,7 @@ export function LabCompassWidget({ snapshot, onImportPoelabJson }: LabCompassWid
             onClick={() => setShowPaste((v) => !v)}
             className="text-hud-muted hover:text-hud-text cursor-pointer transition-colors"
           >
-            {showPaste ? "Hide Paste" : "Paste"}
+            {showPaste ? msg.widgets.hidePaste : msg.widgets.paste}
           </button>
         </div>
       </div>
@@ -48,7 +51,7 @@ export function LabCompassWidget({ snapshot, onImportPoelabJson }: LabCompassWid
             type="text"
             value={pasteText}
             onChange={(e) => setPasteText(e.target.value)}
-            placeholder="Paste PoELab daily JSON..."
+            placeholder={msg.widgets.pastePlaceholder}
             className="flex-1 rounded-md bg-hud-subtle border-b border-hud-hairline focus:border-hud-accent focus:outline-none px-2.5 py-1.5 text-xs font-mono text-hud-text"
           />
           <button
@@ -61,7 +64,7 @@ export function LabCompassWidget({ snapshot, onImportPoelabJson }: LabCompassWid
             }}
             className="px-3 py-1.5 rounded-md bg-hud-accent text-hud-accent-fg text-xs font-semibold cursor-pointer"
           >
-            Load
+            {msg.widgets.load}
           </button>
         </div>
       )}
@@ -98,15 +101,14 @@ export function LabCompassWidget({ snapshot, onImportPoelabJson }: LabCompassWid
         </div>
       ) : (
         <p className="text-xs text-hud-muted leading-relaxed">
-          No daily PoELab JSON loaded yet — import from poelab.com to auto-track rooms by{" "}
-          <code className="font-mono text-hud-text">areaSeed</code>.
+          {msg.widgets.noDailyLabJson} <code className="font-mono text-hud-text">areaSeed</code>.
         </p>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto pt-2 border-t border-hud-hairline">
         <div className="space-y-1">
           <div className="text-[11px] font-semibold text-hud-muted uppercase tracking-[0.12em]">
-            Izaro Phases
+            {msg.widgets.izaroPhases}
           </div>
           {izaroGuides.slice(0, 4).map((g) => (
             <div key={g.phase} className="text-xs text-hud-muted">
@@ -117,7 +119,7 @@ export function LabCompassWidget({ snapshot, onImportPoelabJson }: LabCompassWid
 
         <div className="space-y-1">
           <div className="flex items-baseline justify-between text-[11px] font-semibold text-hud-muted uppercase tracking-[0.12em]">
-            <span>Campaign Trials</span>
+            <span>{msg.widgets.campaignTrials}</span>
             <span className="text-hud-ok font-mono">
               {trials.filter((t) => snapshot.lab.completedTrialAreaIds.includes(t.areaId)).length}/{trials.length}
             </span>
