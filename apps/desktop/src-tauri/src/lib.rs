@@ -32,6 +32,9 @@ pub(crate) mod local_pob_profile_disk_store;
 #[path = "features/campaign_progress_store/local_campaign_progress_disk_store.rs"]
 pub(crate) mod local_campaign_progress_disk_store;
 
+#[path = "features/loot_filter_store/local_loot_filter_installer.rs"]
+pub(crate) mod local_loot_filter_installer;
+
 #[path = "features/passive_tree_hotkey/foreground_poe_hotkey_poller.rs"]
 pub(crate) mod foreground_poe_hotkey_poller;
 
@@ -143,6 +146,9 @@ pub fn run() {
             tauri_host_ipc_commands::load_saved_campaign_progress,
             tauri_host_ipc_commands::save_campaign_progress,
             tauri_host_ipc_commands::open_app_data_folder,
+            local_loot_filter_installer::get_loot_filter_status,
+            local_loot_filter_installer::install_league_starter_filter,
+            local_loot_filter_installer::open_loot_filter_folder,
             tauri_host_ipc_commands::set_passive_tree_hotkey,
             tauri_host_ipc_commands::set_in_game_tree_open,
             overlay_ipc_commands::get_overlay_config,

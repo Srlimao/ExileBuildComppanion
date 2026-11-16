@@ -5,6 +5,7 @@ import { DesktopUpdateFooterBar } from "./features/auto_updater/desktop_update_f
 import { ClientLogAndSimulatorCard } from "./features/environment_panel/client_log_and_simulator_card.js";
 import { CharacterSyncSettingsCard } from "./features/ggg_sync_panel/character_sync_settings_card.js";
 import { useDesktopHostController } from "./features/host_coordinator/use_desktop_host_controller.js";
+import { LeagueStarterFilterCard } from "./features/loot_filter/league_starter_filter_card.js";
 import { OverlayControlCenterCard } from "./features/overlay_hud/overlay_control_center_card.js";
 import {
   DEFAULT_OVERLAY_CONFIG,
@@ -136,6 +137,10 @@ export function App() {
             onOpenStorageFolder={ctl.openStorageFolder}
             onApplyBuild={ctl.applyBuild}
           />
+
+          <div className="border-t border-hud-hairline pt-5">
+            <LeagueStarterFilterCard />
+          </div>
 
           <div className="border-t border-hud-hairline pt-5">
             <CharacterSyncSettingsCard

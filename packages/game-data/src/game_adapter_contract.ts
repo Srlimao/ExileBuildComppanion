@@ -170,6 +170,25 @@ export interface CraftingBenchRecipe {
   unlockAct: number;
 }
 
+export type LootFilterPresetId = "regular" | "semi_strict";
+
+export interface LeagueStarterFilterPresetMeta {
+  id: LootFilterPresetId;
+  strictnessCode: string;
+  targetFileName: string;
+  lineCount: number;
+  byteSize: number;
+}
+
+export interface LeagueStarterFilterMetadata {
+  version: string;
+  leagueName: string;
+  releaseTitle: string;
+  sourceRepo: string;
+  defaultPresetId: LootFilterPresetId;
+  presets: LeagueStarterFilterPresetMeta[];
+}
+
 export interface GameAdapter {
   readonly gameId: SupportedGameId;
   getAreas(): Record<string, AreaDefinition>;

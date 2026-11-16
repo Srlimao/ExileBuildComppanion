@@ -1,0 +1,23 @@
+{
+  "version": "8.21.0a",
+  "leagueName": "Umbra",
+  "releaseTitle": "NeverSink's PoE Filter - version 8.21.0a - Atlas rework and Umbra league",
+  "sourceRepo": "https://github.com/NeverSinkDev/NeverSink-Filter",
+  "defaultPresetId": "regular",
+  "presets": [
+    {
+      "id": "regular",
+      "strictnessCode": "1-REGULAR",
+      "targetFileName": "ExileHUD_LeagueStart_Regular.filter",
+      "lineCount": 11135,
+      "byteSize": 534483
+    },
+    {
+      "id": "semi_strict",
+      "strictnessCode": "2-SEMI-STRICT",
+      "targetFileName": "ExileHUD_LeagueStart_SemiStrict.filter",
+      "lineCount": 11135,
+      "byteSize": 534556
+    }
+  ]
+}

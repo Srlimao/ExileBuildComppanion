@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
 import { ingestGggPassiveTree } from "./ingest_ggg_passive_tree.mjs";
+import { ingestNeversinkLootFilter } from "./ingest_neversink_loot_filter.mjs";
 import { ingestRepoeCraftingBench } from "./ingest_repoe_crafting_bench.mjs";
 
 const ROOT = process.cwd();
@@ -111,12 +112,12 @@ function readExileUiLicense() {
   }).trim();
 }
 
-function writeThirdPartyLicenses() {
+function writeThirdPartyLicenses(neversinkInfo) {
   const exileLevelingLic = fs.readFileSync(path.join(CACHE_EXILE_LEVELING, "LICENSE"), "utf8").trim();
   const exileUiLic = readExileUiLicense();
   const content = `# Third-Party Open Source Licenses
 
-This repository incorporates MIT-licensed game datasets, route syntax, icons, and zone layout diagrams from the following projects:
+This repository incorporates MIT-licensed game datasets, route syntax, icons, loot filters, and zone layout diagrams from the following projects:
 
 ## HeartofPhos/exile-leveling
 Source: https://github.com/HeartofPhos/exile-leveling
@@ -130,6 +131,13 @@ Source: https://github.com/Lailloken/Exile-UI
 
 \`\`\`
 ${exileUiLic}
+\`\`\`
+
+## NeverSinkDev/NeverSink-Filter
+Source: https://github.com/NeverSinkDev/NeverSink-Filter (Tag \`${neversinkInfo.version}\`)
+
+\`\`\`
+${neversinkInfo.licenseText}
 \`\`\`
 
 ## grindinggear/skilltree-export
@@ -150,9 +158,12 @@ async function main() {
   copyExileLevelingData();
   const { nodeCount } = await ingestGggPassiveTree(ROOT);
   const { recipeCount } = await ingestRepoeCraftingBench(ROOT);
+  const neversinkInfo = await ingestNeversinkLootFilter(ROOT);
   const layoutCount = await convertZoneLayoutsToWebp();
-  writeThirdPartyLicenses();
-  console.log(`Ingested PoE1 assets: ${nodeCount} passive tree nodes, ${recipeCount} bench recipes, ${layoutCount} WebP zone layouts.`);
+  writeThirdPartyLicenses(neversinkInfo);
+  console.log(
+    `Ingested PoE1 assets: ${nodeCount} passive tree nodes, ${recipeCount} bench recipes, ${neversinkInfo.presets.length} NeverSink ${neversinkInfo.version} loot filters, ${layoutCount} WebP zone layouts.`,
+  );
 }
 
 main().catch((err) => {

@@ -6,6 +6,7 @@ import defaultRoutesJson from "../data/poe1/default_routes.json" with { type: "j
 import gemColoursJson from "../data/poe1/gem-colours.json" with { type: "json" };
 import gemsJson from "../data/poe1/gems.json" with { type: "json" };
 import killWaypointsJson from "../data/poe1/kill-waypoints.json" with { type: "json" };
+import leagueStarterFilterMetaJson from "../data/poe1/league_starter_filter_meta.json" with { type: "json" };
 import passiveTreeGraphMetaJson from "../data/poe1/passive_tree_graph_meta.json" with { type: "json" };
 import passiveTreeNodesJson from "../data/poe1/passive_tree_nodes.json" with { type: "json" };
 import questsJson from "../data/poe1/quests.json" with { type: "json" };
@@ -16,6 +17,7 @@ import type {
   CharacterStartGems,
   CraftingBenchRecipe,
   GemDefinition,
+  LeagueStarterFilterMetadata,
   PassiveTreeGraphMetadata,
   PassiveTreeNodeMetadata,
   QuestDefinition,
@@ -34,3 +36,4 @@ export const poe1ZoneLayoutManifest = zoneLayoutManifestJson as Record<string, s
 export const poe1PassiveTreeNodes = passiveTreeNodesJson as Record<string, PassiveTreeNodeMetadata>;
 export const poe1PassiveTreeGraphMeta = passiveTreeGraphMetaJson as PassiveTreeGraphMetadata;
 export const poe1CraftingBenchRecipes = craftingBenchRecipesJson as CraftingBenchRecipe[];
+export const poe1LeagueStarterFilterMeta = leagueStarterFilterMetaJson as LeagueStarterFilterMetadata;

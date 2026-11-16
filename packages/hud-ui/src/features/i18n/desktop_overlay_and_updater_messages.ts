@@ -46,6 +46,19 @@ export interface DesktopOverlayAndUpdaterMessages {
   trayStandby: string;
   trayDegraded: (relayConnected: boolean) => string;
   trayLive: (areaName: string) => string;
+  lootFilterCardTitle: string;
+  lootFilterLeagueBadge: (league: string, version: string) => string;
+  lootFilterInstalledBadge: string;
+  lootFilterNotInstalledBadge: string;
+  lootFilterPresetRegular: string;
+  lootFilterPresetSemiStrict: string;
+  lootFilterPresetBoth: string;
+  lootFilterInstallBtn: string;
+  lootFilterReinstallBtn: string;
+  lootFilterInstalling: string;
+  lootFilterOpenFolder: string;
+  lootFilterInGameHint: string;
+  lootFilterSuccessMsg: (files: string) => string;
 }
 
 const PT_BR_OVERLAY_UPDATER: DesktopOverlayAndUpdaterMessages = {
@@ -101,6 +114,19 @@ const PT_BR_OVERLAY_UPDATER: DesktopOverlayAndUpdaterMessages = {
   trayStandby: "Exile Relay — PoE em Espera",
   trayDegraded: (ok) => `Exile Relay — Degradado (${ok ? "Fallback de API" : "Relay Desconectado"})`,
   trayLive: (area) => `Exile Relay — Ao Vivo (${area})`,
+  lootFilterCardTitle: "Loot Filter de Início de Liga",
+  lootFilterLeagueBadge: (league, version) => `Liga ${league} · NeverSink v${version}`,
+  lootFilterInstalledBadge: "INSTALADO",
+  lootFilterNotInstalledBadge: "NÃO INSTALADO",
+  lootFilterPresetRegular: "1 - Regular (Campanha)",
+  lootFilterPresetSemiStrict: "2 - Semi-Strict (Mapas)",
+  lootFilterPresetBoth: "Ambos",
+  lootFilterInstallBtn: "Adicionar Loot Filter de Início de Liga",
+  lootFilterReinstallBtn: "Atualizar / Reinstalar Loot Filter",
+  lootFilterInstalling: "Instalando...",
+  lootFilterOpenFolder: "Abrir Pasta de Filtros",
+  lootFilterInGameHint: "No PoE: Opções → Jogo → Filtro de Itens → Recarregar",
+  lootFilterSuccessMsg: (files) => `Instalado: ${files}`,
 };
 
 const EN_OVERLAY_UPDATER: DesktopOverlayAndUpdaterMessages = {
@@ -156,6 +182,19 @@ const EN_OVERLAY_UPDATER: DesktopOverlayAndUpdaterMessages = {
   trayStandby: "Exile Relay — PoE Standby",
   trayDegraded: (ok) => `Exile Relay — Degraded (${ok ? "API Fallback" : "Relay Disconnected"})`,
   trayLive: (area) => `Exile Relay — Live (${area})`,
+  lootFilterCardTitle: "League-Start Base Loot Filter",
+  lootFilterLeagueBadge: (league, version) => `${league} League · NeverSink v${version}`,
+  lootFilterInstalledBadge: "INSTALLED",
+  lootFilterNotInstalledBadge: "NOT INSTALLED",
+  lootFilterPresetRegular: "1 - Regular (Campaign)",
+  lootFilterPresetSemiStrict: "2 - Semi-Strict (Early Maps)",
+  lootFilterPresetBoth: "Both",
+  lootFilterInstallBtn: "Add League-Start Base Loot Filter",
+  lootFilterReinstallBtn: "Update / Reinstall Loot Filter",
+  lootFilterInstalling: "Installing...",
+  lootFilterOpenFolder: "Open Filter Folder",
+  lootFilterInGameHint: "In PoE: Options → Game → Item Filter → Reload",
+  lootFilterSuccessMsg: (files) => `Installed: ${files}`,
 };
 
 export const DESKTOP_OVERLAY_AND_UPDATER_MESSAGES: Record<HudLocale, DesktopOverlayAndUpdaterMessages> = {
