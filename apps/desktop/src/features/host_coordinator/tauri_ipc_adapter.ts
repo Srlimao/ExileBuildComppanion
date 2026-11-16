@@ -14,6 +14,24 @@ export interface CharacterPollResponse {
   passivesJson: Record<string, any> | null;
 }
 
+export interface GggAccountCharacter {
+  name: string;
+  class: string;
+  league: string;
+  level: number;
+  lastLoginTime: number | null;
+  lastActive: boolean;
+}
+
+export interface AccountCharactersResponse {
+  ok: boolean;
+  statusCode: number;
+  normalizedAccount: string;
+  throttledMs: number | null;
+  error: string | null;
+  characters: GggAccountCharacter[];
+}
+
 export function isTauriRuntime(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
@@ -74,6 +92,20 @@ export async function pollCharacterWindow(params: {
     };
   }
   return callInvoke<CharacterPollResponse>("poll_character_window", params);
+}
+
+export async function fetchAccountCharactersIpc(accountName: string): Promise<AccountCharactersResponse> {
+  if (!isTauriRuntime()) {
+    return {
+      ok: false,
+      statusCode: 503,
+      normalizedAccount: accountName.trim(),
+      throttledMs: null,
+      error: "GGG HTTP fetch requires Windows Tauri desktop runtime (use Replay Simulator in browser preview).",
+      characters: [],
+    };
+  }
+  return callInvoke<AccountCharactersResponse>("fetch_account_characters", { accountName });
 }
 
 export async function setTrayTelemetryStatus(

@@ -23,6 +23,9 @@ pub(crate) mod poe_process_heartbeat;
 #[path = "features/ggg_api_client/character_window_http_poller.rs"]
 pub(crate) mod character_window_http_poller;
 
+#[path = "features/ggg_api_client/account_characters_fetcher.rs"]
+pub(crate) mod account_characters_fetcher;
+
 #[path = "features/clipboard_bridge/windows_clipboard_writer.rs"]
 pub(crate) mod windows_clipboard_writer;
 
@@ -138,6 +141,7 @@ pub fn run() {
             tauri_host_ipc_commands::check_poe_running,
             tauri_host_ipc_commands::write_vendor_regex_clipboard,
             tauri_host_ipc_commands::poll_character_window,
+            account_characters_fetcher::fetch_account_characters,
             tauri_host_ipc_commands::set_tray_telemetry_status,
             tauri_host_ipc_commands::set_tray_locale,
             tauri_host_ipc_commands::get_pob_profile_storage_path,

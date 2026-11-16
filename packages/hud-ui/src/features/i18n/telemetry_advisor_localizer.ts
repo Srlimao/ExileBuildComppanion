@@ -160,6 +160,18 @@ export function localizeConnectionOrSyncMessage(message: string | null, locale: 
   if (message === "Set AccountName#1234 and CharacterName first") {
     return "Defina Conta#1234 e Nome do Personagem primeiro";
   }
+  if (message === "Enter AccountName#1234 first") {
+    return "Informe Conta#1234 primeiro";
+  }
+  if (message === "Account profile is private or AccountName#1234 was not found") {
+    return "Perfil privado ou Conta#1234 não encontrada";
+  }
+  if (message === "AccountName#1234 was not found") {
+    return "Conta#1234 não encontrada";
+  }
+  if (message === "GGG API rate limit (HTTP 429) — wait a moment and retry") {
+    return "Limite da API GGG (HTTP 429) — aguarde um momento e tente novamente";
+  }
   if (message === "Synced via Public API") return "Sincronizado via API Pública";
   if (message === "Auto-synced via Public API") return "Sync automático via API Pública";
   if (message === "GGG HTTP fetch requires Windows Tauri desktop runtime (use Replay Simulator in browser preview).") {

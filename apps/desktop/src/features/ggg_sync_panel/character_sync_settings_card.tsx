@@ -1,14 +1,24 @@
 import type { CharacterSyncStatus } from "@exile-hud/core";
 import { localizeConnectionOrSyncMessage, useHudI18n } from "@exile-hud/hud-ui";
-import { RefreshCw } from "lucide-react";
+import { AlertTriangle, RefreshCw } from "lucide-react";
+import {
+  ALL_LEAGUES_VALUE,
+  detectLeagueRulesetBadges,
+  resolveBaseClassFromGggClass,
+} from "./account_roster_helpers.js";
+import { useAccountCharacterRoster } from "./use_account_character_roster.js";
 
 interface CharacterSyncSettingsCardProps {
   accountName: string;
+  selectedLeague: string;
   characterName: string;
+  pobCharacterClass: string | null;
   syncStatus: CharacterSyncStatus;
   syncMessage: string | null;
   onChangeAccount: (nextAccount: string) => void;
+  onChangeLeague: (nextLeague: string) => void;
   onChangeCharacter: (nextChar: string) => void;
+  onSelectCharacter: (nextChar: string, nextAccount?: string) => void;
   onForceSync: () => Promise<void>;
 }
 
@@ -20,40 +30,138 @@ const STATUS_STYLE: Record<CharacterSyncStatus, string> = {
 
 export function CharacterSyncSettingsCard({
   accountName,
+  selectedLeague,
   characterName,
+  pobCharacterClass,
   syncStatus,
   syncMessage,
   onChangeAccount,
+  onChangeLeague,
   onChangeCharacter,
+  onSelectCharacter,
   onForceSync,
 }: CharacterSyncSettingsCardProps) {
   const { locale, appMsg } = useHudI18n();
-  const localizedSyncMsg = localizeConnectionOrSyncMessage(syncMessage, locale);
+  const roster = useAccountCharacterRoster({
+    accountName,
+    selectedLeague,
+    characterName,
+    onChangeAccount,
+    onChangeLeague,
+    onSelectCharacter,
+  });
+
+  const activeEntry = roster.characters.find((c) => c.name === characterName) ?? null;
+  const activeLeagueName = activeEntry?.league || roster.effectiveLeague;
+  const rulesetBadges = detectLeagueRulesetBadges(activeLeagueName);
+  const charBaseClass = activeEntry ? resolveBaseClassFromGggClass(activeEntry.class) : null;
+  const hasClassMismatch = Boolean(
+    charBaseClass && pobCharacterClass && charBaseClass.toLowerCase() !== pobCharacterClass.toLowerCase(),
+  );
+
+  const statusErrorOrHint = localizeConnectionOrSyncMessage(
+    roster.rosterError ?? syncMessage,
+    locale,
+  );
+  const charDropdownValue = roster.filteredCharacters.some((c) => c.name === characterName)
+    ? characterName
+    : "";
 
   return (
     <section className="space-y-3">
-      <div className="flex items-baseline justify-between gap-2">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
-          {appMsg.desktop.gggSyncTitle}
-        </h2>
-        <span className={`text-[11px] font-mono ${STATUS_STYLE[syncStatus] ?? "text-hud-muted"}`}>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted truncate">
+            {appMsg.desktop.gggSyncTitle}
+          </h2>
+          {rulesetBadges.map((badge) => (
+            <span
+              key={badge}
+              className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-hud-subtle text-hud-quest border border-hud-hairline shrink-0"
+            >
+              {badge}
+            </span>
+          ))}
+        </div>
+        <span className={`text-[11px] font-mono shrink-0 ${STATUS_STYLE[syncStatus] ?? "text-hud-muted"}`}>
           {appMsg.desktop.syncStatuses[syncStatus]}
         </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <label className="space-y-1">
-          <span className="text-[11px] text-hud-muted">{appMsg.desktop.accountLabel}</span>
-          <input
-            type="text"
-            value={accountName}
-            onChange={(e) => onChangeAccount(e.target.value)}
-            placeholder={appMsg.desktop.accountPlaceholder}
-            className="w-full rounded-md bg-hud-subtle border-b border-hud-hairline px-2.5 py-1.5 text-xs text-hud-text focus:outline-none focus:border-hud-accent"
-          />
+      <div className="grid grid-cols-2 gap-2.5">
+        <label className="space-y-1 min-w-0">
+          <span className="text-[11px] text-hud-muted block truncate">{appMsg.desktop.accountLabel}</span>
+          <div className="flex items-center gap-1">
+            <input
+              type="text"
+              value={accountName}
+              onChange={(e) => onChangeAccount(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void roster.refreshRoster();
+                }
+              }}
+              placeholder={appMsg.desktop.accountPlaceholder}
+              className="w-full min-w-0 rounded-md bg-hud-subtle border-b border-hud-hairline px-2.5 py-1.5 text-xs text-hud-text focus:outline-none focus:border-hud-accent"
+            />
+            <button
+              type="button"
+              disabled={roster.loading || !accountName.trim()}
+              onClick={() => void roster.refreshRoster()}
+              title={appMsg.desktop.fetchCharactersBtn}
+              className="p-1.5 rounded-md bg-hud-subtle hover:bg-hud-hairline/40 disabled:opacity-45 text-hud-text cursor-pointer shrink-0 transition-colors"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${roster.loading ? "animate-spin text-hud-accent" : ""}`} />
+            </button>
+          </div>
         </label>
-        <label className="space-y-1">
+
+        <label className="space-y-1 min-w-0">
+          <span className="text-[11px] text-hud-muted block truncate">{appMsg.desktop.leagueLabel}</span>
+          <select
+            disabled={roster.leagues.length === 0}
+            value={roster.effectiveLeague}
+            onChange={(e) => roster.handleSelectLeague(e.target.value)}
+            className="w-full rounded-md bg-hud-subtle border-b border-hud-hairline px-2 py-1.5 text-xs text-hud-text focus:outline-none focus:border-hud-accent disabled:opacity-55 cursor-pointer"
+          >
+            {roster.leagues.length === 0 ? (
+              <option value="">
+                {roster.loading
+                  ? appMsg.desktop.fetchingRoster
+                  : accountName.trim()
+                    ? appMsg.desktop.noCharactersFound
+                    : appMsg.desktop.enterAccountFirst}
+              </option>
+            ) : (
+              <>
+                {roster.leagues.map((league) => (
+                  <option key={league.id} value={league.id} className="bg-hud-surface text-hud-text">
+                    {league.id} ({league.count})
+                  </option>
+                ))}
+                <option value={ALL_LEAGUES_VALUE} className="bg-hud-surface text-hud-text">
+                  {appMsg.desktop.allLeaguesOption(roster.characters.length)}
+                </option>
+              </>
+            )}
+          </select>
+        </label>
+      </div>
+
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-2">
           <span className="text-[11px] text-hud-muted">{appMsg.desktop.activeCharacterLabel}</span>
+          <button
+            type="button"
+            onClick={() => roster.setManualMode(!roster.manualMode)}
+            className="text-[11px] text-hud-accent hover:underline cursor-pointer"
+          >
+            {roster.manualMode ? appMsg.desktop.dropdownSelectToggle : appMsg.desktop.manualEntryToggle}
+          </button>
+        </div>
+
+        {roster.manualMode ? (
           <input
             type="text"
             value={characterName}
@@ -61,12 +169,49 @@ export function CharacterSyncSettingsCard({
             placeholder={appMsg.desktop.activeCharacterPlaceholder}
             className="w-full rounded-md bg-hud-subtle border-b border-hud-hairline px-2.5 py-1.5 text-xs text-hud-text focus:outline-none focus:border-hud-accent"
           />
-        </label>
+        ) : (
+          <select
+            disabled={roster.filteredCharacters.length === 0}
+            value={charDropdownValue}
+            onChange={(e) => {
+              if (e.target.value) onSelectCharacter(e.target.value);
+            }}
+            className="w-full rounded-md bg-hud-subtle border-b border-hud-hairline px-2.5 py-1.5 text-xs text-hud-text focus:outline-none focus:border-hud-accent disabled:opacity-55 cursor-pointer"
+          >
+            {roster.filteredCharacters.length === 0 ? (
+              <option value="">
+                {roster.loading
+                  ? appMsg.desktop.fetchingRoster
+                  : accountName.trim()
+                    ? characterName || appMsg.desktop.noCharactersFound
+                    : appMsg.desktop.enterAccountFirst}
+              </option>
+            ) : (
+              roster.filteredCharacters.map((char) => (
+                <option key={char.name} value={char.name} className="bg-hud-surface text-hud-text">
+                  {char.isMostRecent ? "★ " : ""}
+                  {char.name} — Lv {char.level} {char.class}
+                  {roster.effectiveLeague === ALL_LEAGUES_VALUE ? ` · ${char.league}` : ""}
+                </option>
+              ))
+            )}
+          </select>
+        )}
       </div>
 
-      <div className="flex items-center justify-between gap-2 pt-1">
-        <span className="text-[11px] text-hud-muted truncate">
-          {localizedSyncMsg ?? appMsg.desktop.defaultSyncHint}
+      {hasClassMismatch && activeEntry && pobCharacterClass && (
+        <div className="border-l-2 border-hud-warn pl-2.5 py-0.5 text-[11px] text-hud-warn flex items-start gap-1.5">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+          <span>{appMsg.desktop.classMismatchHint(activeEntry.class, pobCharacterClass)}</span>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between gap-2 pt-0.5">
+        <span
+          className={`text-[11px] truncate ${roster.rosterError ? "text-hud-warn" : "text-hud-muted"}`}
+          title={statusErrorOrHint ?? undefined}
+        >
+          {statusErrorOrHint ?? appMsg.desktop.defaultSyncHint}
         </span>
         <button
           type="button"

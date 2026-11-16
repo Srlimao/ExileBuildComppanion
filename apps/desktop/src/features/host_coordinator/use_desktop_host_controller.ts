@@ -35,6 +35,7 @@ export function useDesktopHostController() {
   const [pin, setPin] = useState(initPrefs.pin);
   const [relayUrl, setRelayUrl] = useState(initPrefs.relayUrl);
   const [accountName, setAccountName] = useState(initPrefs.accountName);
+  const [selectedLeague, setSelectedLeague] = useState(initPrefs.selectedLeague);
   const [characterName, setCharacterName] = useState(initPrefs.characterName);
   const [passiveTreeHotkey, setPassiveTreeHotkey] = useState(initPrefs.passiveTreeHotkey);
 
@@ -67,8 +68,8 @@ export function useDesktopHostController() {
   const getLiveSnapshot = useCallback(() => timerClockRef.current.advanceSnapshotRef(snapshotRef), []);
 
   useEffect(() => {
-    saveHostIdentityPrefs({ roomId, hostSecret, pin, relayUrl, accountName, characterName, passiveTreeHotkey });
-  }, [roomId, hostSecret, pin, relayUrl, accountName, characterName, passiveTreeHotkey]);
+    saveHostIdentityPrefs({ roomId, hostSecret, pin, relayUrl, accountName, selectedLeague, characterName, passiveTreeHotkey });
+  }, [roomId, hostSecret, pin, relayUrl, accountName, selectedLeague, characterName, passiveTreeHotkey]);
 
   useEffect(() => {
     void setPassiveTreeHotkeyIpc(passiveTreeHotkey);
@@ -236,12 +237,29 @@ export function useDesktopHostController() {
     }
   };
 
+  const selectCharacter = useCallback(
+    (nextChar: string, nextAccount?: string) => {
+      if (nextAccount !== undefined) {
+        setAccountName(nextAccount);
+        syncPrefsRef.current.accountName = nextAccount;
+      }
+      setCharacterName(nextChar);
+      syncPrefsRef.current.characterName = nextChar;
+      const cur = getLiveSnapshot();
+      if (cur && nextChar && cur.characterName !== nextChar) {
+        pushPatch({ ...cur, version: cur.version + 1, characterName: nextChar }, "select_character");
+      }
+      if (nextChar.trim()) runGggSync(true);
+    },
+    [getLiveSnapshot, pushPatch, runGggSync],
+  );
+
   return {
     roomId, pin, relayUrl, snapshot, pobInput, pobPreview, pobSelection, pobStoragePath,
-    leagueStart, customRouteText, compileLoading, compileError, accountName, characterName,
+    leagueStart, customRouteText, compileLoading, compileError, accountName, selectedLeague, characterName,
     syncMessage, simulatedOutage, clientLogPath, clientLogFound,
     relayConnected, relayError, viewers, passiveTreeHotkey, setPassiveTreeHotkey,
-    setAccountName, setCharacterName, applyBuild,
+    setAccountName, setSelectedLeague, setCharacterName, selectCharacter, applyBuild,
     inspectBuild: (rawPobInput: string, previousSelection?: PobSetSelection | null) => inspectPobBuildSets({ rawPobInput, previousSelection }),
     openStorageFolder: openPobStorageFolder,
     forceSync: async () => runGggSync(true),

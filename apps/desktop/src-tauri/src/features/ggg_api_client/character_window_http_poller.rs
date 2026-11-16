@@ -7,10 +7,11 @@ pub const DEFAULT_COOLDOWN_MS: u64 = 45_000;
 const BACKOFF_SCHEDULE_MS: &[u64] = &[60_000, 120_000, 300_000];
 
 pub fn build_character_window_url(endpoint: &str, account_name: &str, character_name: &str) -> String {
+    let normalized_account = crate::account_characters_fetcher::normalize_ggg_account_name(account_name);
     format!(
         "https://www.pathofexile.com/character-window/{}?accountName={}&character={}",
         endpoint,
-        encode(account_name.trim()),
+        encode(&normalized_account),
         encode(character_name.trim())
     )
 }

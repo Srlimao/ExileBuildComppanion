@@ -98,17 +98,35 @@ export function App() {
       )}
 
       {tab === "pairing" && (
-        <QrRoomPairingCard
-          roomId={ctl.roomId}
-          pin={ctl.pin}
-          relayUrl={ctl.relayUrl}
-          relayConnected={ctl.relayConnected}
-          relayError={ctl.relayError}
-          viewers={ctl.viewers}
-          onChangeRelayUrl={ctl.setRelayUrl}
-          onRotatePin={ctl.rotatePin}
-          onReconnectRelay={ctl.reconnectRelay}
-        />
+        <div className="space-y-5">
+          <QrRoomPairingCard
+            roomId={ctl.roomId}
+            pin={ctl.pin}
+            relayUrl={ctl.relayUrl}
+            relayConnected={ctl.relayConnected}
+            relayError={ctl.relayError}
+            viewers={ctl.viewers}
+            onChangeRelayUrl={ctl.setRelayUrl}
+            onRotatePin={ctl.rotatePin}
+            onReconnectRelay={ctl.reconnectRelay}
+          />
+
+          <div className="border-t border-hud-hairline pt-4">
+            <CharacterSyncSettingsCard
+              accountName={ctl.accountName}
+              selectedLeague={ctl.selectedLeague}
+              characterName={ctl.characterName}
+              pobCharacterClass={ctl.snapshot?.characterClass ?? null}
+              syncStatus={ctl.snapshot?.characterSyncStatus ?? "UNCONFIGURED"}
+              syncMessage={ctl.syncMessage}
+              onChangeAccount={ctl.setAccountName}
+              onChangeLeague={ctl.setSelectedLeague}
+              onChangeCharacter={ctl.setCharacterName}
+              onSelectCharacter={ctl.selectCharacter}
+              onForceSync={ctl.forceSync}
+            />
+          </div>
+        </div>
       )}
 
       {tab === "overlay" && (
@@ -140,18 +158,6 @@ export function App() {
 
           <div className="border-t border-hud-hairline pt-5">
             <LeagueStarterFilterCard />
-          </div>
-
-          <div className="border-t border-hud-hairline pt-5">
-            <CharacterSyncSettingsCard
-              accountName={ctl.accountName}
-              characterName={ctl.characterName}
-              syncStatus={ctl.snapshot?.characterSyncStatus ?? "UNCONFIGURED"}
-              syncMessage={ctl.syncMessage}
-              onChangeAccount={ctl.setAccountName}
-              onChangeCharacter={ctl.setCharacterName}
-              onForceSync={ctl.forceSync}
-            />
           </div>
         </div>
       )}

@@ -52,6 +52,15 @@ export interface DesktopControlMessages {
   syncStatuses: Record<CharacterSyncStatus, string>;
   accountLabel: string;
   accountPlaceholder: string;
+  leagueLabel: string;
+  allLeaguesOption: (count: number) => string;
+  enterAccountFirst: string;
+  fetchingRoster: string;
+  fetchCharactersBtn: string;
+  noCharactersFound: string;
+  manualEntryToggle: string;
+  dropdownSelectToggle: string;
+  classMismatchHint: (charClass: string, pobClass: string) => string;
   activeCharacterLabel: string;
   activeCharacterPlaceholder: string;
   defaultSyncHint: string;
@@ -125,6 +134,16 @@ const PT_BR_CONTROL: DesktopControlMessages = {
   syncStatuses: { ONLINE_PUBLIC: "ONLINE_PÚBLICO", OFFLINE_FALLBACK: "FALLBACK_OFFLINE", UNCONFIGURED: "NÃO_CONFIGURADO" },
   accountLabel: "Conta (suporta Nome#1234)",
   accountPlaceholder: "Nome#1234",
+  leagueLabel: "Liga",
+  allLeaguesOption: (count) => `Todas as Ligas (${count})`,
+  enterAccountFirst: "Informe a conta acima",
+  fetchingRoster: "Buscando...",
+  fetchCharactersBtn: "Carregar personagens da conta",
+  noCharactersFound: "Nenhum personagem encontrado",
+  manualEntryToggle: "Digitar nome",
+  dropdownSelectToggle: "Usar lista",
+  classMismatchHint: (charClass, pobClass) =>
+    `Personagem é ${charClass}, mas o PoB atual é ${pobClass}.`,
   activeCharacterLabel: "Personagem Ativo",
   activeCharacterPlaceholder: "Auto-detectado ou digite",
   defaultSyncHint: "Perfil público · Leitor Rust sem CORS · intervalo 45s",
@@ -198,6 +217,16 @@ const EN_CONTROL: DesktopControlMessages = {
   syncStatuses: { ONLINE_PUBLIC: "ONLINE_PUBLIC", OFFLINE_FALLBACK: "OFFLINE_FALLBACK", UNCONFIGURED: "UNCONFIGURED" },
   accountLabel: "Account (#1234 supported)",
   accountPlaceholder: "Name#1234",
+  leagueLabel: "League",
+  allLeaguesOption: (count) => `All Leagues (${count})`,
+  enterAccountFirst: "Enter account above",
+  fetchingRoster: "Fetching...",
+  fetchCharactersBtn: "Fetch account characters",
+  noCharactersFound: "No characters found",
+  manualEntryToggle: "Type manually",
+  dropdownSelectToggle: "Use dropdown",
+  classMismatchHint: (charClass, pobClass) =>
+    `Selected character is ${charClass}, while loaded PoB is ${pobClass}.`,
   activeCharacterLabel: "Active Character",
   activeCharacterPlaceholder: "Auto-detected or name",
   defaultSyncHint: "Public profile · CORS-free Rust poller · 45s cooldown",

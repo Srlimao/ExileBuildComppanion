@@ -4,6 +4,7 @@ export interface HostIdentityPrefs {
   pin: string;
   relayUrl: string;
   accountName: string;
+  selectedLeague: string;
   characterName: string;
   passiveTreeHotkey: string;
 }
@@ -36,6 +37,7 @@ export function loadHostIdentityPrefs(): HostIdentityPrefs {
     pin: localStorage.getItem("exile_room_pin") || generateRoomPin(),
     relayUrl,
     accountName: localStorage.getItem("exile_account") || "",
+    selectedLeague: localStorage.getItem("exile_league") || "",
     characterName: localStorage.getItem("exile_character") || "ExileRunner",
     passiveTreeHotkey: localStorage.getItem("exile_tree_hotkey") || "P",
   };
@@ -48,6 +50,7 @@ export function saveHostIdentityPrefs(prefs: HostIdentityPrefs): void {
   localStorage.setItem("exile_room_pin", prefs.pin);
   localStorage.setItem("exile_relay_url", prefs.relayUrl);
   localStorage.setItem("exile_account", prefs.accountName);
+  localStorage.setItem("exile_league", prefs.selectedLeague);
   localStorage.setItem("exile_character", prefs.characterName);
   localStorage.setItem("exile_tree_hotkey", prefs.passiveTreeHotkey);
 }
