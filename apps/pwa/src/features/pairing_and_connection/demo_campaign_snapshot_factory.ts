@@ -111,6 +111,7 @@ export function createInteractiveDemoSnapshot(): HudSessionSnapshot {
     ...snap,
     passiveTree,
     characterLevel: 30,
+    equippedItemNames: ["goldrim"],
     characterSyncStatus: "ONLINE_PUBLIC",
     runElapsedMs: 142_000,
     runTimerRunning: true,

@@ -145,5 +145,6 @@ export {
 } from "./features/widgets/run_timer_clock_tracker.js";
 export { RunTimerWidget } from "./features/widgets/run_timer_widget.js";
 export { SocketLinksWidget } from "./features/widgets/socket_links_widget.js";
+export { TwinkGearWidget } from "./features/widgets/twink_gear_widget.js";
 export { VendorShoppingWidget } from "./features/widgets/vendor_shopping_widget.js";
 export { ZoneLayoutWidget } from "./features/widgets/zone_layout_widget.js";

@@ -14,6 +14,7 @@ import {
 import { poe1GameAdapter } from "@exile-hud/game-data";
 import {
   extractAllocatedMasteriesFromPassives,
+  extractEquippedItemNames,
   markEquippedItemSets,
 } from "./client_log_sync_helper.js";
 import type { CharacterPollResponse } from "./tauri_ipc_adapter.js";
@@ -124,6 +125,7 @@ export function applyGggCharacterResponseToSnapshot(
     ),
     linkGroups: gemVerification.linkGroups,
     itemSets: markEquippedItemSets(build.itemSets, items),
+    equippedItemNames: extractEquippedItemNames([...items, ...passiveItems]),
     resistances,
     gearHygiene,
     benchCraftSuggestions,

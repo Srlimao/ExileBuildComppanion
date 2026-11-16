@@ -123,6 +123,7 @@ const PT_BR_SHELL_AND_TREE: HudShellAndTreeMessages = {
       gear_hygiene: { label: "Gear e Flasks", description: "Botas 0% MS, nível de flasks e armas" },
       run_timer: { label: "Cronômetro", description: "Tempo total, parciais por Ato e ritmo" },
       lab_compass: { label: "Bússola do Lab", description: "Rastreador diário do PoELab, Trials e Izaro" },
+      twink_gear: { label: "Gear de Twink", description: "Uniques de leveling por classe, nível e arquétipo" },
     },
   },
   tree: {
@@ -213,6 +214,7 @@ const EN_SHELL_AND_TREE: HudShellAndTreeMessages = {
       gear_hygiene: { label: "Gear & Flasks", description: "0% MS boots, flask tier & weapon alerts" },
       run_timer: { label: "Run Timer", description: "Total timer, Act splits & pace delta" },
       lab_compass: { label: "Lab Compass", description: "Daily PoELab room tracker, Trials & Izaro" },
+      twink_gear: { label: "Twink Gear", description: "Leveling uniques timeline by class, level & archetype" },
     },
   },
   tree: {

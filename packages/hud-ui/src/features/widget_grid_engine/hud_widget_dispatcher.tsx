@@ -9,6 +9,7 @@ import { ResistanceCapWidget } from "../widgets/resistance_cap_widget.js";
 import { syncRunTimerSnapshot } from "../widgets/run_timer_clock_tracker.js";
 import { RunTimerWidget } from "../widgets/run_timer_widget.js";
 import { SocketLinksWidget } from "../widgets/socket_links_widget.js";
+import { TwinkGearWidget } from "../widgets/twink_gear_widget.js";
 import { VendorShoppingWidget } from "../widgets/vendor_shopping_widget.js";
 import { ZoneLayoutWidget } from "../widgets/zone_layout_widget.js";
 
@@ -44,6 +45,8 @@ export function renderHudWidget(widgetId: WidgetId, handlers: HudWidgetDispatchH
       return <ResistanceCapWidget snapshot={snapshot} />;
     case "gear_hygiene":
       return <GearHygieneWidget snapshot={snapshot} />;
+    case "twink_gear":
+      return <TwinkGearWidget snapshot={snapshot} onPushToPcClipboard={handlers.onPushToPcClipboard} />;
     case "run_timer":
       return <RunTimerWidget snapshot={snapshot} />;
     case "lab_compass":

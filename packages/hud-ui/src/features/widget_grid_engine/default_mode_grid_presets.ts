@@ -18,6 +18,7 @@ const ORDERED_WIDGET_IDS: readonly WidgetId[] = [
   "deferred_backlog",
   "resistance_cap",
   "gear_hygiene",
+  "twink_gear",
   "run_timer",
   "lab_compass",
 ];
@@ -37,11 +38,12 @@ export const WIDGET_CATALOG: WidgetCatalogEntry[] = getLocalizedWidgetCatalog("e
 export function getDefaultLayoutForMode(
   formFactor: DeviceFormFactor,
   mode: HudContextMode,
+  options?: { leagueStart?: boolean },
 ): WidgetGridItemLayout[] {
   const isPhone = formFactor === "phone";
 
   if (mode === "TOWN") {
-    return [
+    const items: WidgetGridItemLayout[] = [
       { widgetId: "vendor_shopping", colSpan: isPhone ? 1 : 2, rowSpan: 2, order: 0 },
       { widgetId: "regex_sync", colSpan: 1, rowSpan: 1, order: 1 },
       { widgetId: "socket_links", colSpan: 1, rowSpan: 1, order: 2 },
@@ -49,6 +51,11 @@ export function getDefaultLayoutForMode(
       { widgetId: "gear_hygiene", colSpan: 1, rowSpan: 1, order: 4 },
       { widgetId: "passive_tree", colSpan: isPhone ? 1 : 2, rowSpan: 1, order: 5 },
     ];
+    if (options?.leagueStart === false) {
+      items.splice(1, 0, { widgetId: "twink_gear", colSpan: isPhone ? 1 : 2, rowSpan: 2, order: 1 });
+      return items.map((item, idx) => ({ ...item, order: idx }));
+    }
+    return items;
   }
 
   if (mode === "LAB") {

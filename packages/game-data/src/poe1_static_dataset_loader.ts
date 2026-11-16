@@ -10,6 +10,8 @@ import leagueStarterFilterMetaJson from "../data/poe1/league_starter_filter_meta
 import passiveTreeGraphMetaJson from "../data/poe1/passive_tree_graph_meta.json" with { type: "json" };
 import passiveTreeNodesJson from "../data/poe1/passive_tree_nodes.json" with { type: "json" };
 import questsJson from "../data/poe1/quests.json" with { type: "json" };
+import twinkGearCatalogJson from "../data/poe1/twink_gear_catalog.json" with { type: "json" };
+import uniqueItemIconsJson from "../data/poe1/unique_item_icons.json" with { type: "json" };
 import vaalGemLookupJson from "../data/poe1/vaal-gem-lookup.json" with { type: "json" };
 import zoneLayoutManifestJson from "../data/poe1/zone_layout_manifest.json" with { type: "json" };
 import type {
@@ -21,6 +23,7 @@ import type {
   PassiveTreeGraphMetadata,
   PassiveTreeNodeMetadata,
   QuestDefinition,
+  TwinkCatalogItem,
 } from "./game_adapter_contract.js";
 
 export const poe1Areas = areasJson as Record<string, AreaDefinition>;
@@ -37,3 +40,5 @@ export const poe1PassiveTreeNodes = passiveTreeNodesJson as Record<string, Passi
 export const poe1PassiveTreeGraphMeta = passiveTreeGraphMetaJson as PassiveTreeGraphMetadata;
 export const poe1CraftingBenchRecipes = craftingBenchRecipesJson as CraftingBenchRecipe[];
 export const poe1LeagueStarterFilterMeta = leagueStarterFilterMetaJson as LeagueStarterFilterMetadata;
+export const poe1TwinkGearCatalog = twinkGearCatalogJson as TwinkCatalogItem[];
+export const poe1UniqueItemIcons = uniqueItemIconsJson as Record<string, string>;

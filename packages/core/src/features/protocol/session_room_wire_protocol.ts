@@ -37,6 +37,7 @@ export const WidgetIdSchema = z.enum([
   "gear_hygiene",
   "run_timer",
   "lab_compass",
+  "twink_gear",
 ]);
 export type WidgetId = z.infer<typeof WidgetIdSchema>;
 
@@ -238,6 +239,7 @@ export interface HudSessionSnapshot {
   nextTownCurrencyBudget: CurrencyTally;
   linkGroups: TargetLinkGroupSummary[];
   itemSets?: TargetItemSetSummary[];
+  equippedItemNames?: string[];
   resistances: ResistanceTelemetry;
   gearHygiene: GearHygieneIssue[];
   benchCraftSuggestions?: BenchCraftSuggestion[];

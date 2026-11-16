@@ -1,0 +1,910 @@
+[
+  {
+    "id": "tabula-rasa",
+    "itemName": "Tabula Rasa",
+    "baseType": "Simple Robe",
+    "slot": "Body Armour",
+    "levelReq": 1,
+    "archetypes": ["universal"],
+    "iconPath": "/assets/poe1/twink-items/tabula-rasa.webp",
+    "summaryEn": "6-Link White sockets from Lv 1 with zero attribute requirements",
+    "summaryPtBr": "6-Link com sockets White desde Nv 1 e sem requisitos",
+    "keyMods": [
+      "Has 6 Linked White Sockets",
+      "Has no Attribute Requirements or Energy Shield"
+    ]
+  },
+  {
+    "id": "thousand-ribbons",
+    "itemName": "Thousand Ribbons",
+    "baseType": "Simple Robe",
+    "slot": "Body Armour",
+    "levelReq": 1,
+    "archetypes": ["spell", "minion"],
+    "preferredClasses": ["Witch", "Templar", "Shadow"],
+    "iconPath": "/assets/poe1/twink-items/thousand-ribbons.webp",
+    "summaryEn": "Built-in Elemental Proliferation + flat tri-ele Spell damage, Life & Resists",
+    "summaryPtBr": "Elemental Proliferation + dano elemental flat, Vida e Res",
+    "keyMods": [
+      "Socketed Gems are Supported by Level 5 Elemental Proliferation",
+      "Adds Fire, Cold and Lightning Damage to Spells and Attacks",
+      "+(25-50) to maximum Life & +(15-30)% Fire/Cold/Lightning Res"
+    ]
+  },
+  {
+    "id": "goldrim",
+    "itemName": "Goldrim",
+    "baseType": "Leather Cap",
+    "slot": "Helmet",
+    "levelReq": 1,
+    "archetypes": ["universal"],
+    "iconPath": "/assets/poe1/twink-items/goldrim.webp",
+    "summaryEn": "+30–40% to all Elemental Resistances from Lv 1",
+    "summaryPtBr": "+30–40% a todas as Resistências Elementais desde Nv 1",
+    "keyMods": [
+      "+(30-40)% to all Elemental Resistances",
+      "+(30-50) to Evasion Rating",
+      "10% increased Rarity of Items found"
+    ]
+  },
+  {
+    "id": "seven-league-step",
+    "itemName": "Seven-League Step",
+    "baseType": "Rawhide Boots",
+    "slot": "Boots",
+    "levelReq": 1,
+    "archetypes": ["universal"],
+    "iconPath": "/assets/poe1/twink-items/seven-league-step.webp",
+    "summaryEn": "50% increased Movement Speed from Lv 1",
+    "summaryPtBr": "+50% de Movement Speed desde Nv 1",
+    "keyMods": [
+      "50% increased Movement Speed"
+    ]
+  },
+  {
+    "id": "wanderlust",
+    "itemName": "Wanderlust",
+    "baseType": "Wool Shoes",
+    "slot": "Boots",
+    "levelReq": 1,
+    "archetypes": ["universal"],
+    "iconPath": "/assets/poe1/twink-items/wanderlust.webp",
+    "summaryEn": "20% Movement Speed, Freeze Immunity & Mana Regen",
+    "summaryPtBr": "+20% Movement Speed, imune a Freeze e Mana Regen",
+    "keyMods": [
+      "20% increased Movement Speed",
+      "Cannot be Frozen",
+      "(20-40)% increased Mana Regeneration Rate"
+    ]
+  },
+  {
+    "id": "lochtonial-caress",
+    "itemName": "Lochtonial Caress",
+    "baseType": "Iron Gauntlets",
+    "slot": "Gloves",
+    "levelReq": 1,
+    "archetypes": ["spell", "bow", "melee", "minion"],
+    "iconPath": "/assets/poe1/twink-items/lochtonial-caress.webp",
+    "summaryEn": "10–15% Attack & Cast Speed + Power/Frenzy/Endurance Charges on Kill",
+    "summaryPtBr": "10–15% Attack/Cast Speed + Charges ao matar",
+    "keyMods": [
+      "(10-15)% increased Attack Speed",
+      "(10-15)% increased Cast Speed",
+      "(10-15)% chance to gain a Power, Frenzy or Endurance Charge on Kill"
+    ]
+  },
+  {
+    "id": "darkness-enthroned",
+    "itemName": "Darkness Enthroned",
+    "baseType": "Stygian Vise",
+    "slot": "Belt",
+    "levelReq": 1,
+    "archetypes": ["universal"],
+    "iconPath": "/assets/poe1/twink-items/darkness-enthroned.webp",
+    "summaryEn": "2x Abyssal Sockets with 50–100% increased Abyss Jewel effect",
+    "summaryPtBr": "2x Abyssal Sockets com 50–100% mais efeito de Abyss Jewels",
+    "keyMods": [
+      "Has 1 Abyssal Socket (Implicit) + Has 1 Abyssal Socket (Explicit)",
+      "(50-100)% increased Effect of Socketed Abyss Jewels"
+    ]
+  },
+  {
+    "id": "blackheart",
+    "itemName": "Blackheart",
+    "baseType": "Iron Ring",
+    "slot": "Ring",
+    "levelReq": 1,
+    "archetypes": ["melee", "bow", "hollow_palm"],
+    "preferredClasses": ["Marauder", "Duelist", "Ranger", "Shadow"],
+    "iconPath": "/assets/poe1/twink-items/blackheart.webp",
+    "summaryEn": "Flat Chaos & Physical Damage to Attacks + Life Regen",
+    "summaryPtBr": "Dano flat de Chaos e Physical para Attacks + Regen",
+    "keyMods": [
+      "Adds 1 to 4 Physical Damage to Attacks (Implicit)",
+      "Adds (10-15) to (20-25) Chaos Damage to Attacks",
+      "Regenerate (10-15) Life per second"
+    ]
+  },
+  {
+    "id": "doedres-damning",
+    "itemName": "Doedre's Damning",
+    "baseType": "Paua Ring",
+    "slot": "Ring",
+    "levelReq": 1,
+    "archetypes": ["spell", "minion"],
+    "preferredClasses": ["Witch", "Templar", "Shadow"],
+    "iconPath": "/assets/poe1/twink-items/doedres-damning.webp",
+    "summaryEn": "+1 Additional Curse, All Ele Res & Mana on Kill",
+    "summaryPtBr": "+1 Curse adicional, All Elemental Res e Mana on Kill",
+    "keyMods": [
+      "You can apply an additional Curse",
+      "+(5-20)% to all Elemental Resistances",
+      "+(5-20) to Intelligence & Gain (5-20) Mana per Enemy Killed"
+    ]
+  },
+  {
+    "id": "sidhebreath",
+    "itemName": "Sidhebreath",
+    "baseType": "Paua Amulet",
+    "slot": "Amulet",
+    "levelReq": 1,
+    "archetypes": ["minion"],
+    "preferredClasses": ["Witch", "Templar", "Scion"],
+    "iconPath": "/assets/poe1/twink-items/sidhebreath.webp",
+    "summaryEn": "Massive flat Cold Damage, Life & 50% Phys-to-Cold for Minions",
+    "summaryPtBr": "Muito dano flat Cold, Vida e conversão Cold para Minions",
+    "keyMods": [
+      "Minions deal (25-35) to (50-65) additional Cold Damage",
+      "Minions convert 50% of Physical Damage to Cold Damage",
+      "Minions have (10-15)% increased maximum Life & +25% Cold Res"
+    ]
+  },
+  {
+    "id": "lifesprig",
+    "itemName": "Lifesprig",
+    "baseType": "Driftwood Wand",
+    "slot": "Weapon",
+    "levelReq": 1,
+    "archetypes": ["spell"],
+    "preferredClasses": ["Witch", "Templar", "Shadow", "Scion"],
+    "iconPath": "/assets/poe1/twink-items/lifesprig.webp",
+    "summaryEn": "+1 Socketed Spell Gems, Spell Damage, Cast Speed & Life Regen",
+    "summaryPtBr": "+1 Socketed Spell Gems, Spell Damage, Cast Speed e Regen",
+    "keyMods": [
+      "+1 to Level of Socketed Spell Gems",
+      "(20-28)% increased Spell Damage & (5-8)% increased Cast Speed",
+      "+(15-20) Life/Mana & Regenerate (6-8) Life on Spell Cast"
+    ]
+  },
+  {
+    "id": "silverbranch",
+    "itemName": "Silverbranch",
+    "baseType": "Crude Bow",
+    "slot": "Weapon",
+    "levelReq": 1,
+    "archetypes": ["bow"],
+    "preferredClasses": ["Ranger", "Shadow", "Duelist"],
+    "iconPath": "/assets/poe1/twink-items/silverbranch.webp",
+    "summaryEn": "+1 Socketed Bow Gems, 10% Attack Speed & +10 Mana on Kill",
+    "summaryPtBr": "+1 Socketed Bow Gems, 10% Attack Speed e +10 Mana on Kill",
+    "keyMods": [
+      "+1 to Level of Socketed Bow Gems",
+      "(80-100)% increased Physical Damage & 10% increased Attack Speed",
+      "Gain 10 Mana per Enemy Killed"
+    ]
+  },
+  {
+    "id": "widowhail",
+    "itemName": "Widowhail",
+    "baseType": "Crude Bow",
+    "slot": "Weapon",
+    "levelReq": 1,
+    "archetypes": ["bow"],
+    "preferredClasses": ["Ranger", "Shadow", "Duelist"],
+    "iconPath": "/assets/poe1/twink-items/widowhail.webp",
+    "summaryEn": "150–250% increased bonuses from Equipped Quiver",
+    "summaryPtBr": "150–250% de bônus aumentados do Quiver equipado",
+    "keyMods": [
+      "(150-250)% increased bonuses gained from Equipped Quiver"
+    ]
+  },
+  {
+    "id": "redbeak",
+    "itemName": "Redbeak",
+    "baseType": "Rusted Sword",
+    "slot": "Weapon",
+    "levelReq": 1,
+    "archetypes": ["melee"],
+    "preferredClasses": ["Marauder", "Duelist", "Shadow", "Scion"],
+    "iconPath": "/assets/poe1/twink-items/redbeak.webp",
+    "summaryEn": "Fast early Physical Sword with Life on Hit & 100% Damage on Low Life",
+    "summaryPtBr": "Espada inicial rápida com Life on Hit e +100% Damage em Low Life",
+    "keyMods": [
+      "50% increased Physical Damage & Adds 2 to 6 Physical Damage",
+      "10% increased Attack Speed & Grants 2 Life per Enemy Hit",
+      "100% increased Damage when on Low Life"
+    ]
+  },
+  {
+    "id": "one-with-nothing",
+    "itemName": "One With Nothing",
+    "baseType": "Small Cluster Jewel",
+    "slot": "Jewel",
+    "levelReq": 1,
+    "archetypes": ["hollow_palm"],
+    "preferredClasses": ["Ranger", "Duelist", "Shadow", "Marauder", "Scion"],
+    "iconPath": "/assets/poe1/twink-items/one-with-nothing.webp",
+    "summaryEn": "Hollow Palm Technique: massive Attack Phys & Speed while Unencumbered",
+    "summaryPtBr": "Hollow Palm Technique: muito dano Phys e Speed sem armas/luvas",
+    "keyMods": [
+      "Adds Hollow Palm Technique (14–20 Added Attack Phys per 10 Dex)",
+      "60% more Attack Speed with Melee Skills while Unencumbered",
+      "Requires no Weapon, Offhand, or Gloves equipped"
+    ]
+  },
+  {
+    "id": "craghead",
+    "itemName": "Craghead",
+    "baseType": "Serrated Arrow Quiver",
+    "slot": "Offhand",
+    "levelReq": 4,
+    "archetypes": ["bow"],
+    "preferredClasses": ["Ranger", "Shadow", "Duelist"],
+    "iconPath": "/assets/poe1/twink-items/craghead.webp",
+    "summaryEn": "Flat Bow Physical Damage (scales hard with Widowhail)",
+    "summaryPtBr": "Dano Phys flat para Bow (escala forte com Widowhail)",
+    "keyMods": [
+      "Adds 1 to 4 Physical Damage to Attacks (Implicit)",
+      "6 to 10 Added Physical Damage with Bow Attacks",
+      "(140-200)% increased Stun Duration on Enemies"
+    ]
+  },
+  {
+    "id": "karui-ward",
+    "itemName": "Karui Ward",
+    "baseType": "Jade Amulet",
+    "slot": "Amulet",
+    "levelReq": 5,
+    "archetypes": ["universal"],
+    "iconPath": "/assets/poe1/twink-items/karui-ward.webp",
+    "summaryEn": "10% Movement Speed, 30% Projectile Speed & +Str/Dex",
+    "summaryPtBr": "+10% Movement Speed, 30% Projectile Speed e +Str/Dex",
+    "keyMods": [
+      "10% increased Movement Speed",
+      "30% increased Projectile Speed & 30% increased Projectile Damage",
+      "+(20-30) to Dexterity & +(20-30) to Strength"
+    ]
+  },
+  {
+    "id": "replica-karui-ward",
+    "itemName": "Replica Karui Ward",
+    "baseType": "Jade Amulet",
+    "slot": "Amulet",
+    "levelReq": 5,
+    "archetypes": ["spell", "melee", "minion"],
+    "iconPath": "/assets/poe1/twink-items/replica-karui-ward.webp",
+    "summaryEn": "10% Movement Speed, 30% Area of Effect & Area Damage",
+    "summaryPtBr": "+10% Movement Speed, 30% Area of Effect e Area Damage",
+    "keyMods": [
+      "10% increased Movement Speed",
+      "30% increased Area of Effect & 30% increased Area Damage",
+      "+(20-30) to Dexterity & +(20-30) to Intelligence"
+    ]
+  },
+  {
+    "id": "quill-rain",
+    "itemName": "Quill Rain",
+    "baseType": "Short Bow",
+    "slot": "Weapon",
+    "levelReq": 5,
+    "archetypes": ["bow"],
+    "preferredClasses": ["Ranger", "Shadow", "Duelist"],
+    "iconPath": "/assets/poe1/twink-items/quill-rain.webp",
+    "summaryEn": "100% Attack Speed & Projectile Speed (BIS for Toxic Rain / DoT Bows)",
+    "summaryPtBr": "100% Attack Speed e Projectile Speed (ótimo para Toxic Rain/DoT)",
+    "keyMods": [
+      "100% increased Attack Speed & (50-100)% increased Projectile Speed",
+      "Grants 2 Mana per Enemy Hit & +(10-20) Dexterity",
+      "30% less Damage"
+    ]
+  },
+  {
+    "id": "ondars-clasp",
+    "itemName": "Ondar's Clasp",
+    "baseType": "Wrapped Mitts",
+    "slot": "Gloves",
+    "levelReq": 5,
+    "archetypes": ["bow", "melee"],
+    "preferredClasses": ["Ranger", "Duelist", "Shadow", "Marauder"],
+    "iconPath": "/assets/poe1/twink-items/ondars-clasp.webp",
+    "summaryEn": "30% Attack Speed on Full Life + flat Lightning & Accuracy",
+    "summaryPtBr": "30% Attack Speed em Full Life + dano Lightning flat e Accuracy",
+    "keyMods": [
+      "30% increased Attack Speed when on Full Life",
+      "Adds (1-4) to (30-50) Lightning Damage to Attacks",
+      "+(100-200) to Accuracy Rating & 20% Move Speed on Low Life"
+    ]
+  },
+  {
+    "id": "the-screaming-eagle",
+    "itemName": "The Screaming Eagle",
+    "baseType": "Jade Hatchet",
+    "slot": "Weapon",
+    "levelReq": 6,
+    "archetypes": ["melee"],
+    "preferredClasses": ["Marauder", "Duelist"],
+    "iconPath": "/assets/poe1/twink-items/the-screaming-eagle.webp",
+    "summaryEn": "10% Movement Speed + strong early 1H Physical Axe DPS",
+    "summaryPtBr": "+10% Movement Speed + ótimo DPS físico inicial em Axe 1H",
+    "keyMods": [
+      "10% increased Movement Speed",
+      "(120-160)% increased Physical Damage & Adds (8-12) to (18-24) Physical Damage",
+      "+(10-15) to maximum Life & Gain (5-7) Life per Enemy Killed"
+    ]
+  },
+  {
+    "id": "asenaths-mark",
+    "itemName": "Asenath's Mark",
+    "baseType": "Iron Circlet",
+    "slot": "Helmet",
+    "levelReq": 8,
+    "archetypes": ["spell", "bow"],
+    "preferredClasses": ["Ranger", "Shadow", "Witch"],
+    "iconPath": "/assets/poe1/twink-items/asenaths-mark.webp",
+    "summaryEn": "Triggers socketed Spells on Bow Attack + Attack/Spell & Mana Regen",
+    "summaryPtBr": "Ativa Spells socketados ao atacar com Bow + Speed e Mana Regen",
+    "keyMods": [
+      "Trigger a Socketed Spell when you Attack with a Bow (0.3s Cooldown)",
+      "(10-15)% increased Attack Speed & (30-60)% increased Spell Damage",
+      "30% increased Mana Regeneration Rate & +(30-50) ES"
+    ]
+  },
+  {
+    "id": "crest-of-perandus",
+    "itemName": "Crest of Perandus",
+    "baseType": "Pine Buckler",
+    "slot": "Offhand",
+    "levelReq": 8,
+    "archetypes": ["melee", "spell"],
+    "iconPath": "/assets/poe1/twink-items/crest-of-perandus.webp",
+    "summaryEn": "+60–80 Life, +30% Lightning Res, +5% Block & 3% Movement Speed",
+    "summaryPtBr": "+60–80 Vida, +30% Lightning Res, Block e 3% Movement Speed",
+    "keyMods": [
+      "+(60-80) to maximum Life & Regenerate (5-7.5) Life per second",
+      "+30% to Lightning Resistance & +5% Chance to Block",
+      "3% increased Movement Speed (Implicit)"
+    ]
+  },
+  {
+    "id": "meginords-girdle",
+    "itemName": "Meginord's Girdle",
+    "baseType": "Heavy Belt",
+    "slot": "Belt",
+    "levelReq": 8,
+    "archetypes": ["melee", "bow", "hollow_palm"],
+    "preferredClasses": ["Marauder", "Duelist", "Ranger"],
+    "iconPath": "/assets/poe1/twink-items/meginords-girdle.webp",
+    "summaryEn": "Adds 10–20 Attack Physical Damage, +50–60 Str, 10% Life & Cold Res",
+    "summaryPtBr": "+10–20 dano Physical em Attacks, +50–60 Str, 10% Vida e Cold Res",
+    "keyMods": [
+      "Adds 10 to 20 Physical Damage to Attacks",
+      "+25 to Strength (+(25-35) Implicit) & 10% increased maximum Life",
+      "+(10-20)% to Cold Resistance & 25% Flask Life Recovery rate"
+    ]
+  },
+  {
+    "id": "hrimsorrow",
+    "itemName": "Hrimsorrow",
+    "baseType": "Goathide Gloves",
+    "slot": "Gloves",
+    "levelReq": 9,
+    "archetypes": ["melee", "bow", "spell"],
+    "iconPath": "/assets/poe1/twink-items/hrimsorrow.webp",
+    "summaryEn": "100% Physical converted to Cold Damage + Strength & Cold Res",
+    "summaryPtBr": "Converte 100% do dano Physical para Cold + Strength e Cold Res",
+    "keyMods": [
+      "100% of Physical Damage Converted to Cold Damage",
+      "+(20-30) to Strength & +(20-30)% to Cold Resistance",
+      "+(40-50) to Evasion Rating"
+    ]
+  },
+  {
+    "id": "storm-cloud",
+    "itemName": "Storm Cloud",
+    "baseType": "Long Bow",
+    "slot": "Weapon",
+    "levelReq": 9,
+    "archetypes": ["bow"],
+    "preferredClasses": ["Ranger", "Shadow", "Duelist"],
+    "iconPath": "/assets/poe1/twink-items/storm-cloud.webp",
+    "summaryEn": "Up to 50% Attack Speed & 1–85 flat Lightning Damage",
+    "summaryPtBr": "Até 50% Attack Speed e 1–85 de dano Lightning flat",
+    "keyMods": [
+      "Adds 1 to 85 Lightning Damage",
+      "(36-50)% increased Attack Speed",
+      "No Physical Damage"
+    ]
+  },
+  {
+    "id": "axiom-perpetuum",
+    "itemName": "Axiom Perpetuum",
+    "baseType": "Bronze Sceptre",
+    "slot": "Weapon",
+    "levelReq": 10,
+    "archetypes": ["spell"],
+    "preferredClasses": ["Templar", "Witch", "Shadow"],
+    "iconPath": "/assets/poe1/twink-items/axiom-perpetuum.webp",
+    "summaryEn": "Flat Tri-Elemental Spell Damage, Cast Speed & up to 140% Spell Crit",
+    "summaryPtBr": "Dano flat tri-elemental em Spells, Cast Speed e até 140% Spell Crit",
+    "keyMods": [
+      "Adds Fire, Cold and Lightning Damage to Spells",
+      "(100-140)% increased Spell Critical Strike Chance",
+      "(4-6)% increased Cast Speed & 12% Elemental Damage (Implicit)"
+    ]
+  },
+  {
+    "id": "the-princess",
+    "itemName": "The Princess",
+    "baseType": "Sabre",
+    "slot": "Weapon",
+    "levelReq": 10,
+    "archetypes": ["melee", "spell"],
+    "preferredClasses": ["Duelist", "Shadow", "Templar"],
+    "iconPath": "/assets/poe1/twink-items/the-princess.webp",
+    "summaryEn": "Gain 25–30% of Physical Damage as Extra Cold + 15% Attack Speed",
+    "summaryPtBr": "Ganha 25–30% do dano Physical como Extra Cold + 15% Attack Speed",
+    "keyMods": [
+      "Gain (25-30)% of Physical Damage as Extra Cold Damage",
+      "15% increased Attack Speed & (20-50)% increased Physical Damage",
+      "40% increased Global Accuracy Rating (Implicit)"
+    ]
+  },
+  {
+    "id": "ghostwrithe",
+    "itemName": "Ghostwrithe",
+    "baseType": "Silken Vest",
+    "slot": "Body Armour",
+    "levelReq": 11,
+    "archetypes": ["spell", "minion"],
+    "preferredClasses": ["Witch", "Templar", "Shadow"],
+    "iconPath": "/assets/poe1/twink-items/ghostwrithe.webp",
+    "summaryEn": "Converts 50% Max Life to massive Energy Shield + 50% Chaos Res",
+    "summaryPtBr": "Converte 50% da Vida em Energy Shield alto + 50% Chaos Res",
+    "keyMods": [
+      "50% of Maximum Life Converted to Energy Shield",
+      "+(100-200) to maximum Energy Shield & +(50-100) to maximum Life",
+      "+50% to Chaos Resistance"
+    ]
+  },
+  {
+    "id": "lycosidae",
+    "itemName": "Lycosidae",
+    "baseType": "Rawhide Tower Shield",
+    "slot": "Offhand",
+    "levelReq": 11,
+    "archetypes": ["melee"],
+    "preferredClasses": ["Marauder", "Duelist", "Templar"],
+    "iconPath": "/assets/poe1/twink-items/lycosidae.webp",
+    "summaryEn": "Your hits can't be Evaded — solves Attack Accuracy through endgame",
+    "summaryPtBr": "Seus Hits não podem ser evadidos — resolve Accuracy de vez",
+    "keyMods": [
+      "Your hits can't be Evaded",
+      "+(120-160) to Armour & +(30-40) to maximum Life",
+      "+(3-5)% Chance to Block"
+    ]
+  },
+  {
+    "id": "honourhome",
+    "itemName": "Honourhome",
+    "baseType": "Soldier Helmet",
+    "slot": "Helmet",
+    "levelReq": 12,
+    "archetypes": ["spell", "minion"],
+    "preferredClasses": ["Templar", "Witch", "Scion"],
+    "iconPath": "/assets/poe1/twink-items/honourhome.webp",
+    "summaryEn": "+2 to Level of Socketed Gems + Mana Cost Efficiency & flat Lightning",
+    "summaryPtBr": "+2 Level de Socketed Gems + Mana Efficiency e dano Lightning",
+    "keyMods": [
+      "+2 to Level of Socketed Gems",
+      "(30-50)% increased Mana Cost Efficiency",
+      "Adds 1 to 30 Lightning Damage to Spells and Attacks"
+    ]
+  },
+  {
+    "id": "doedres-tenure",
+    "itemName": "Doedre's Tenure",
+    "baseType": "Velvet Gloves",
+    "slot": "Gloves",
+    "levelReq": 12,
+    "archetypes": ["spell"],
+    "preferredClasses": ["Witch", "Templar", "Shadow"],
+    "iconPath": "/assets/poe1/twink-items/doedres-tenure.webp",
+    "summaryEn": "100% increased Spell Damage & +20–50 Intelligence",
+    "summaryPtBr": "100% Spell Damage aumentado e +20–50 Intelligence",
+    "keyMods": [
+      "100% increased Spell Damage",
+      "+(20-50) to Intelligence",
+      "(25-15)% reduced Cast Speed"
+    ]
+  },
+  {
+    "id": "limbsplit",
+    "itemName": "Limbsplit",
+    "baseType": "Woodsplitter",
+    "slot": "Weapon",
+    "levelReq": 13,
+    "archetypes": ["melee"],
+    "preferredClasses": ["Marauder", "Duelist"],
+    "iconPath": "/assets/poe1/twink-items/limbsplit.webp",
+    "summaryEn": "+1 Strength Gems, Culling Strike & Gore Shockwave 2H Axe",
+    "summaryPtBr": "+1 Strength Gems, Culling Strike e Gore Shockwave (Axe 2H)",
+    "keyMods": [
+      "+1 to Level of Socketed Strength Gems & Culling Strike",
+      "Trigger Level 1 Gore Shockwave on Melee Hit (150+ Str)",
+      "(80-100)% increased Physical Damage & +(15-30) Strength"
+    ]
+  },
+  {
+    "id": "hyrris-bite",
+    "itemName": "Hyrri's Bite",
+    "baseType": "Sharktooth Arrow Quiver",
+    "slot": "Offhand",
+    "levelReq": 14,
+    "archetypes": ["bow"],
+    "preferredClasses": ["Ranger", "Shadow", "Duelist"],
+    "iconPath": "/assets/poe1/twink-items/hyrris-bite.webp",
+    "summaryEn": "All Attributes, Attack Speed, AoE, Cold Damage & Life Gain on Hit",
+    "summaryPtBr": "Todos Atributos, Attack Speed, AoE, dano Cold e Life on Hit",
+    "keyMods": [
+      "+(35-45) Dexterity & +(15-25) Strength/Intelligence",
+      "Adds 10 to 20 Cold Damage to Attacks & (7-10)% Attack Speed",
+      "Gain (8-11) Life per Enemy Hit with Attacks & 10% Area of Effect"
+    ]
+  },
+  {
+    "id": "thrillsteel",
+    "itemName": "Thrillsteel",
+    "baseType": "Barbute Helmet",
+    "slot": "Helmet",
+    "levelReq": 18,
+    "archetypes": ["universal"],
+    "iconPath": "/assets/poe1/twink-items/thrillsteel.webp",
+    "summaryEn": "Permanent Onslaught (20% Move, Attack & Cast Speed)",
+    "summaryPtBr": "Onslaught permanente (+20% Move, Attack e Cast Speed)",
+    "keyMods": [
+      "Onslaught (20% increased Movement, Attack and Cast Speed)"
+    ]
+  },
+  {
+    "id": "roths-reach",
+    "itemName": "Roth's Reach",
+    "baseType": "Recurve Bow",
+    "slot": "Weapon",
+    "levelReq": 18,
+    "archetypes": ["bow"],
+    "preferredClasses": ["Ranger", "Shadow", "Duelist"],
+    "iconPath": "/assets/poe1/twink-items/roths-reach.webp",
+    "summaryEn": "Skills Chain +2 times, Elemental Attack Damage & Projectile Speed",
+    "summaryPtBr": "Skills fazem Chain +2 vezes + Elemental Attack Damage",
+    "keyMods": [
+      "Skills Chain +2 times",
+      "(60-80)% increased Elemental Damage with Attack Skills",
+      "30% increased Projectile Speed & +(15-25)% Global Crit Multi (Implicit)"
+    ]
+  },
+  {
+    "id": "astramentis",
+    "itemName": "Astramentis",
+    "baseType": "Onyx Amulet",
+    "slot": "Amulet",
+    "levelReq": 20,
+    "archetypes": ["universal", "hollow_palm"],
+    "iconPath": "/assets/poe1/twink-items/astramentis.webp",
+    "summaryEn": "+90–116 to all Attributes — solves gem reqs & scales Hollow Palm",
+    "summaryPtBr": "+90–116 todos Atributos — resolve requisitos e escala Hollow Palm",
+    "keyMods": [
+      "+(80-100) to all Attributes (+(10-16) Implicit)",
+      "-4 Physical Damage taken from Attack Hits"
+    ]
+  },
+  {
+    "id": "bereks-respite",
+    "itemName": "Berek's Respite",
+    "baseType": "Two-Stone Ring",
+    "slot": "Ring",
+    "levelReq": 20,
+    "archetypes": ["spell", "bow"],
+    "preferredClasses": ["Witch", "Ranger", "Shadow", "Templar"],
+    "iconPath": "/assets/poe1/twink-items/bereks-respite.webp",
+    "summaryEn": "Flat Fire Damage + Shock/Ignite Proliferation on Kill & Resists",
+    "summaryPtBr": "Dano flat Fire + proliferação de Shock/Ignite ao matar e Resists",
+    "keyMods": [
+      "Adds (20-25) to (30-50) Fire Damage to Spells and Attacks",
+      "Spread equivalent Shock & Ignite to nearby Enemies on Kill",
+      "+(12-16)% Fire/Lightning Res & (25-30)% Lightning Damage"
+    ]
+  },
+  {
+    "id": "tasalios-sign",
+    "itemName": "Tasalio's Sign",
+    "baseType": "Sapphire Ring",
+    "slot": "Ring",
+    "levelReq": 20,
+    "archetypes": ["bow", "melee", "hollow_palm"],
+    "iconPath": "/assets/poe1/twink-items/tasalios-sign.webp",
+    "summaryEn": "Massive flat Cold Damage vs Chilled Enemies + Cold Res & Evasion",
+    "summaryPtBr": "Muito dano flat Cold contra alvos Chilled + Cold Res e Evasion",
+    "keyMods": [
+      "Adds 40 to 60 Cold Damage against Chilled Enemies",
+      "Adds (7-10) to (15-20) Cold Damage to Spells and Attacks",
+      "+(20-30)% Cold Res (Implicit) & +(200-300) Evasion"
+    ]
+  },
+  {
+    "id": "carnage-heart",
+    "itemName": "Carnage Heart",
+    "baseType": "Onyx Amulet",
+    "slot": "Amulet",
+    "levelReq": 20,
+    "archetypes": ["melee", "bow"],
+    "preferredClasses": ["Marauder", "Duelist", "Ranger"],
+    "iconPath": "/assets/poe1/twink-items/carnage-heart.webp",
+    "summaryEn": "All Attributes, All Ele Res, Physical Life Leech & Damage while Leeching",
+    "summaryPtBr": "All Attributes, All Ele Res, Life Leech físico e Damage Leeching",
+    "keyMods": [
+      "+(20-40) to all Attributes (+(10-16) Implicit)",
+      "+(10-20)% to all Elemental Resistances",
+      "(1.2-2)% Physical Attack Life Leech & (30-40)% Damage while Leeching"
+    ]
+  },
+  {
+    "id": "brightbeak",
+    "itemName": "Brightbeak",
+    "baseType": "War Hammer",
+    "slot": "Weapon",
+    "levelReq": 20,
+    "archetypes": ["melee", "spell"],
+    "iconPath": "/assets/poe1/twink-items/brightbeak.webp",
+    "summaryEn": "45% Attack Speed for ultra-fast Leap Slam / Shield Charge + Fire/Light Res",
+    "summaryPtBr": "45% Attack Speed para Leap Slam/Shield Charge rápido + Fire/Light Res",
+    "keyMods": [
+      "45% increased Attack Speed",
+      "+(20-30)% Fire Resistance & +(20-30)% Lightning Resistance",
+      "(50-75)% increased Physical Damage"
+    ]
+  },
+  {
+    "id": "praxis",
+    "itemName": "Praxis",
+    "baseType": "Paua Ring",
+    "slot": "Ring",
+    "levelReq": 22,
+    "archetypes": ["universal"],
+    "iconPath": "/assets/poe1/twink-items/praxis.webp",
+    "summaryEn": "-(4–8) Total Mana Cost of Skills — solves 6-Link Tabula mana drain",
+    "summaryPtBr": "-(4–8) Custo Total de Mana das Skills — resolve mana em 6-Link",
+    "keyMods": [
+      "-(8-4) to Total Mana Cost of Skills",
+      "(20-30)% increased Mana Cost Efficiency",
+      "+(30-60) to maximum Mana & 8% Damage taken Recouped as Mana"
+    ]
+  },
+  {
+    "id": "bones-of-ullr",
+    "itemName": "Bones of Ullr",
+    "baseType": "Silk Slippers",
+    "slot": "Boots",
+    "levelReq": 22,
+    "archetypes": ["minion"],
+    "preferredClasses": ["Witch", "Templar"],
+    "iconPath": "/assets/poe1/twink-items/bones-of-ullr.webp",
+    "summaryEn": "+1 Raise Zombie & +1 Raise Spectre Gem Levels + Movement Speed",
+    "summaryPtBr": "+1 Nível de Raise Zombie e Raise Spectre + Movement Speed",
+    "keyMods": [
+      "+1 to Level of all Raise Zombie Gems",
+      "+1 to Level of all Raise Spectre Gems",
+      "(5-15)% increased Movement Speed & +20 Life/Mana"
+    ]
+  },
+  {
+    "id": "le-heup-of-all",
+    "itemName": "Le Heup of All",
+    "baseType": "Iron Ring",
+    "slot": "Ring",
+    "levelReq": 24,
+    "archetypes": ["universal"],
+    "iconPath": "/assets/poe1/twink-items/le-heup-of-all.webp",
+    "summaryEn": "Up to +30% All Damage, +30 All Attributes & +30% All Elemental Res",
+    "summaryPtBr": "Até +30% All Damage, +30 All Attributes e +30% All Elemental Res",
+    "keyMods": [
+      "(10-30)% increased Damage",
+      "+(10-30) to all Attributes",
+      "+(10-30)% to all Elemental Resistances"
+    ]
+  },
+  {
+    "id": "reverberation-rod",
+    "itemName": "Reverberation Rod",
+    "baseType": "Spiraled Wand",
+    "slot": "Weapon",
+    "levelReq": 24,
+    "archetypes": ["spell"],
+    "preferredClasses": ["Witch", "Templar", "Shadow"],
+    "iconPath": "/assets/poe1/twink-items/reverberation-rod.webp",
+    "summaryEn": "+2 Socketed Gems + built-in Spell Echo, Controlled Destr. & Arcane Surge",
+    "summaryPtBr": "+2 Socketed Gems + Spell Echo, Controlled Destr. e Arcane Surge",
+    "keyMods": [
+      "+2 to Level of Socketed Gems",
+      "Supported by Lv 10 Spell Echo, Controlled Destruction & Arcane Surge",
+      "+(10-30) to Intelligence"
+    ]
+  },
+  {
+    "id": "prismweave",
+    "itemName": "Prismweave",
+    "baseType": "Rustic Sash",
+    "slot": "Belt",
+    "levelReq": 25,
+    "archetypes": ["bow", "melee", "spell"],
+    "iconPath": "/assets/poe1/twink-items/prismweave.webp",
+    "summaryEn": "High flat Tri-Elemental Attack Damage, +All Res & Elemental Damage",
+    "summaryPtBr": "Muito dano flat tri-elemental em Attacks, +All Res e Ele Damage",
+    "keyMods": [
+      "Adds Fire, Cold and Lightning Damage to Attacks",
+      "30% increased Elemental Damage with Attack Skills during any Flask Effect",
+      "+(6-15)% to all Elemental Resistances"
+    ]
+  },
+  {
+    "id": "lakishus-blade",
+    "itemName": "Lakishu's Blade",
+    "baseType": "Elegant Sword",
+    "slot": "Weapon",
+    "levelReq": 28,
+    "archetypes": ["melee"],
+    "preferredClasses": ["Duelist", "Marauder", "Shadow"],
+    "iconPath": "/assets/poe1/twink-items/lakishus-blade.webp",
+    "summaryEn": "Built-in Multistrike, Attack Speed, Phys DPS & Stun Avoidance",
+    "summaryPtBr": "Multistrike embutido, Attack Speed, Phys DPS e Stun Avoidance",
+    "keyMods": [
+      "Socketed Gems are supported by Level 1 Multistrike",
+      "(60-80)% increased Physical Damage & (10-15)% Attack Speed",
+      "20% chance to Avoid being Stunned & +190 Accuracy (Implicit)"
+    ]
+  },
+  {
+    "id": "shade-of-solaris",
+    "itemName": "Shade of Solaris",
+    "baseType": "Sage Wand",
+    "slot": "Weapon",
+    "levelReq": 30,
+    "archetypes": ["spell"],
+    "preferredClasses": ["Witch", "Templar", "Shadow"],
+    "iconPath": "/assets/poe1/twink-items/shade-of-solaris.webp",
+    "summaryEn": "200% Spell Damage after recent Crit + Ele gained as Extra Chaos",
+    "summaryPtBr": "200% Spell Damage após Crit recente + Ele ganho como Extra Chaos",
+    "keyMods": [
+      "200% increased Spell Damage if you've dealt a Critical Strike in past 8s",
+      "Gain (10-20)% of Elemental Damage as Extra Chaos Damage",
+      "Critical Strikes deal no Damage"
+    ]
+  },
+  {
+    "id": "bitterdream",
+    "itemName": "Bitterdream",
+    "baseType": "Shadow Sceptre",
+    "slot": "Weapon",
+    "levelReq": 32,
+    "archetypes": ["spell"],
+    "preferredClasses": ["Witch", "Templar", "Shadow"],
+    "iconPath": "/assets/poe1/twink-items/bitterdream.webp",
+    "summaryEn": "Pseudo 9-Link Cold Spell Sceptre (6x Lv 15 built-in supports)",
+    "summaryPtBr": "Cetro pseudo 9-Link de Cold Spell (6 suportes Nv 15 embutidos)",
+    "keyMods": [
+      "Supported by Lv 15 Bonechill, Hypothermia & Ice Bite",
+      "Supported by Lv 15 Cold Penetration, Added Cold & Inspiration",
+      "22% increased Elemental Damage (Implicit)"
+    ]
+  },
+  {
+    "id": "sacrificial-heart",
+    "itemName": "Sacrificial Heart",
+    "baseType": "Paua Amulet",
+    "slot": "Amulet",
+    "levelReq": 32,
+    "archetypes": ["spell", "bow", "melee"],
+    "iconPath": "/assets/poe1/twink-items/sacrificial-heart.webp",
+    "summaryEn": "Huge flat Fire/Cold/Lightning Damage + Vaal Power Charges & Move Speed",
+    "summaryPtBr": "Dano flat altíssimo Fire/Cold/Lightning + Vaal Charges e Move Speed",
+    "keyMods": [
+      "Adds (22-27)-(34-38) Fire, (20-23)-(31-35) Cold & (1-3)-(47-52) Lightning Damage",
+      "Gain max Power Charges when you use a Vaal Skill",
+      "10% Move Speed & +10 Life per Hit if used Vaal Skill Recently"
+    ]
+  },
+  {
+    "id": "deaths-harp",
+    "itemName": "Death's Harp",
+    "baseType": "Death Bow",
+    "slot": "Weapon",
+    "levelReq": 32,
+    "archetypes": ["bow"],
+    "preferredClasses": ["Ranger", "Shadow", "Duelist"],
+    "iconPath": "/assets/poe1/twink-items/deaths-harp.webp",
+    "summaryEn": "Bow Attacks fire +2 Additional Arrows & +50% Crit Multiplier",
+    "summaryPtBr": "Bow Attacks disparam +2 flechas adicionais e +50% Crit Multi",
+    "keyMods": [
+      "Bow Attacks fire 2 additional Arrows",
+      "+50% to Global Critical Strike Multiplier",
+      "(90-105)% increased Physical Damage & 10% Attack Speed"
+    ]
+  },
+  {
+    "id": "the-gryphon",
+    "itemName": "The Gryphon",
+    "baseType": "Jade Hatchet",
+    "slot": "Weapon",
+    "levelReq": 32,
+    "archetypes": ["melee"],
+    "preferredClasses": ["Marauder", "Duelist"],
+    "iconPath": "/assets/poe1/twink-items/the-gryphon.webp",
+    "summaryEn": "Up to 25% Movement Speed on Kill & upgraded 1H Physical Axe DPS",
+    "summaryPtBr": "Até 25% Movement Speed ao matar + DPS físico sólido em Axe 1H",
+    "keyMods": [
+      "10% increased Movement Speed + 15% Move Speed if Killed Recently",
+      "(170-190)% increased Physical Damage & Adds (10-15) to (25-30) Phys",
+      "+(10-15) maximum Life & Gain (5-7) Life per Enemy Killed"
+    ]
+  },
+  {
+    "id": "briskwrap",
+    "itemName": "Briskwrap",
+    "baseType": "Sun Leather",
+    "slot": "Body Armour",
+    "levelReq": 32,
+    "archetypes": ["hollow_palm", "bow", "melee"],
+    "preferredClasses": ["Ranger", "Duelist", "Shadow"],
+    "iconPath": "/assets/poe1/twink-items/briskwrap.webp",
+    "summaryEn": "15% increased Dexterity, +1% Damage per 15 Dex & +30–40% Cold Res",
+    "summaryPtBr": "15% Dexterity aumentada, +1% Damage por 15 Dex e Cold Res",
+    "keyMods": [
+      "15% increased Dexterity & 1% increased Damage per 15 Dexterity",
+      "+(30-40)% to Cold Resistance & +(120-180) Evasion Rating",
+      "(60-100)% increased Mana Recovery from Flasks"
+    ]
+  },
+  {
+    "id": "amplification-rod",
+    "itemName": "Amplification Rod",
+    "baseType": "Spiraled Wand",
+    "slot": "Weapon",
+    "levelReq": 36,
+    "archetypes": ["spell"],
+    "preferredClasses": ["Witch", "Templar", "Shadow"],
+    "iconPath": "/assets/poe1/twink-items/amplification-rod.webp",
+    "summaryEn": "+2 Socketed Gems + built-in Intensify, Spell Echo & Controlled Destr.",
+    "summaryPtBr": "+2 Socketed Gems + Intensify, Spell Echo e Controlled Destruction",
+    "keyMods": [
+      "+2 to Level of Socketed Gems",
+      "Supported by Lv 10 Intensify, Spell Echo & Controlled Destruction",
+      "+(10-30) to Intelligence"
+    ]
+  },
+  {
+    "id": "clayshaper",
+    "itemName": "Clayshaper",
+    "baseType": "Rock Breaker",
+    "slot": "Weapon",
+    "levelReq": 41,
+    "archetypes": ["minion"],
+    "preferredClasses": ["Witch", "Templar", "Scion"],
+    "iconPath": "/assets/poe1/twink-items/clayshaper.webp",
+    "summaryEn": "+1 Maximum Golems & massive flat Physical Attack Damage for Golems",
+    "summaryPtBr": "+1 Golem máximo e muito dano físico flat para Golems",
+    "keyMods": [
+      "+1 to maximum number of Summoned Golems",
+      "Golems have (96-120) to (132-160) Added Attack Physical Damage",
+      "Grants Level 12 Summon Stone Golem Skill"
+    ]
+  }
+]

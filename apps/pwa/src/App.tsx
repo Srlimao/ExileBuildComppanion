@@ -199,7 +199,8 @@ export function App() {
   const autoMode: HudContextMode = snapshot.inGameTreeOpen ? "TREE" : snapshot.mode;
   const effectiveMode: HudContextMode = previewModeOverride ?? autoMode;
   const activeGridItems =
-    layouts[formFactor]?.[effectiveMode] ?? getDefaultLayoutForMode(formFactor, effectiveMode);
+    layouts[formFactor]?.[effectiveMode] ??
+    getDefaultLayoutForMode(formFactor, effectiveMode, { leagueStart: snapshot.leagueStart });
 
   return (
     <div className="min-h-screen bg-hud-bg text-hud-text pb-10 transition-colors">
@@ -258,7 +259,9 @@ export function App() {
             })
           }
           onUpdateLayout={(next) => handleUpdateLayout(effectiveMode, next)}
-          onResetDefaults={() => handleUpdateLayout(effectiveMode, getDefaultLayoutForMode(formFactor, effectiveMode))}
+          onResetDefaults={() =>
+            handleUpdateLayout(effectiveMode, getDefaultLayoutForMode(formFactor, effectiveMode, { leagueStart: snapshot.leagueStart }))
+          }
         />
       )}
 

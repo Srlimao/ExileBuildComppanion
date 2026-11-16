@@ -57,6 +57,15 @@ describe("overlay_default_grid_presets", () => {
       "socket_links",
       "resistance_cap",
     ]);
+
+    const twinkTown = getDefaultOverlayLayoutForMode("TOWN", { leagueStart: false });
+    expect(twinkTown.map((i) => i.widgetId)).toEqual([
+      "vendor_shopping",
+      "twink_gear",
+      "regex_sync",
+      "socket_links",
+      "resistance_cap",
+    ]);
   });
 });
 

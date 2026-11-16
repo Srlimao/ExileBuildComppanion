@@ -122,7 +122,8 @@ export function OverlayHudApp() {
     effectiveDisplayMode === "TREE" || effectiveDisplayMode === "STANDBY" ? "TREE_COMPACT" : effectiveDisplayMode;
 
   const activeItems =
-    config.modeLayouts[layoutModeKey] ?? getDefaultOverlayLayoutForMode(layoutModeKey);
+    config.modeLayouts[layoutModeKey] ??
+    getDefaultOverlayLayoutForMode(layoutModeKey, { leagueStart: snapshot?.leagueStart });
 
   const saveOverlayModeLayout = useCallback(
     (modeKey: OverlayContextMode, items: WidgetGridItemLayout[]) => {
@@ -204,7 +205,12 @@ export function OverlayHudApp() {
                   })
                 }
                 onUpdateLayout={(next) => saveOverlayModeLayout(layoutModeKey, next)}
-                onResetDefaults={() => saveOverlayModeLayout(layoutModeKey, getDefaultOverlayLayoutForMode(layoutModeKey))}
+                onResetDefaults={() =>
+                  saveOverlayModeLayout(
+                    layoutModeKey,
+                    getDefaultOverlayLayoutForMode(layoutModeKey, { leagueStart: snapshot?.leagueStart }),
+                  )
+                }
               />
             )}
           </>

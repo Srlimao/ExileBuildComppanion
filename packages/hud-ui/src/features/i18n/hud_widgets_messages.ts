@@ -1,4 +1,9 @@
 import type { HudLocale } from "./locale_storage_and_types.js";
+import {
+  EN_TWINK_GEAR_MESSAGES,
+  PT_BR_TWINK_GEAR_MESSAGES,
+  type TwinkGearWidgetMessages,
+} from "./twink_gear_widget_messages.js";
 
 export interface HudWidgetsMessages {
   actStepsTitle: (act: number) => string;
@@ -64,6 +69,7 @@ export interface HudWidgetsMessages {
   noDailyLabJson: string;
   izaroPhases: string;
   campaignTrials: string;
+  twinkGear: TwinkGearWidgetMessages;
 }
 
 const PT_BR_WIDGETS: HudWidgetsMessages = {
@@ -131,6 +137,7 @@ const PT_BR_WIDGETS: HudWidgetsMessages = {
   noDailyLabJson: "Nenhum JSON diário do PoELab carregado — importe de poelab.com para rastrear salas pelo",
   izaroPhases: "Fases do Izaro",
   campaignTrials: "Trials da Campanha",
+  twinkGear: PT_BR_TWINK_GEAR_MESSAGES,
 };
 
 const EN_WIDGETS: HudWidgetsMessages = {
@@ -197,6 +204,7 @@ const EN_WIDGETS: HudWidgetsMessages = {
   noDailyLabJson: "No daily PoELab JSON loaded yet — import from poelab.com to auto-track rooms by",
   izaroPhases: "Izaro Phases",
   campaignTrials: "Campaign Trials",
+  twinkGear: EN_TWINK_GEAR_MESSAGES,
 };
 
 export const HUD_WIDGET_MESSAGES: Record<HudLocale, HudWidgetsMessages> = {

@@ -92,3 +92,8 @@ Official Path of Exile Passive Skill Tree export JSON (`data.json`) provided pub
 Source: https://github.com/brather1ng/RePoE
 
 Community-maintained JSON extractions of Path of Exile game data (`crafting_bench_options.min.json`, `mods.min.json`) used for campaign bench craft recipe suggestions.
+
+## repoe-fork/repoe-fork.github.io & Official PoE 2D Item Art
+Source: https://repoe-fork.github.io/uniques.min.json
+
+Community-maintained Path of Exile unique item visual identity mapping (`uniques.min.json`) pointing to official 2D item artwork hosted on `web.poecdn.com`, used for twink leveling gear thumbnails.

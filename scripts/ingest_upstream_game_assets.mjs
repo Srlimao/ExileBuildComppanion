@@ -5,6 +5,7 @@ import sharp from "sharp";
 import { ingestGggPassiveTree } from "./ingest_ggg_passive_tree.mjs";
 import { ingestNeversinkLootFilter } from "./ingest_neversink_loot_filter.mjs";
 import { ingestRepoeCraftingBench } from "./ingest_repoe_crafting_bench.mjs";
+import { ingestTwinkGearAssets } from "./ingest_twink_gear_assets.mjs";
 
 const ROOT = process.cwd();
 const CACHE_EXILE_LEVELING = path.join(ROOT, ".upstream-cache", "exile-leveling");
@@ -149,6 +150,11 @@ Official Path of Exile Passive Skill Tree export JSON (\`data.json\`) provided p
 Source: https://github.com/brather1ng/RePoE
 
 Community-maintained JSON extractions of Path of Exile game data (\`crafting_bench_options.min.json\`, \`mods.min.json\`) used for campaign bench craft recipe suggestions.
+
+## repoe-fork/repoe-fork.github.io & Official PoE 2D Item Art
+Source: https://repoe-fork.github.io/uniques.min.json
+
+Community-maintained Path of Exile unique item visual identity mapping (\`uniques.min.json\`) pointing to official 2D item artwork hosted on \`web.poecdn.com\`, used for twink leveling gear thumbnails.
 `;
   fs.writeFileSync(path.join(ROOT, "THIRD_PARTY_LICENSES.md"), content);
 }
@@ -158,11 +164,12 @@ async function main() {
   copyExileLevelingData();
   const { nodeCount } = await ingestGggPassiveTree(ROOT);
   const { recipeCount } = await ingestRepoeCraftingBench(ROOT);
+  const { catalogCount } = await ingestTwinkGearAssets(ROOT);
   const neversinkInfo = await ingestNeversinkLootFilter(ROOT);
   const layoutCount = await convertZoneLayoutsToWebp();
   writeThirdPartyLicenses(neversinkInfo);
   console.log(
-    `Ingested PoE1 assets: ${nodeCount} passive tree nodes, ${recipeCount} bench recipes, ${neversinkInfo.presets.length} NeverSink ${neversinkInfo.version} loot filters, ${layoutCount} WebP zone layouts.`,
+    `Ingested PoE1 assets: ${nodeCount} passive tree nodes, ${recipeCount} bench recipes, ${catalogCount} twink gear icons, ${neversinkInfo.presets.length} NeverSink ${neversinkInfo.version} loot filters, ${layoutCount} WebP zone layouts.`,
   );
 }
 

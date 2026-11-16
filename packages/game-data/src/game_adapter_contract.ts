@@ -189,6 +189,34 @@ export interface LeagueStarterFilterMetadata {
   presets: LeagueStarterFilterPresetMeta[];
 }
 
+export type TwinkArchetypeId = "spell" | "bow" | "melee" | "minion" | "hollow_palm";
+
+export type TwinkEquipCategory =
+  | "Body Armour"
+  | "Helmet"
+  | "Boots"
+  | "Gloves"
+  | "Belt"
+  | "Amulet"
+  | "Ring"
+  | "Weapon"
+  | "Offhand"
+  | "Jewel";
+
+export interface TwinkCatalogItem {
+  id: string;
+  itemName: string;
+  baseType: string;
+  slot: TwinkEquipCategory;
+  levelReq: number;
+  archetypes: Array<"universal" | TwinkArchetypeId>;
+  preferredClasses?: string[];
+  iconPath: string;
+  summaryEn: string;
+  summaryPtBr: string;
+  keyMods: string[];
+}
+
 export interface GameAdapter {
   readonly gameId: SupportedGameId;
   getAreas(): Record<string, AreaDefinition>;
@@ -203,6 +231,8 @@ export interface GameAdapter {
   getPassiveTreeNodes(): Record<string, PassiveTreeNodeMetadata>;
   getPassiveTreeGraphMeta(): PassiveTreeGraphMetadata;
   getCraftingBenchRecipes(): CraftingBenchRecipe[];
+  getTwinkGearCatalog(): TwinkCatalogItem[];
+  resolveOfficialUniqueIconUrl(itemName: string): string | null;
   resolveAreaById(areaId: string): AreaDefinition | null;
   resolveAreasByName(localizedName: string): AreaDefinition[];
   getResistancePenaltyForAct(highestUnlockedAct: number, completedBossFlags: string[]): number;

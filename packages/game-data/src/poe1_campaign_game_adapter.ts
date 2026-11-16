@@ -5,6 +5,7 @@ import type {
   GameAdapter,
   IzaroMechanicGuide,
   LabTrialMeta,
+  TwinkCatalogItem,
 } from "./game_adapter_contract.js";
 import {
   poe1Areas,
@@ -17,6 +18,8 @@ import {
   poe1PassiveTreeGraphMeta,
   poe1PassiveTreeNodes,
   poe1Quests,
+  poe1TwinkGearCatalog,
+  poe1UniqueItemIcons,
   poe1VaalGemLookup,
   poe1ZoneLayoutManifest,
 } from "./poe1_static_dataset_loader.js";
@@ -63,6 +66,12 @@ const BOSS_WARNINGS: BossElementalWarning[] = [
   { act: 8, areaId: "2_8_14", bossName: "Solaris & Lunaris", recommendedFire: 75, recommendedCold: 75, recommendedLightning: 65, recommendedChaos: 0, warningText: "Heavy Fire & Cold beams; avoid crossing ground orbs" },
   { act: 10, areaId: "2_10_2", bossName: "Kitava (Act 10)", recommendedFire: 75, recommendedCold: 75, recommendedLightning: 75, recommendedChaos: 0, warningText: "Triggers final -60% All Resistances penalty for mapping" },
 ];
+
+const POE_CDN_2DITEMS_BASE = "https://web.poecdn.com/image/Art/2DItems/";
+
+const TWINK_ICON_BY_LOWER_NAME = new Map(
+  poe1TwinkGearCatalog.map((item) => [item.itemName.trim().toLowerCase(), item.iconPath]),
+);
 
 const SKILL_BOOK_IDS = computePoe1SkillBookQuestIds(poe1Quests);
 const AREAS_BY_LOWER_NAME = (() => {
@@ -125,6 +134,19 @@ export class Poe1CampaignGameAdapter implements GameAdapter {
 
   getCraftingBenchRecipes(): CraftingBenchRecipe[] {
     return poe1CraftingBenchRecipes;
+  }
+
+  getTwinkGearCatalog(): TwinkCatalogItem[] {
+    return poe1TwinkGearCatalog;
+  }
+
+  resolveOfficialUniqueIconUrl(itemName: string): string | null {
+    const key = itemName.trim().toLowerCase();
+    if (!key) return null;
+    const localPath = TWINK_ICON_BY_LOWER_NAME.get(key);
+    if (localPath) return localPath;
+    const suffix = poe1UniqueItemIcons[key];
+    return suffix ? `${POE_CDN_2DITEMS_BASE}${suffix}` : null;
   }
 
   resolveAreaById(areaId: string): AreaDefinition | null {

@@ -151,6 +151,19 @@ export function markEquippedItemSets(
   }));
 }
 
+/** Collects deduplicated lowercase names/typeLines of actively equipped gear & tree jewels. */
+export function extractEquippedItemNames(items: GggItemModRecord[]): string[] {
+  const names = new Set<string>();
+  for (const item of items) {
+    if (item.inventoryId === "MainInventory") continue;
+    for (const candidate of [item.name, item.typeLine]) {
+      const normalized = candidate?.trim().toLowerCase();
+      if (normalized) names.add(normalized);
+    }
+  }
+  return [...names];
+}
+
 /** Extracts GGG get-passive-skills mastery_effects into a nodeId -> effectId map. */
 export function extractAllocatedMasteriesFromPassives(
   passivesJson: Record<string, any> | null,

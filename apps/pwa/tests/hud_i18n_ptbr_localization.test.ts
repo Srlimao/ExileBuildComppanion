@@ -8,6 +8,7 @@ import { poe1GameAdapter } from "@exile-hud/game-data";
 import {
   DEFAULT_HUD_LOCALE,
   HUD_LOCALE_STORAGE_KEY,
+  getDefaultLayoutForMode,
   getLocalizedWidgetCatalog,
   loadSavedHudLocale,
   localizeBenchPrescription,
@@ -188,6 +189,10 @@ describe("Mode labels, widget catalog, and telemetry advisor localization", () =
     const enCatalog = getLocalizedWidgetCatalog("en");
     expect(ptCatalog).toHaveLength(enCatalog.length);
     expect(ptCatalog.find((w) => w.widgetId === "resistance_cap")?.label).toBe("Resistências");
+    expect(ptCatalog.find((w) => w.widgetId === "twink_gear")?.label).toBe("Gear de Twink");
+    expect(enCatalog.find((w) => w.widgetId === "twink_gear")?.label).toBe("Twink Gear");
+    expect(getDefaultLayoutForMode("tablet-landscape", "TOWN", { leagueStart: true }).some((i) => i.widgetId === "twink_gear")).toBe(false);
+    expect(getDefaultLayoutForMode("tablet-landscape", "TOWN", { leagueStart: false }).some((i) => i.widgetId === "twink_gear")).toBe(true);
 
     expect(localizeBenchProblemSummary("Cold Res -14% under cap", "pt-BR")).toBe("Res de Gelo -14% abaixo do cap");
     expect(localizeBenchPrescription("Craft 16-20% Cold Res on Gloves (1x Orb of Transmutation)", "pt-BR")).toBe(

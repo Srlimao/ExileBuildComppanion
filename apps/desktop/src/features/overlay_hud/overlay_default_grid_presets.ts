@@ -2,14 +2,22 @@ import type { WidgetGridItemLayout } from "@exile-hud/core";
 import type { OverlayContextMode } from "./overlay_types_and_ipc.js";
 
 /** Default compact widget grid presets strictly scoped to the local PC overlay. */
-export function getDefaultOverlayLayoutForMode(mode: OverlayContextMode): WidgetGridItemLayout[] {
+export function getDefaultOverlayLayoutForMode(
+  mode: OverlayContextMode,
+  options?: { leagueStart?: boolean },
+): WidgetGridItemLayout[] {
   if (mode === "TOWN") {
-    return [
+    const items: WidgetGridItemLayout[] = [
       { widgetId: "vendor_shopping", colSpan: 1, rowSpan: 2, order: 0 },
       { widgetId: "regex_sync", colSpan: 1, rowSpan: 1, order: 1 },
       { widgetId: "socket_links", colSpan: 1, rowSpan: 1, order: 2 },
       { widgetId: "resistance_cap", colSpan: 1, rowSpan: 1, order: 3 },
     ];
+    if (options?.leagueStart === false) {
+      items.splice(1, 0, { widgetId: "twink_gear", colSpan: 1, rowSpan: 2, order: 1 });
+      return items.map((item, idx) => ({ ...item, order: idx }));
+    }
+    return items;
   }
 
   if (mode === "LAB") {
