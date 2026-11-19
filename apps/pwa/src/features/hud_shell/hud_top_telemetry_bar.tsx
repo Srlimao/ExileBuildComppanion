@@ -19,6 +19,7 @@ interface HudTopTelemetryBarProps {
   onTriggerManualSync: () => void;
   onResetProgress: () => void;
   onOpenPairingModal?: () => void;
+  onReconnectNow?: () => void;
 }
 
 function getXpRangeLabel(playerLvl: number, zoneLvl: number): { label: string; ok: boolean } {
@@ -44,6 +45,7 @@ export function HudTopTelemetryBar({
   onTriggerManualSync,
   onResetProgress,
   onOpenPairingModal,
+  onReconnectNow,
 }: HudTopTelemetryBarProps) {
   const { msg, appMsg } = useHudI18n();
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -148,23 +150,36 @@ export function HudTopTelemetryBar({
                 </button>
               )}
 
-              <span
-                className={`inline-flex items-center gap-1 text-xs font-mono ${
-                  isDemo
-                    ? "text-hud-accent"
-                    : connectionPhase === "connected"
-                      ? "text-hud-ok"
-                      : "text-hud-warn"
-                }`}
-              >
-                {connectionPhase === "connected" || isDemo ? (
-                  <Wifi className="h-3.5 w-3.5" />
-                ) : (
+              {!isDemo && connectionPhase !== "connected" && onReconnectNow ? (
+                <button
+                  type="button"
+                  onClick={onReconnectNow}
+                  title={appMsg.pwa.reconnectNowTitle}
+                  className="inline-flex items-center gap-1 text-xs font-mono text-hud-warn hover:underline cursor-pointer"
+                >
                   <WifiOff className="h-3.5 w-3.5" />
-                )}
-                <span>{isDemo ? appMsg.pwa.demoTag : appMsg.pwa.connectionPhases[connectionPhase]}</span>
-                {wakeLocked && <span className="text-hud-ok">· {appMsg.pwa.awakeTag}</span>}
-              </span>
+                  <span>{appMsg.pwa.connectionPhases[connectionPhase]}</span>
+                  {wakeLocked && <span className="text-hud-ok">· {appMsg.pwa.awakeTag}</span>}
+                </button>
+              ) : (
+                <span
+                  className={`inline-flex items-center gap-1 text-xs font-mono ${
+                    isDemo
+                      ? "text-hud-accent"
+                      : connectionPhase === "connected"
+                        ? "text-hud-ok"
+                        : "text-hud-warn"
+                  }`}
+                >
+                  {connectionPhase === "connected" || isDemo ? (
+                    <Wifi className="h-3.5 w-3.5" />
+                  ) : (
+                    <WifiOff className="h-3.5 w-3.5" />
+                  )}
+                  <span>{isDemo ? appMsg.pwa.demoTag : appMsg.pwa.connectionPhases[connectionPhase]}</span>
+                  {wakeLocked && <span className="text-hud-ok">· {appMsg.pwa.awakeTag}</span>}
+                </span>
+              )}
 
               <button
                 type="button"

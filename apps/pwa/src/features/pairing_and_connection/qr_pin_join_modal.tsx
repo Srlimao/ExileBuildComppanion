@@ -5,7 +5,14 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { DesktopCompanionDownloadCard } from "../desktop_download/desktop_companion_download_card.js";
 import { detectDeviceFormFactor, type ConnectionPhase } from "./edge_websocket_room_client.js";
 import { LandingThemePlaygroundBar } from "./landing_theme_playground_bar.js";
-import { clearRecentRoomId, loadRecentRoomId, normalizeRoomCode, saveRecentRoomId } from "./recent_room_storage.js";
+import { clearCachedRoomSnapshot } from "./pwa_local_persistence.js";
+import {
+  clearRecentRoomId,
+  loadRecentRoomId,
+  loadRecentRoomSession,
+  normalizeRoomCode,
+  saveRecentRoomSession,
+} from "./recent_room_storage.js";
 
 interface QrPinJoinModalProps {
   initialRoomId: string;
@@ -31,8 +38,22 @@ export function QrPinJoinModal({
   const [roomId, setRoomId] = useState(initialRoomId);
   const [pin, setPin] = useState(initialPin);
   const [recentRoomId, setRecentRoomId] = useState<string | null>(() => loadRecentRoomId());
+  const [hasSavedPin, setHasSavedPin] = useState<boolean>(() => Boolean(loadRecentRoomSession()));
   const [formFactor, setFormFactor] = useState<DeviceFormFactor>(detectDeviceFormFactor);
   const pinInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    setRoomId(initialRoomId);
+  }, [initialRoomId]);
+
+  useEffect(() => {
+    setPin(initialPin);
+  }, [initialPin]);
+
+  useEffect(() => {
+    setRecentRoomId(loadRecentRoomId());
+    setHasSavedPin(Boolean(loadRecentRoomSession()));
+  }, [errorMessage]);
 
   useEffect(() => {
     const onResize = () => setFormFactor(detectDeviceFormFactor());
@@ -48,20 +69,30 @@ export function QrPinJoinModal({
     const cleanRoom = normalizeRoomCode(roomId);
     const cleanPin = pin.trim();
     if (!cleanRoom || !cleanPin) return;
-    saveRecentRoomId(cleanRoom);
+    saveRecentRoomSession(cleanRoom, cleanPin, true);
     setRecentRoomId(loadRecentRoomId());
+    setHasSavedPin(Boolean(loadRecentRoomSession()));
     onJoinRoom(cleanRoom, cleanPin);
   };
 
   const handleApplyRecentRoom = () => {
     if (!recentRoomId) return;
+    const saved = loadRecentRoomSession();
+    if (saved && saved.roomId === recentRoomId && saved.pin) {
+      setRoomId(saved.roomId);
+      setPin(saved.pin);
+      onJoinRoom(saved.roomId, saved.pin);
+      return;
+    }
     setRoomId(recentRoomId);
     pinInputRef.current?.focus();
   };
 
   const handleClearRecentRoom = () => {
     clearRecentRoomId();
+    clearCachedRoomSnapshot();
     setRecentRoomId(null);
+    setHasSavedPin(false);
   };
 
   return (
@@ -166,6 +197,7 @@ export function QrPinJoinModal({
                   <button
                     type="button"
                     onClick={handleApplyRecentRoom}
+                    title={hasSavedPin ? appMsg.pwa.recentRoomReconnectTitle : undefined}
                     className="inline-flex items-center gap-1.5 text-hud-text hover:text-hud-accent transition-colors cursor-pointer"
                   >
                     <History className="h-3.5 w-3.5 text-hud-muted" />

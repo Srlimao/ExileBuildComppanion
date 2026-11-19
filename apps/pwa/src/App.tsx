@@ -1,12 +1,5 @@
-import type {
-  DeviceFormFactor,
-  HudContextMode,
-  HudSessionSnapshot,
-  ModeWidgetGrids,
-  WidgetGridItemLayout,
-} from "@exile-hud/core";
+import type { DeviceFormFactor, HudContextMode, WidgetGridItemLayout } from "@exile-hud/core";
 import {
-  applySavedCampaignProgress,
   createEmptyCampaignProgress,
   extractCampaignProgress,
   parsePoelabDailyJson,
@@ -24,46 +17,39 @@ import {
   StandbySessionSummaryView,
   useHudI18n,
 } from "@exile-hud/hud-ui";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { HudTopTelemetryBar } from "./features/hud_shell/hud_top_telemetry_bar.js";
 import { GggOauthCallbackView } from "./features/oauth_callback/ggg_oauth_callback_view.js";
-import { createInteractiveDemoSnapshot } from "./features/pairing_and_connection/demo_campaign_snapshot_factory.js";
-import {
-  detectDeviceFormFactor,
-  EdgeWebSocketRoomClient,
-  type ConnectionPhase,
-} from "./features/pairing_and_connection/edge_websocket_room_client.js";
-import {
-  loadCachedLayouts,
-  loadDemoProgress,
-  LOCAL_LAYOUT_KEY,
-  saveDemoProgress,
-} from "./features/pairing_and_connection/pwa_local_persistence.js";
+import { detectDeviceFormFactor } from "./features/pairing_and_connection/edge_websocket_room_client.js";
+import { LOCAL_LAYOUT_KEY, saveDemoProgress } from "./features/pairing_and_connection/pwa_local_persistence.js";
 import { QrPinJoinModal } from "./features/pairing_and_connection/qr_pin_join_modal.js";
-import { saveRecentRoomId } from "./features/pairing_and_connection/recent_room_storage.js";
 import { useScreenWakeLock } from "./features/pairing_and_connection/screen_wake_lock_controller.js";
+import { usePwaRoomSession } from "./features/pairing_and_connection/use_pwa_room_session.js";
 
 export function App() {
   const { locale, appMsg } = useHudI18n();
-  const params = useMemo(() => new URLSearchParams(window.location.search), []);
-  const [roomId, setRoomId] = useState(() => params.get("room")?.toUpperCase() ?? "");
-  const [pin, setPin] = useState(() => params.get("pin") ?? "");
-  const [isDemo, setIsDemo] = useState(() => params.get("demo") === "1");
-  const [snapshot, setSnapshot] = useState<HudSessionSnapshot | null>(() => {
-    if (params.get("demo") !== "1") return null;
-    return applySavedCampaignProgress(createInteractiveDemoSnapshot(), loadDemoProgress());
-  });
-  const [layouts, setLayouts] = useState<ModeWidgetGrids>(loadCachedLayouts);
+  const session = usePwaRoomSession();
+  const {
+    roomId,
+    pin,
+    isDemo,
+    snapshot,
+    setSnapshot,
+    layouts,
+    setLayouts,
+    previewModeOverride,
+    setPreviewModeOverride,
+    connectionPhase,
+    errorMsg,
+    joinRoom,
+    startDemo,
+    openPairingModal,
+    reconnectNow,
+    sendCommand,
+  } = session;
+
   const [formFactor, setFormFactor] = useState<DeviceFormFactor>(detectDeviceFormFactor);
   const [editMode, setEditMode] = useState(false);
-  const [previewModeOverride, setPreviewModeOverride] = useState<HudContextMode | null>(() => {
-    const m = params.get("mode")?.toUpperCase();
-    return m === "FIELD" || m === "TOWN" || m === "LAB" || m === "TREE" || m === "STANDBY" ? m : null;
-  });
-  const [connectionPhase, setConnectionPhase] = useState<ConnectionPhase>("idle");
-  const [connectEpoch, setConnectEpoch] = useState(0);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const clientRef = useRef<EdgeWebSocketRoomClient | null>(null);
 
   const wake = useScreenWakeLock(Boolean(snapshot));
 
@@ -73,39 +59,6 @@ export function App() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  useEffect(() => {
-    if (snapshot && window.location.search) {
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, [snapshot]);
-
-  useEffect(() => {
-    if (isDemo || !roomId || !pin) return;
-    const client = new EdgeWebSocketRoomClient(roomId, pin, {
-      onStatusChange: (phase, detail) => {
-        setConnectionPhase(phase);
-        if (phase === "error") setErrorMsg(detail ?? "Connection rejected");
-        else if (phase === "connected") setErrorMsg(null);
-      },
-      onHydrated: (snap, serverLayouts) => {
-        saveRecentRoomId(roomId);
-        setSnapshot(snap);
-        setLayouts((prev) => ({ ...prev, ...serverLayouts }));
-      },
-      onSnapshotPatch: (snap) => setSnapshot(snap),
-      onLayoutUpdated: (ff, mode, items) => {
-        setLayouts((prev) => {
-          const next = { ...prev, [ff]: { ...prev[ff], [mode]: items } };
-          localStorage.setItem(LOCAL_LAYOUT_KEY, JSON.stringify(next));
-          return next;
-        });
-      },
-    });
-    clientRef.current = client;
-    client.connect();
-    return () => client.disconnect();
-  }, [isDemo, roomId, pin, connectEpoch]);
-
   const handleToggleCheckpoint = useCallback(
     (checkpointId: string) => {
       setSnapshot((prev) => {
@@ -114,9 +67,9 @@ export function App() {
         if (isDemo) saveDemoProgress(extractCampaignProgress(next, { wasExplicitlyReset: false }));
         return next;
       });
-      clientRef.current?.sendCommand({ type: "viewer:toggle_checkpoint", checkpointId });
+      sendCommand({ type: "viewer:toggle_checkpoint", checkpointId });
     },
-    [isDemo],
+    [isDemo, sendCommand, setSnapshot],
   );
 
   const handleToggleGem = useCallback(
@@ -127,9 +80,9 @@ export function App() {
         if (isDemo) saveDemoProgress(extractCampaignProgress(next, { wasExplicitlyReset: false }));
         return next;
       });
-      clientRef.current?.sendCommand({ type: "viewer:toggle_gem", gemStepId });
+      sendCommand({ type: "viewer:toggle_gem", gemStepId });
     },
-    [isDemo],
+    [isDemo, sendCommand, setSnapshot],
   );
 
   const handleResetProgress = useCallback(() => {
@@ -139,35 +92,37 @@ export function App() {
       if (isDemo) saveDemoProgress(createEmptyCampaignProgress());
       return next;
     });
-    clientRef.current?.sendCommand({ type: "viewer:reset_progress" });
-  }, [isDemo]);
+    sendCommand({ type: "viewer:reset_progress" });
+  }, [isDemo, sendCommand, setSnapshot]);
 
   const handleUpdateLayout = useCallback(
     (mode: HudContextMode, items: WidgetGridItemLayout[]) => {
       setLayouts((prev) => {
         const next = { ...prev, [formFactor]: { ...prev[formFactor], [mode]: items } };
-        localStorage.setItem(LOCAL_LAYOUT_KEY, JSON.stringify(next));
+        try {
+          localStorage.setItem(LOCAL_LAYOUT_KEY, JSON.stringify(next));
+        } catch {
+          // Ignore storage quota errors
+        }
         return next;
       });
-      clientRef.current?.sendCommand({
-        type: "viewer:save_widget_layout",
-        deviceFormFactor: formFactor,
-        mode,
-        items,
-      });
+      sendCommand({ type: "viewer:save_widget_layout", deviceFormFactor: formFactor, mode, items });
     },
-    [formFactor],
+    [formFactor, sendCommand, setLayouts],
   );
 
-  const handleImportPoelab = useCallback((rawJson: string) => {
-    try {
-      const lab = parsePoelabDailyJson(rawJson);
-      setSnapshot((prev) => (prev ? { ...prev, lab } : prev));
-      clientRef.current?.sendCommand({ type: "viewer:import_poelab_daily", rawJson });
-    } catch {
-      // Invalid JSON silently ignored
-    }
-  }, []);
+  const handleImportPoelab = useCallback(
+    (rawJson: string) => {
+      try {
+        const lab = parsePoelabDailyJson(rawJson);
+        setSnapshot((prev) => (prev ? { ...prev, lab } : prev));
+        sendCommand({ type: "viewer:import_poelab_daily", rawJson });
+      } catch {
+        // Invalid JSON silently ignored
+      }
+    },
+    [sendCommand, setSnapshot],
+  );
 
   if (window.location.pathname.startsWith("/oauth/callback")) {
     return <GggOauthCallbackView />;
@@ -180,18 +135,8 @@ export function App() {
         initialPin={pin}
         connectionPhase={connectionPhase}
         errorMessage={localizeConnectionOrSyncMessage(errorMsg, locale)}
-        onJoinRoom={(r, p) => {
-          setErrorMsg(null);
-          setIsDemo(false);
-          setRoomId(r);
-          setPin(p);
-          setConnectEpoch((n) => n + 1);
-        }}
-        onStartDemo={(mode) => {
-          setIsDemo(true);
-          if (mode) setPreviewModeOverride(mode);
-          setSnapshot(applySavedCampaignProgress(createInteractiveDemoSnapshot(), loadDemoProgress()));
-        }}
+        onJoinRoom={joinRoom}
+        onStartDemo={startDemo}
       />
     );
   }
@@ -215,13 +160,10 @@ export function App() {
         isDemo={isDemo}
         onToggleEditLayout={() => setEditMode((v) => !v)}
         onSelectPreviewMode={(m) => setPreviewModeOverride(m)}
-        onTriggerManualSync={() => clientRef.current?.sendCommand({ type: "viewer:request_character_sync" })}
+        onTriggerManualSync={() => sendCommand({ type: "viewer:request_character_sync" })}
         onResetProgress={handleResetProgress}
-        onOpenPairingModal={() => {
-          clientRef.current?.disconnect();
-          setIsDemo(false);
-          setSnapshot(null);
-        }}
+        onOpenPairingModal={openPairingModal}
+        onReconnectNow={reconnectNow}
       />
 
       {snapshot.resumeZoneBanner && (
@@ -239,7 +181,7 @@ export function App() {
       ) : effectiveMode === "TREE" ? (
         <PassiveTreeCommandView
           snapshot={snapshot}
-          onTriggerManualSync={() => clientRef.current?.sendCommand({ type: "viewer:request_character_sync" })}
+          onTriggerManualSync={() => sendCommand({ type: "viewer:request_character_sync" })}
         />
       ) : (
         <CustomizableModeWidgetGrid
@@ -253,8 +195,7 @@ export function App() {
               onToggleCheckpoint: handleToggleCheckpoint,
               onToggleGem: handleToggleGem,
               onOpenFullTree: () => setPreviewModeOverride("TREE"),
-              onPushToPcClipboard: (regex) =>
-                clientRef.current?.sendCommand({ type: "viewer:request_regex_copy", regex }),
+              onPushToPcClipboard: (regex) => sendCommand({ type: "viewer:request_regex_copy", regex }),
               onImportPoelabJson: handleImportPoelab,
             })
           }

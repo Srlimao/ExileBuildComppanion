@@ -48,7 +48,9 @@ export interface PwaSurfaceMessages {
   mobileQuickPair: string;
   secondScreenSync: string;
   recentRoom: string;
+  recentRoomReconnectTitle: string;
   clearRecentRoom: string;
+  reconnectNowTitle: string;
   roomCode: string;
   roomCodePlaceholder: string;
   fourDigitPin: string;
@@ -143,7 +145,9 @@ const PT_BR_PWA: PwaSurfaceMessages = {
   mobileQuickPair: "Pareamento Rápido",
   secondScreenSync: "Segunda Tela",
   recentRoom: "Sala Recente:",
+  recentRoomReconnectTitle: "Tocar para reconectar automaticamente à sala recente",
   clearRecentRoom: "Limpar sala recente",
+  reconnectNowTitle: "Tocar para reconectar agora",
   roomCode: "Código da Sala",
   roomCodePlaceholder: "ex: EXILE9",
   fourDigitPin: "PIN de 4 Dígitos",
@@ -231,7 +235,9 @@ const EN_PWA: PwaSurfaceMessages = {
   mobileQuickPair: "Mobile Quick-Pair",
   secondScreenSync: "Second-Screen Sync",
   recentRoom: "Recent Room:",
+  recentRoomReconnectTitle: "Tap to reconnect to recent room",
   clearRecentRoom: "Clear recent room",
+  reconnectNowTitle: "Tap to reconnect now",
   roomCode: "Room Code",
   roomCodePlaceholder: "e.g. EXILE9",
   fourDigitPin: "4-Digit PIN",
