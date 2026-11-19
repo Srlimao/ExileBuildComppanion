@@ -5,7 +5,7 @@ use tauri::{AppHandle, Manager};
 
 pub const POB_PROFILE_FILE_NAME: &str = "saved_pob_profile.json";
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct SavedPobSetSelection {
     #[serde(default)]

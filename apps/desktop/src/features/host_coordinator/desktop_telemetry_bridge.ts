@@ -64,6 +64,7 @@ export async function compilePobProfileToSnapshot(params: {
   leagueStart: boolean;
   characterName?: string;
   previousSnapshot?: HudSessionSnapshot | null;
+  carryProgressFromPrevious?: boolean;
 }): Promise<CompiledProfileBundle> {
   const source = params.cachedXml?.trim() ? params.cachedXml : params.rawPobInput;
   const decoded = await resolveAndDecodePobInput(source);
@@ -82,6 +83,7 @@ export async function compilePobProfileToSnapshot(params: {
   const routeSteps = parsePreprocessedRouteLines(preprocessRouteConditionals(combinedRoute, defs), poe1GameAdapter);
   const checkpoints = buildCheckpointGraph(routeSteps, poe1GameAdapter);
   const gemSteps = assignGemsToCampaignRoute(build, routeSteps, poe1GameAdapter);
+  const carryProgress = Boolean(params.previousSnapshot && params.carryProgressFromPrevious !== false);
 
   const fresh = buildInitialSessionSnapshot({
     roomId: params.roomId,
@@ -90,7 +92,7 @@ export async function compilePobProfileToSnapshot(params: {
     checkpoints,
     gemSteps,
     adapter: poe1GameAdapter,
-    characterName: params.characterName || params.previousSnapshot?.characterName,
+    characterName: params.characterName || (carryProgress ? params.previousSnapshot?.characterName : undefined),
   });
 
   if (!params.previousSnapshot) {
@@ -100,6 +102,22 @@ export async function compilePobProfileToSnapshot(params: {
       decodedXml: decoded.xmlString,
       preview,
       selection,
+    };
+  }
+
+  if (params.carryProgressFromPrevious === false) {
+    return {
+      build,
+      decodedXml: decoded.xmlString,
+      preview,
+      selection,
+      snapshot: {
+        ...fresh,
+        leagueStart: params.leagueStart,
+        poeRunning: params.previousSnapshot.poeRunning,
+        clientLogHooked: params.previousSnapshot.clientLogHooked,
+        autoClipboardEnabled: params.previousSnapshot.autoClipboardEnabled,
+      },
     };
   }
 

@@ -5,7 +5,7 @@ use tauri::{AppHandle, Manager};
 
 pub const CAMPAIGN_PROGRESS_FILE_NAME: &str = "saved_campaign_progress.json";
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct SavedCampaignProgressRecord {
     #[serde(default)]

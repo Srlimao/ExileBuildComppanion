@@ -2,20 +2,20 @@ import {
   reduceTelemetrySession,
   resetSnapshotProgress,
   type HudSessionSnapshot,
-  type PobBuildPreview,
-  type PobSetSelection,
   type ValidatedPobBuild,
   type ViewerPresenceEntry,
   type ViewerToRoomMessage,
 } from "@exile-hud/core";
 import { poe1GameAdapter } from "@exile-hud/game-data";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { initializeHostSessionWithProgress, persistSnapshotProgressIfNeeded } from "./campaign_progress_persistence_client.js";
-import { generateRoomPin, loadHostIdentityPrefs, saveHostIdentityPrefs } from "./desktop_host_settings_storage.js";
+import { useBuildLibrarySession } from "../build_library/use_build_library_session.js";
+import { useHostOverlayBroadcastBridge } from "../overlay_hud/overlay_local_bus.js";
+import { persistSnapshotProgressIfNeeded } from "./campaign_progress_persistence_client.js";
 import { applyLogLinesToSnapshot, hookAndBootstrapLogPath, syncBuildSetsForLevel } from "./client_log_sync_helper.js";
-import { applyViewerCommandToSnapshot, compilePobProfileToSnapshot, DEFAULT_STARTER_POB_XML, inspectPobBuildSets } from "./desktop_telemetry_bridge.js";
-import { compileAndSavePobProfile, openPobStorageFolder } from "./pob_profile_persistence_client.js";
+import { generateRoomPin, loadHostIdentityPrefs, saveHostIdentityPrefs } from "./desktop_host_settings_storage.js";
+import { applyViewerCommandToSnapshot } from "./desktop_telemetry_bridge.js";
 import { createHostRunTimerClock } from "./host_run_timer_clock.js";
+import { executeGggCharacterSync } from "./passive_tree_hotkey_sync_helper.js";
 import { createHostRelaySession, type HostRelaySession } from "./relay_host_connection.js";
 import {
   detectClientLogPath,
@@ -23,10 +23,8 @@ import {
   setPassiveTreeHotkeyIpc,
   writeVendorRegexClipboard,
 } from "./tauri_ipc_adapter.js";
-import { executeGggCharacterSync } from "./passive_tree_hotkey_sync_helper.js";
 import { useTauriHostEventBridge } from "./use_tauri_host_event_bridge.js";
 import { useTrayStatusAndLocaleSync } from "./use_tray_status_and_locale_sync.js";
-import { useHostOverlayBroadcastBridge } from "../overlay_hud/overlay_local_bus.js";
 
 export function useDesktopHostController() {
   const [initPrefs] = useState(loadHostIdentityPrefs);
@@ -35,20 +33,12 @@ export function useDesktopHostController() {
   const [pin, setPin] = useState(initPrefs.pin);
   const [relayUrl, setRelayUrl] = useState(initPrefs.relayUrl);
   const [accountName, setAccountName] = useState(initPrefs.accountName);
-  const [selectedLeague, setSelectedLeague] = useState(initPrefs.selectedLeague);
-  const [characterName, setCharacterName] = useState(initPrefs.characterName);
+  const [selectedLeague, setSelectedLeagueState] = useState(initPrefs.selectedLeague);
+  const [characterName, setCharacterNameState] = useState(initPrefs.characterName);
   const [passiveTreeHotkey, setPassiveTreeHotkey] = useState(initPrefs.passiveTreeHotkey);
 
   const [snapshot, setSnapshot] = useState<HudSessionSnapshot | null>(null);
   const [activeBuild, setActiveBuild] = useState<ValidatedPobBuild | null>(null);
-  const [pobInput, setPobInput] = useState(DEFAULT_STARTER_POB_XML);
-  const [pobPreview, setPobPreview] = useState<PobBuildPreview | null>(null);
-  const [pobSelection, setPobSelection] = useState<PobSetSelection | null>(null);
-  const [pobStoragePath, setPobStoragePath] = useState("");
-  const [leagueStart, setLeagueStart] = useState(true);
-  const [customRouteText, setCustomRouteText] = useState("");
-  const [compileLoading, setCompileLoading] = useState(false);
-  const [compileError, setCompileError] = useState<string | null>(null);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [simulatedOutage, setSimulatedOutage] = useState(false);
   const [clientLogPath, setClientLogPathState] = useState("");
@@ -61,8 +51,12 @@ export function useDesktopHostController() {
   const snapshotRef = useRef<HudSessionSnapshot | null>(null);
   const timerClockRef = useRef(createHostRunTimerClock());
   const activeBuildRef = useRef<ValidatedPobBuild | null>(null);
+  const activeBuildPathRef = useRef<string | null>(null);
+  const summarySyncCallbackRef = useRef<(snap: HudSessionSnapshot) => void>(() => undefined);
+  const selectedLeagueRef = useRef(selectedLeague);
   const syncPrefsRef = useRef({ accountName, characterName, simulatedOutage });
   activeBuildRef.current = activeBuild;
+  selectedLeagueRef.current = selectedLeague;
   syncPrefsRef.current = { accountName, characterName, simulatedOutage };
 
   const getLiveSnapshot = useCallback(() => timerClockRef.current.advanceSnapshotRef(snapshotRef), []);
@@ -77,7 +71,10 @@ export function useDesktopHostController() {
 
   const pushPatch = useCallback((rawNext: HudSessionSnapshot, eventTag: string) => {
     const next = timerClockRef.current.reconcileOutgoingSnapshot(snapshotRef.current, rawNext, eventTag);
-    persistSnapshotProgressIfNeeded(snapshotRef.current, next, eventTag);
+    persistSnapshotProgressIfNeeded(snapshotRef.current, next, eventTag, {
+      activeBuildPath: activeBuildPathRef.current,
+      onSummaryUpdated: summarySyncCallbackRef.current,
+    });
     setSnapshot(next);
     snapshotRef.current = next;
     relayRef.current?.sendPatch(next, eventTag);
@@ -96,6 +93,23 @@ export function useDesktopHostController() {
     },
     [getLiveSnapshot, pushPatch],
   );
+
+  const buildLibrary = useBuildLibrarySession({
+    roomId,
+    activeBuildPathRef,
+    snapshotRef,
+    activeBuildRef,
+    timerClockRef,
+    syncPrefsRef,
+    getLiveSnapshot,
+    setSnapshot,
+    setActiveBuild,
+    setCharacterName: setCharacterNameState,
+    setSelectedLeague: setSelectedLeagueState,
+    pushPatch,
+    runGggSync,
+  });
+  summarySyncCallbackRef.current = buildLibrary.updateActiveListingSummary;
 
   const handleViewerCommand = useCallback(
     (cmd: ViewerToRoomMessage) => {
@@ -124,10 +138,7 @@ export function useDesktopHostController() {
         pin: overridePin ?? pin,
         snapshot: targetSnap,
         getLatestSnapshot: getLiveSnapshot,
-        onConnected: () => {
-          setRelayConnected(true);
-          setRelayError(null);
-        },
+        onConnected: () => { setRelayConnected(true); setRelayError(null); },
         onDisconnected: () => setRelayConnected(false),
         onError: (msg) => setRelayError(`${msg} — running offline locally`),
         onViewersChange: setViewers,
@@ -139,31 +150,10 @@ export function useDesktopHostController() {
 
   useEffect(() => {
     void (async () => {
-      const init = await initializeHostSessionWithProgress({ roomId, characterName }, compilePobProfileToSnapshot);
-      const { compiled, env, hydratedSnapshot } = init;
-
-      if (init.storagePath) setPobStoragePath(init.storagePath);
-      setPobInput(init.rawInput);
-      setLeagueStart(init.leagueStart);
-      setCustomRouteText(init.customRouteText);
-      setPobPreview(compiled.preview);
-      setPobSelection(compiled.selection);
-      setActiveBuild(compiled.build);
-      if (env.detectedPath) setClientLogPathState(env.detectedPath);
-      setClientLogFound(env.hooked);
-      if (hydratedSnapshot.characterName && hydratedSnapshot.characterName !== characterName) {
-        setCharacterName(hydratedSnapshot.characterName);
-      }
-
-      timerClockRef.current.syncBaseSnapshot(hydratedSnapshot);
-      setSnapshot(hydratedSnapshot);
-      snapshotRef.current = hydratedSnapshot;
-      activeBuildRef.current = compiled.build;
-      syncPrefsRef.current = {
-        ...syncPrefsRef.current,
-        characterName: hydratedSnapshot.characterName || characterName,
-      };
-      connectRelay(hydratedSnapshot);
+      const booted = await buildLibrary.bootstrapInitialLibraryBuild();
+      if (booted.detectedLogPath) setClientLogPathState(booted.detectedLogPath);
+      setClientLogFound(booted.clientLogHooked);
+      connectRelay(booted.snapshot);
       runGggSync(false);
     })();
     return () => relayRef.current?.close();
@@ -180,8 +170,9 @@ export function useDesktopHostController() {
       if (logged === cur) return;
       const next = syncBuildSetsForLevel(logged, activeBuildRef.current);
       if (next.characterName !== cur.characterName) {
-        setCharacterName(next.characterName);
+        setCharacterNameState(next.characterName);
         syncPrefsRef.current.characterName = next.characterName;
+        buildLibrary.persistCharacterLink(next.characterName);
       }
       if (cur.currentAreaId !== next.currentAreaId && cur.inGameTreeOpen) {
         void setInGameTreeOpenIpc(false);
@@ -192,7 +183,7 @@ export function useDesktopHostController() {
       if (cur.currentAreaId !== next.currentAreaId) runGggSync(false);
       pushPatch(next, "client_log_batch");
     },
-    [getLiveSnapshot, pushPatch, runGggSync],
+    [buildLibrary, getLiveSnapshot, pushPatch, runGggSync],
   );
 
   useTauriHostEventBridge({
@@ -204,38 +195,36 @@ export function useDesktopHostController() {
     setClientLogFound,
   });
 
-  const applyBuild = async (nextCfg: { pobInput: string; cachedXml?: string | null; selection?: PobSetSelection | null; leagueStart: boolean; customRouteText: string }) => {
-    setCompileLoading(true);
-    setCompileError(null);
-    try {
-      const { compiled, syncedSnapshot } = await compileAndSavePobProfile(
-        { roomId, characterName, previousSnapshot: getLiveSnapshot(), ...nextCfg },
-        compilePobProfileToSnapshot,
-        syncBuildSetsForLevel,
-      );
-      setPobInput(nextCfg.pobInput);
-      setLeagueStart(nextCfg.leagueStart);
-      setCustomRouteText(nextCfg.customRouteText);
-      setActiveBuild(compiled.build);
-      setPobPreview(compiled.preview);
-      setPobSelection(compiled.selection);
-      pushPatch(syncedSnapshot, "build_updated");
-    } catch (err) {
-      setCompileError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setCompileLoading(false);
-    }
-  };
-
   const applySelectedLogPath = async (p: string, manual: boolean, eventTag: string) => {
     setClientLogPathState(p);
     const { hooked, nextSnapshot } = await hookAndBootstrapLogPath(p, manual, getLiveSnapshot());
     setClientLogFound(hooked);
     if (nextSnapshot) {
-      if (nextSnapshot.characterName) setCharacterName(nextSnapshot.characterName);
+      if (nextSnapshot.characterName) {
+        setCharacterNameState(nextSnapshot.characterName);
+        buildLibrary.persistCharacterLink(nextSnapshot.characterName);
+      }
       pushPatch(nextSnapshot, eventTag);
     }
   };
+
+  const setCharacterName = useCallback(
+    (nextChar: string) => {
+      setCharacterNameState(nextChar);
+      syncPrefsRef.current.characterName = nextChar;
+      buildLibrary.persistCharacterLink(nextChar, selectedLeagueRef.current);
+    },
+    [buildLibrary],
+  );
+
+  const setSelectedLeague = useCallback(
+    (nextLeague: string) => {
+      setSelectedLeagueState(nextLeague);
+      selectedLeagueRef.current = nextLeague;
+      buildLibrary.persistCharacterLink(syncPrefsRef.current.characterName, nextLeague);
+    },
+    [buildLibrary],
+  );
 
   const selectCharacter = useCallback(
     (nextChar: string, nextAccount?: string) => {
@@ -243,25 +232,23 @@ export function useDesktopHostController() {
         setAccountName(nextAccount);
         syncPrefsRef.current.accountName = nextAccount;
       }
-      setCharacterName(nextChar);
+      setCharacterNameState(nextChar);
       syncPrefsRef.current.characterName = nextChar;
+      buildLibrary.persistCharacterLink(nextChar, selectedLeagueRef.current);
       const cur = getLiveSnapshot();
       if (cur && nextChar && cur.characterName !== nextChar) {
         pushPatch({ ...cur, version: cur.version + 1, characterName: nextChar }, "select_character");
       }
       if (nextChar.trim()) runGggSync(true);
     },
-    [getLiveSnapshot, pushPatch, runGggSync],
+    [buildLibrary, getLiveSnapshot, pushPatch, runGggSync],
   );
 
   return {
-    roomId, pin, relayUrl, snapshot, pobInput, pobPreview, pobSelection, pobStoragePath,
-    leagueStart, customRouteText, compileLoading, compileError, accountName, selectedLeague, characterName,
+    roomId, pin, relayUrl, snapshot, accountName, selectedLeague, characterName,
     syncMessage, simulatedOutage, clientLogPath, clientLogFound,
     relayConnected, relayError, viewers, passiveTreeHotkey, setPassiveTreeHotkey,
-    setAccountName, setSelectedLeague, setCharacterName, selectCharacter, applyBuild,
-    inspectBuild: (rawPobInput: string, previousSelection?: PobSetSelection | null) => inspectPobBuildSets({ rawPobInput, previousSelection }),
-    openStorageFolder: openPobStorageFolder,
+    setAccountName, setSelectedLeague, setCharacterName, selectCharacter, buildLibrary,
     forceSync: async () => runGggSync(true),
     simulateLogLines: processLogLines,
     toggleSimInGameTree: () => {

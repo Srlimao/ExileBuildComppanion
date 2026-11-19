@@ -4,7 +4,7 @@ import type { HudLocale } from "./locale_storage_and_types.js";
 export interface DesktopControlMessages {
   initializing: string;
   toggleOverlayTitle: (hotkey: string) => string;
-  tabs: Record<"pairing" | "overlay" | "build" | "simulator", string>;
+  tabs: Record<"builds" | "pairing" | "overlay" | "simulator", string>;
   progressCounts: (doneSteps: number, totalSteps: number, doneGems: number, totalGems: number) => string;
   savedOnPc: string;
   confirmReset: string;
@@ -86,7 +86,7 @@ export interface DesktopControlMessages {
 const PT_BR_CONTROL: DesktopControlMessages = {
   initializing: "Inicializando...",
   toggleOverlayTitle: (hotkey) => `Alternar overlay local no PC (${hotkey})`,
-  tabs: { pairing: "Parear", overlay: "Overlay", build: "PoB", simulator: "Sim" },
+  tabs: { builds: "Builds", pairing: "Parear", overlay: "Overlay", simulator: "Sim" },
   progressCounts: (ds, ts, dg, tg) => `${ds}/${ts} passos · ${dg}/${tg} gemas`,
   savedOnPc: "· Salvo no PC",
   confirmReset: "Confirmar Reset",
@@ -169,7 +169,7 @@ const PT_BR_CONTROL: DesktopControlMessages = {
 const EN_CONTROL: DesktopControlMessages = {
   initializing: "Initializing...",
   toggleOverlayTitle: (hotkey) => `Toggle local PC overlay (${hotkey})`,
-  tabs: { pairing: "Pair", overlay: "Overlay", build: "PoB", simulator: "Sim" },
+  tabs: { builds: "Builds", pairing: "Pair", overlay: "Overlay", simulator: "Sim" },
   progressCounts: (ds, ts, dg, tg) => `${ds}/${ts} steps · ${dg}/${tg} gems`,
   savedOnPc: "· Saved on PC",
   confirmReset: "Confirm Reset",

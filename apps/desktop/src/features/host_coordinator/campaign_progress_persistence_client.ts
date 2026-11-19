@@ -1,13 +1,14 @@
 import {
-  applySavedCampaignProgress,
   createEmptyCampaignProgress,
   extractCampaignProgress,
   type HudSessionSnapshot,
   type SavedCampaignProgress,
-  type ValidatedPobBuild,
 } from "@exile-hud/core";
-import { bootstrapHostEnvironment, syncBuildSetsForLevel } from "./client_log_sync_helper.js";
-import { loadInitialSavedOrDefaultProfile, type CompileProfileFn } from "./pob_profile_persistence_client.js";
+import { updateBuildProgressIpc } from "../build_library/build_library_ipc_client.js";
+import {
+  buildSummaryFromSnapshot,
+  type BuildProgressPatch,
+} from "../build_library/build_library_types.js";
 import {
   isTauriRuntime,
   loadSavedCampaignProgressIpc,
@@ -17,24 +18,43 @@ import {
 const WEB_PROGRESS_FALLBACK_KEY = "exile_saved_campaign_progress_v1";
 const SAVE_DEBOUNCE_MS = 150;
 
+interface PendingBuildProgressSave {
+  activeBuildPath: string | null;
+  progress: SavedCampaignProgress;
+  patch: BuildProgressPatch | null;
+}
+
 let debounceTimer: number | null = null;
-let pendingProgress: SavedCampaignProgress | null = null;
+let pendingSave: PendingBuildProgressSave | null = null;
+
+async function writePendingSave(target: PendingBuildProgressSave): Promise<void> {
+  if (target.activeBuildPath && target.patch) {
+    await updateBuildProgressIpc(target.activeBuildPath, target.patch).catch(() => undefined);
+    return;
+  }
+  await persistCampaignProgress(target.progress);
+}
+
+/** Immediately writes any debounced campaign progress save before switching or unloading. */
+export async function flushPendingProgressSave(): Promise<void> {
+  if (debounceTimer !== null) {
+    window.clearTimeout(debounceTimer);
+    debounceTimer = null;
+  }
+  const toFlush = pendingSave;
+  pendingSave = null;
+  if (toFlush) {
+    await writePendingSave(toFlush);
+  }
+}
 
 if (typeof window !== "undefined") {
   window.addEventListener("beforeunload", () => {
-    if (pendingProgress) {
-      const toFlush = pendingProgress;
-      pendingProgress = null;
-      if (debounceTimer !== null) {
-        window.clearTimeout(debounceTimer);
-        debounceTimer = null;
-      }
-      void persistCampaignProgress(toFlush);
-    }
+    void flushPendingProgressSave();
   });
 }
 
-/** Loads persisted checklist and gem completion from PC AppData JSON (or browser localStorage in preview). */
+/** Loads legacy persisted checklist and gem completion from PC AppData JSON or browser fallback. */
 export async function loadSavedCampaignProgress(): Promise<SavedCampaignProgress | null> {
   if (isTauriRuntime()) {
     return loadSavedCampaignProgressIpc();
@@ -47,7 +67,7 @@ export async function loadSavedCampaignProgress(): Promise<SavedCampaignProgress
   }
 }
 
-/** Saves checklist and gem completion to PC AppData JSON (or browser localStorage in preview). */
+/** Saves legacy checklist and gem completion when no active library build path is present. */
 export async function persistCampaignProgress(record: SavedCampaignProgress): Promise<void> {
   if (isTauriRuntime()) {
     await saveCampaignProgressIpc(record);
@@ -62,7 +82,14 @@ export async function persistCampaignProgress(record: SavedCampaignProgress): Pr
 
 function didProgressStateChange(prev: HudSessionSnapshot | null, next: HudSessionSnapshot): boolean {
   if (!prev) return true;
-  if (prev.checkpoints.length !== next.checkpoints.length || prev.gemSteps.length !== next.gemSteps.length) {
+  if (
+    prev.currentAreaId !== next.currentAreaId ||
+    (prev.visitedAreaIds?.length ?? 0) !== (next.visitedAreaIds?.length ?? 0) ||
+    (prev.clearedAreaIds?.length ?? 0) !== (next.clearedAreaIds?.length ?? 0) ||
+    Object.keys(prev.actSplitsMs ?? {}).length !== Object.keys(next.actSplitsMs ?? {}).length ||
+    prev.checkpoints.length !== next.checkpoints.length ||
+    prev.gemSteps.length !== next.gemSteps.length
+  ) {
     return true;
   }
   for (let i = 0; i < next.checkpoints.length; i++) {
@@ -82,74 +109,94 @@ function didProgressStateChange(prev: HudSessionSnapshot | null, next: HudSessio
   return false;
 }
 
-/** Persists progress changes immediately on resets/toggles and debounces rapid log updates. */
+/** Persists progress changes strictly onto the active build file ("one save, one progression"). */
 export function persistSnapshotProgressIfNeeded(
   prev: HudSessionSnapshot | null,
   next: HudSessionSnapshot,
   eventTag: string,
+  activeBuildCtx?: {
+    activeBuildPath: string | null;
+    onSummaryUpdated?: (snapshot: HudSessionSnapshot) => void;
+  },
 ): void {
+  if (eventTag === "switch_build") return;
+
+  const activeBuildPath = activeBuildCtx?.activeBuildPath ?? null;
+
   if (eventTag === "reset_progress" || eventTag === "viewer_reset_progress") {
     if (debounceTimer !== null) {
       window.clearTimeout(debounceTimer);
       debounceTimer = null;
     }
-    pendingProgress = null;
-    void persistCampaignProgress(createEmptyCampaignProgress());
+    pendingSave = null;
+    const emptyProgress = createEmptyCampaignProgress();
+    if (activeBuildPath) {
+      void updateBuildProgressIpc(activeBuildPath, {
+        progress: emptyProgress,
+        summary: buildSummaryFromSnapshot(next),
+        runElapsedMs: 0,
+        actSplitsMs: {},
+        updatedAtMs: Date.now(),
+      }).catch(() => undefined);
+      activeBuildCtx?.onSummaryUpdated?.(next);
+    } else {
+      void persistCampaignProgress(emptyProgress);
+    }
     return;
   }
 
   if (!didProgressStateChange(prev, next)) return;
 
-  const progress = extractCampaignProgress(next, { wasExplicitlyReset: false });
+  const now = Date.now();
+  const progress = extractCampaignProgress(next, { wasExplicitlyReset: false, nowMs: now });
+  const patch: BuildProgressPatch | null = activeBuildPath
+    ? {
+        progress,
+        summary: buildSummaryFromSnapshot(next),
+        runElapsedMs: next.runElapsedMs,
+        actSplitsMs: next.actSplitsMs,
+        ...(next.characterName ? { characterName: next.characterName } : {}),
+        updatedAtMs: now,
+      }
+    : null;
+
+  activeBuildCtx?.onSummaryUpdated?.(next);
+
+  const payload: PendingBuildProgressSave = { activeBuildPath, progress, patch };
   if (eventTag === "viewer_checkpoint" || eventTag === "viewer_gem") {
     if (debounceTimer !== null) {
       window.clearTimeout(debounceTimer);
       debounceTimer = null;
     }
-    pendingProgress = null;
-    void persistCampaignProgress(progress);
+    pendingSave = null;
+    void writePendingSave(payload);
     return;
   }
 
-  pendingProgress = progress;
+  pendingSave = payload;
   if (debounceTimer !== null) {
     window.clearTimeout(debounceTimer);
   }
   debounceTimer = window.setTimeout(() => {
     debounceTimer = null;
-    const target = pendingProgress;
-    pendingProgress = null;
+    const target = pendingSave;
+    pendingSave = null;
     if (target) {
-      void persistCampaignProgress(target);
+      void writePendingSave(target);
     }
   }, SAVE_DEBOUNCE_MS);
 }
 
-/** Bootstraps PoB profile, PC environment, and persisted checklist/gem progress on startup. */
-export async function initializeHostSessionWithProgress(
-  params: { roomId: string; characterName: string },
-  compileFn: CompileProfileFn,
-): Promise<{
-  compiled: Awaited<ReturnType<typeof loadInitialSavedOrDefaultProfile>>["compiled"];
-  rawInput: string;
-  leagueStart: boolean;
-  customRouteText: string;
-  storagePath: string;
-  env: Awaited<ReturnType<typeof bootstrapHostEnvironment>>;
-  hydratedSnapshot: HudSessionSnapshot;
-}> {
-  const [loaded, savedProgress] = await Promise.all([
-    loadInitialSavedOrDefaultProfile(params, compileFn),
-    loadSavedCampaignProgress().catch(() => null),
-  ]);
-  const env = await bootstrapHostEnvironment(loaded.compiled.snapshot);
-  const synced = syncBuildSetsForLevel(env.snapshot, loaded.compiled.build);
-  const hydratedSnapshot = applySavedCampaignProgress(synced, savedProgress);
-  return {
-    ...loaded,
-    env,
-    hydratedSnapshot,
-  };
+/** Persists linked character name and league immediately onto the active build file. */
+export function persistActiveBuildCharacterLink(
+  activeBuildPath: string | null,
+  characterName: string,
+  selectedLeague?: string,
+): void {
+  if (!activeBuildPath) return;
+  void updateBuildProgressIpc(activeBuildPath, {
+    characterName,
+    ...(selectedLeague !== undefined ? { selectedLeague } : {}),
+    updatedAtMs: Date.now(),
+  }).catch(() => undefined);
 }
-
-export type SyncBuildLevelFn = (snapshot: HudSessionSnapshot, build: ValidatedPobBuild | null) => HudSessionSnapshot;

@@ -32,6 +32,9 @@ pub(crate) mod windows_clipboard_writer;
 #[path = "features/pob_profile_store/local_pob_profile_disk_store.rs"]
 pub(crate) mod local_pob_profile_disk_store;
 
+#[path = "features/build_library_store/mod.rs"]
+pub(crate) mod build_library_store;
+
 #[path = "features/campaign_progress_store/local_campaign_progress_disk_store.rs"]
 pub(crate) mod local_campaign_progress_disk_store;
 
@@ -150,6 +153,18 @@ pub fn run() {
             tauri_host_ipc_commands::load_saved_campaign_progress,
             tauri_host_ipc_commands::save_campaign_progress,
             tauri_host_ipc_commands::open_app_data_folder,
+            build_library_store::build_library_ipc_commands::list_build_library,
+            build_library_store::build_library_ipc_commands::load_build_file,
+            build_library_store::build_library_ipc_commands::save_build_file,
+            build_library_store::build_library_ipc_commands::update_build_progress,
+            build_library_store::build_library_ipc_commands::rename_or_move_build,
+            build_library_store::build_library_ipc_commands::duplicate_build,
+            build_library_store::build_library_ipc_commands::delete_build,
+            build_library_store::build_library_ipc_commands::create_build_folder,
+            build_library_store::build_library_ipc_commands::rename_build_folder,
+            build_library_store::build_library_ipc_commands::delete_build_folder,
+            build_library_store::build_library_ipc_commands::set_active_build_path,
+            build_library_store::build_library_ipc_commands::open_builds_library_folder,
             local_loot_filter_installer::get_loot_filter_status,
             local_loot_filter_installer::install_league_starter_filter,
             local_loot_filter_installer::open_loot_filter_folder,

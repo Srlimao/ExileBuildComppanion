@@ -1,5 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
+  DESKTOP_BUILD_LIBRARY_MESSAGES,
+  type DesktopBuildLibraryMessages,
+} from "./desktop_build_library_messages.js";
+import {
   DESKTOP_OVERLAY_AND_UPDATER_MESSAGES,
   type DesktopOverlayAndUpdaterMessages,
 } from "./desktop_overlay_and_updater_messages.js";
@@ -17,7 +21,9 @@ import {
 import { PWA_SURFACE_MESSAGES, type PwaSurfaceMessages } from "./pwa_surface_messages.js";
 
 export type HudMessagesBundle = HudShellAndTreeMessages & { widgets: HudWidgetsMessages };
-export type DesktopSurfaceMessages = DesktopControlMessages & DesktopOverlayAndUpdaterMessages;
+export type DesktopSurfaceMessages = DesktopControlMessages &
+  DesktopOverlayAndUpdaterMessages &
+  DesktopBuildLibraryMessages;
 
 export interface AppMessagesBundle {
   legalDisclaimer: string;
@@ -40,6 +46,7 @@ function buildContextValue(locale: HudLocale, setLocale: (next: HudLocale) => vo
   const desktop = {
     ...DESKTOP_CONTROL_MESSAGES[locale],
     ...DESKTOP_OVERLAY_AND_UPDATER_MESSAGES[locale],
+    ...DESKTOP_BUILD_LIBRARY_MESSAGES[locale],
   };
   return {
     locale,

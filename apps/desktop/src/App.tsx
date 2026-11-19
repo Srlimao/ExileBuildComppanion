@@ -2,10 +2,10 @@ import { ExileRelayBrandIcon, ThemeSelectorPopover, useHudI18n } from "@exile-hu
 import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { DesktopUpdateFooterBar } from "./features/auto_updater/desktop_update_footer_bar.js";
+import { BuildLibraryManagerView } from "./features/build_library/build_library_manager_view.js";
 import { ClientLogAndSimulatorCard } from "./features/environment_panel/client_log_and_simulator_card.js";
 import { CharacterSyncSettingsCard } from "./features/ggg_sync_panel/character_sync_settings_card.js";
 import { useDesktopHostController } from "./features/host_coordinator/use_desktop_host_controller.js";
-import { LeagueStarterFilterCard } from "./features/loot_filter/league_starter_filter_card.js";
 import { OverlayControlCenterCard } from "./features/overlay_hud/overlay_control_center_card.js";
 import {
   DEFAULT_OVERLAY_CONFIG,
@@ -18,13 +18,12 @@ import {
 } from "./features/overlay_hud/overlay_types_and_ipc.js";
 import { QrRoomPairingCard } from "./features/pairing_panel/qr_room_pairing_card.js";
 import { CampaignProgressResetBar } from "./features/pob_profile_panel/campaign_progress_reset_bar.js";
-import { PobBuildLoaderCard } from "./features/pob_profile_panel/pob_build_loader_card.js";
 
-type TabKey = "pairing" | "overlay" | "build" | "simulator";
+type TabKey = "builds" | "pairing" | "overlay" | "simulator";
 
 export function App() {
   const { msg, appMsg } = useHudI18n();
-  const [tab, setTab] = useState<TabKey>("pairing");
+  const [tab, setTab] = useState<TabKey>("builds");
   const ctl = useDesktopHostController();
   const [overlayConfig, setOverlayConfig] = useState<SavedOverlayConfig>(DEFAULT_OVERLAY_CONFIG);
 
@@ -73,7 +72,7 @@ export function App() {
           </button>
 
           <nav className="flex items-center gap-2.5 text-xs">
-            {(["pairing", "overlay", "build", "simulator"] as TabKey[]).map((key) => (
+            {(["builds", "pairing", "overlay", "simulator"] as TabKey[]).map((key) => (
               <button
                 key={key}
                 type="button"
@@ -95,6 +94,32 @@ export function App() {
 
       {ctl.snapshot && (
         <CampaignProgressResetBar snapshot={ctl.snapshot} onResetProgress={ctl.resetProgress} />
+      )}
+
+      {tab === "builds" && (
+        <BuildLibraryManagerView
+          listing={ctl.buildLibrary.listing}
+          currentFolder={ctl.buildLibrary.currentFolder}
+          editorMode={ctl.buildLibrary.editorMode}
+          busy={ctl.buildLibrary.busy}
+          error={ctl.buildLibrary.error}
+          onChangeFolder={ctl.buildLibrary.setCurrentFolder}
+          onOpenCreateEditor={ctl.buildLibrary.openCreateEditor}
+          onOpenEditEditor={ctl.buildLibrary.openEditEditor}
+          onCloseEditor={ctl.buildLibrary.closeEditor}
+          onInspectBuild={ctl.buildLibrary.inspectBuild}
+          onSaveFromEditor={ctl.buildLibrary.saveFromEditor}
+          onActivateBuild={ctl.buildLibrary.activateBuild}
+          onDuplicateBuild={(entry) =>
+            ctl.buildLibrary.handleDuplicateBuild(entry, appMsg.desktop.copySuffix)
+          }
+          onMoveBuild={ctl.buildLibrary.handleMoveBuild}
+          onDeleteBuild={ctl.buildLibrary.handleDeleteBuild}
+          onCreateFolder={ctl.buildLibrary.handleCreateFolder}
+          onRenameFolder={ctl.buildLibrary.handleRenameFolder}
+          onDeleteFolder={ctl.buildLibrary.handleDeleteFolder}
+          onOpenLibraryFolder={ctl.buildLibrary.openBuildsFolder}
+        />
       )}
 
       {tab === "pairing" && (
@@ -137,29 +162,6 @@ export function App() {
           onToggleLock={() => void toggleOverlayClickThroughIpc()}
           onResetOverlayLayouts={() => handleUpdateOverlayConfig({ ...overlayConfig, modeLayouts: {} })}
         />
-      )}
-
-      {tab === "build" && (
-        <div className="space-y-6">
-          <PobBuildLoaderCard
-            snapshot={ctl.snapshot}
-            pobInput={ctl.pobInput}
-            pobPreview={ctl.pobPreview}
-            pobSelection={ctl.pobSelection}
-            pobStoragePath={ctl.pobStoragePath}
-            leagueStart={ctl.leagueStart}
-            customRouteText={ctl.customRouteText}
-            loading={ctl.compileLoading}
-            error={ctl.compileError}
-            onInspectBuild={ctl.inspectBuild}
-            onOpenStorageFolder={ctl.openStorageFolder}
-            onApplyBuild={ctl.applyBuild}
-          />
-
-          <div className="border-t border-hud-hairline pt-5">
-            <LeagueStarterFilterCard />
-          </div>
-        </div>
       )}
 
       {tab === "simulator" && (
