@@ -59,6 +59,13 @@ export interface DesktopOverlayAndUpdaterMessages {
   lootFilterOpenFolder: string;
   lootFilterInGameHint: string;
   lootFilterSuccessMsg: (files: string) => string;
+  quickPairTitle: string;
+  openConnectTab: string;
+  connectSubSecondScreen: string;
+  connectSubCharacter: string;
+  advancedRelayToggle: string;
+  devSimulatorDrawerTitle: string;
+  monitorWindowLabel: string;
 }
 
 const PT_BR_OVERLAY_UPDATER: DesktopOverlayAndUpdaterMessages = {
@@ -127,6 +134,13 @@ const PT_BR_OVERLAY_UPDATER: DesktopOverlayAndUpdaterMessages = {
   lootFilterOpenFolder: "Abrir Pasta de Filtros",
   lootFilterInGameHint: "No PoE: Opções → Jogo → Filtro de Itens → Recarregar",
   lootFilterSuccessMsg: (files) => `Instalado: ${files}`,
+  quickPairTitle: "Pareamento Rápido",
+  openConnectTab: "Abrir Conectar",
+  connectSubSecondScreen: "Segunda Tela",
+  connectSubCharacter: "Personagem GGG",
+  advancedRelayToggle: "URL Avançada do Relay",
+  devSimulatorDrawerTitle: "Simulador de Replay (Dev)",
+  monitorWindowLabel: "Janela do Path of Exile",
 };
 
 const EN_OVERLAY_UPDATER: DesktopOverlayAndUpdaterMessages = {
@@ -195,6 +209,13 @@ const EN_OVERLAY_UPDATER: DesktopOverlayAndUpdaterMessages = {
   lootFilterOpenFolder: "Open Filter Folder",
   lootFilterInGameHint: "In PoE: Options → Game → Item Filter → Reload",
   lootFilterSuccessMsg: (files) => `Installed: ${files}`,
+  quickPairTitle: "Quick Pair",
+  openConnectTab: "Open Connect",
+  connectSubSecondScreen: "Second Screen",
+  connectSubCharacter: "GGG Character",
+  advancedRelayToggle: "Advanced Relay URL",
+  devSimulatorDrawerTitle: "Developer Replay Simulator",
+  monitorWindowLabel: "Path of Exile Window",
 };
 
 export const DESKTOP_OVERLAY_AND_UPDATER_MESSAGES: Record<HudLocale, DesktopOverlayAndUpdaterMessages> = {

@@ -49,6 +49,10 @@ export interface DesktopBuildLibraryMessages {
   buildsFolderFooter: string;
   defaultStarterBuildName: string;
   copySuffix: string;
+  editorTabPob: string;
+  editorTabMeta: string;
+  moreActionsTitle: string;
+  resetRunConfirmPrompt: string;
 }
 
 const PT_BR_LIBRARY: DesktopBuildLibraryMessages = {
@@ -101,6 +105,10 @@ const PT_BR_LIBRARY: DesktopBuildLibraryMessages = {
   buildsFolderFooter: "Salvo em:",
   defaultStarterBuildName: "Starter RF Elementalist",
   copySuffix: "Cópia",
+  editorTabPob: "PoB e Sets",
+  editorTabMeta: "Personagem e Notas",
+  moreActionsTitle: "Mais ações",
+  resetRunConfirmPrompt: "Zerar marcações desta build?",
 };
 
 const EN_LIBRARY: DesktopBuildLibraryMessages = {
@@ -153,6 +161,10 @@ const EN_LIBRARY: DesktopBuildLibraryMessages = {
   buildsFolderFooter: "Saved in:",
   defaultStarterBuildName: "Starter RF Elementalist",
   copySuffix: "Copy",
+  editorTabPob: "PoB & Sets",
+  editorTabMeta: "Character & Notes",
+  moreActionsTitle: "More actions",
+  resetRunConfirmPrompt: "Reset checks for this build?",
 };
 
 export const DESKTOP_BUILD_LIBRARY_MESSAGES: Record<HudLocale, DesktopBuildLibraryMessages> = {

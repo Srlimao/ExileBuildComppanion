@@ -1,7 +1,7 @@
-import type { PobBuildPreview, PobSetSelection } from "@exile-hud/core";
+import type { HudSessionSnapshot, PobBuildPreview, PobSetSelection } from "@exile-hud/core";
 import { useHudI18n } from "@exile-hud/hud-ui";
 import { useState } from "react";
-import { LeagueStarterFilterCard } from "../loot_filter/league_starter_filter_card.js";
+import { ActiveBuildRunCard } from "./active_build_run_card.js";
 import {
   BuildLibraryEditorPanel,
   type BuildEditorSubmitPayload,
@@ -21,6 +21,7 @@ import {
 
 interface BuildLibraryManagerViewProps {
   listing: BuildLibraryListing | null;
+  snapshot: HudSessionSnapshot | null;
   currentFolder: string;
   editorMode: BuildEditorMode;
   busy: boolean;
@@ -43,8 +44,10 @@ interface BuildLibraryManagerViewProps {
   onRenameFolder: (folderPath: string, newName: string) => Promise<void>;
   onDeleteFolder: (folderPath: string, recursive: boolean) => Promise<void>;
   onOpenLibraryFolder: () => Promise<string | null>;
+  onResetProgress: () => void;
 }
 
+/** Builds tab view: unified Active Run card, folder/search toolbar, and minimalist build rows. */
 export function BuildLibraryManagerView(props: BuildLibraryManagerViewProps) {
   const { appMsg } = useHudI18n();
   const [searchQuery, setSearchQuery] = useState("");
@@ -76,76 +79,70 @@ export function BuildLibraryManagerView(props: BuildLibraryManagerViewProps) {
     Boolean(props.listing?.rootDir) && !props.listing!.rootDir.startsWith("Browser ");
 
   return (
-    <div className="space-y-4">
-      <section className="space-y-2.5">
-        <BuildLibraryNavigationBar
-          activeEntry={activeEntry}
-          currentFolder={props.currentFolder}
-          searchQuery={searchQuery}
-          sortKey={sortKey}
-          canOpenNativeFolder={canOpenNativeFolder}
-          busy={props.busy}
-          onEditActive={props.onOpenEditEditor}
-          onOpenCreateEditor={props.onOpenCreateEditor}
-          onCreateFolder={props.onCreateFolder}
-          onOpenLibraryFolder={props.onOpenLibraryFolder}
-          onChangeFolder={props.onChangeFolder}
-          onChangeSearch={setSearchQuery}
-          onChangeSort={setSortKey}
-        />
+    <div className="space-y-3.5">
+      <ActiveBuildRunCard
+        activeEntry={activeEntry}
+        snapshot={props.snapshot}
+        busy={props.busy}
+        onEditActive={props.onOpenEditEditor}
+        onResetProgress={props.onResetProgress}
+      />
 
-        {props.error && (
-          <p className="border-l-2 border-hud-danger pl-2.5 py-0.5 text-[11px] text-hud-danger">
-            {props.error}
-          </p>
-        )}
+      <BuildLibraryNavigationBar
+        currentFolder={props.currentFolder}
+        searchQuery={searchQuery}
+        sortKey={sortKey}
+        rootDir={props.listing?.rootDir}
+        canOpenNativeFolder={canOpenNativeFolder}
+        busy={props.busy}
+        onOpenCreateEditor={props.onOpenCreateEditor}
+        onCreateFolder={props.onCreateFolder}
+        onOpenLibraryFolder={props.onOpenLibraryFolder}
+        onChangeFolder={props.onChangeFolder}
+        onChangeSearch={setSearchQuery}
+        onChangeSort={setSortKey}
+      />
 
-        <div className="space-y-1.5 max-h-[340px] overflow-y-auto pr-0.5">
-          {childFolders.map((folder) => (
-            <BuildLibraryFolderRow
-              key={folder}
-              folderPath={folder}
-              buildCount={countBuildsInFolder(allBuilds, folder)}
-              busy={props.busy}
-              onOpen={props.onChangeFolder}
-              onRename={props.onRenameFolder}
-              onDelete={props.onDeleteFolder}
-            />
-          ))}
+      {props.error && (
+        <p className="border-l-2 border-hud-danger pl-2.5 py-0.5 text-[11px] text-hud-danger">
+          {props.error}
+        </p>
+      )}
 
-          {visibleBuilds.map((entry) => (
-            <BuildLibraryRowItem
-              key={entry.relativePath}
-              entry={entry}
-              isActive={entry.relativePath === activePath}
-              showFolderBadge={searching}
-              allFolders={allFolders}
-              busy={props.busy}
-              onActivate={props.onActivateBuild}
-              onEdit={props.onOpenEditEditor}
-              onDuplicate={props.onDuplicateBuild}
-              onMove={props.onMoveBuild}
-              onDelete={props.onDeleteBuild}
-            />
-          ))}
+      <div className="space-y-1.5">
+        {childFolders.map((folder) => (
+          <BuildLibraryFolderRow
+            key={folder}
+            folderPath={folder}
+            buildCount={countBuildsInFolder(allBuilds, folder)}
+            busy={props.busy}
+            onOpen={props.onChangeFolder}
+            onRename={props.onRenameFolder}
+            onDelete={props.onDeleteFolder}
+          />
+        ))}
 
-          {childFolders.length === 0 && visibleBuilds.length === 0 && (
-            <div className="rounded-md bg-hud-subtle/25 px-3 py-5 text-center text-xs text-hud-muted">
-              {searching ? appMsg.desktop.emptySearchMsg : appMsg.desktop.emptyFolderMsg}
-            </div>
-          )}
-        </div>
+        {visibleBuilds.map((entry) => (
+          <BuildLibraryRowItem
+            key={entry.relativePath}
+            entry={entry}
+            isActive={entry.relativePath === activePath}
+            showFolderBadge={searching}
+            allFolders={allFolders}
+            busy={props.busy}
+            onActivate={props.onActivateBuild}
+            onEdit={props.onOpenEditEditor}
+            onDuplicate={props.onDuplicateBuild}
+            onMove={props.onMoveBuild}
+            onDelete={props.onDeleteBuild}
+          />
+        ))}
 
-        {props.listing?.rootDir && (
-          <div className="pt-1 text-[10px] text-hud-muted truncate" title={props.listing.rootDir}>
-            <span>{appMsg.desktop.buildsFolderFooter} </span>
-            <span className="font-mono text-hud-text">{props.listing.rootDir}</span>
+        {childFolders.length === 0 && visibleBuilds.length === 0 && (
+          <div className="rounded-xl bg-hud-subtle/30 border border-hud-hairline/50 px-3 py-6 text-center text-xs text-hud-muted">
+            {searching ? appMsg.desktop.emptySearchMsg : appMsg.desktop.emptyFolderMsg}
           </div>
         )}
-      </section>
-
-      <div className="border-t border-hud-hairline pt-4">
-        <LeagueStarterFilterCard />
       </div>
     </div>
   );

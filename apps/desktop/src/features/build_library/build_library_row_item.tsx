@@ -1,6 +1,6 @@
 import { formatRunTimerClock, useHudI18n } from "@exile-hud/hud-ui";
-import { Copy, FolderInput, Pencil, Play, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Copy, FolderInput, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import type { BuildLibraryEntrySummary } from "./build_library_types.js";
 
 interface BuildLibraryRowItemProps {
@@ -16,6 +16,7 @@ interface BuildLibraryRowItemProps {
   onDelete: (relativePath: string) => Promise<void>;
 }
 
+/** Minimalist 2-line build card with click-to-load primary action and overflow menu for secondary ops. */
 export function BuildLibraryRowItem({
   entry,
   isActive,
@@ -29,25 +30,46 @@ export function BuildLibraryRowItem({
   onDelete,
 }: BuildLibraryRowItemProps) {
   const { appMsg } = useHudI18n();
+  const [menuOpen, setMenuOpen] = useState(false);
   const [moving, setMoving] = useState(false);
   const [targetFolder, setTargetFolder] = useState(entry.folderPath);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onPointerDown = (ev: PointerEvent) => {
+      if (menuRef.current && !menuRef.current.contains(ev.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    const onKeyDown = (ev: KeyboardEvent) => {
+      if (ev.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [menuOpen]);
 
   const classLabel = entry.summary.ascendancyName || entry.summary.characterClass || "PoB";
-  const levelLabel = entry.summary.buildLevel > 0 ? `Lv ${entry.summary.buildLevel}` : "";
+  const hasSteps = entry.summary.totalCheckpoints > 0;
 
   return (
     <div
-      className={`rounded-md px-2.5 py-2 space-y-1.5 border-l-2 transition-colors ${
+      className={`relative rounded-xl px-3 py-2.5 border transition-colors space-y-2 ${
         isActive
-          ? "border-hud-accent bg-hud-subtle/85"
-          : "border-transparent bg-hud-subtle/35 hover:bg-hud-subtle/65"
+          ? "bg-hud-surface border-hud-accent/45"
+          : "bg-hud-subtle/40 hover:bg-hud-subtle/75 border-transparent"
       }`}
     >
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-center justify-between gap-2">
         <button
           type="button"
           disabled={busy}
+          title={entry.notes || undefined}
           onClick={() => {
             if (!isActive) void onActivate(entry.relativePath);
           }}
@@ -55,121 +77,125 @@ export function BuildLibraryRowItem({
         >
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="text-xs font-semibold text-hud-text truncate">{entry.name}</span>
-            {isActive && (
-              <span className="text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded bg-hud-accent/15 text-hud-accent shrink-0">
-                {appMsg.desktop.activeBadge}
-              </span>
-            )}
             {!entry.leagueStart && (
               <span className="text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded bg-hud-warn/15 text-hud-warn shrink-0">
                 {appMsg.desktop.twinkBadge}
               </span>
             )}
             {showFolderBadge && entry.folderPath && (
-              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-hud-bg/70 text-hud-muted truncate max-w-[110px]">
+              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-hud-bg/70 text-hud-muted truncate max-w-[100px]">
                 {entry.folderPath}
               </span>
             )}
           </div>
 
-          <div className="text-[11px] text-hud-muted flex flex-wrap items-center gap-x-1.5 gap-y-0.5 mt-0.5">
-            <span>
+          <div className="text-[11px] text-hud-muted mt-0.5 truncate flex items-center gap-1">
+            <span className="truncate">
               {classLabel}
-              {levelLabel ? ` · ${levelLabel}` : ""}
+              {entry.characterName ? ` · ${entry.characterName}` : ""}
+              {` · Act ${entry.summary.currentAct || 1}`}
             </span>
-            {entry.characterName && (
-              <span className="font-mono text-hud-text/90">
-                · {entry.characterName}
-                {entry.selectedLeague ? ` (${entry.selectedLeague})` : ""}
-              </span>
-            )}
-            {entry.summary.totalCheckpoints > 0 && (
-              <span className="font-mono text-[10px]">
-                ·{" "}
-                {appMsg.desktop.stepsShort(
-                  entry.summary.completedCheckpoints,
-                  entry.summary.totalCheckpoints,
-                  entry.summary.currentAct || 1,
-                )}
+            {hasSteps && (
+              <span className="font-mono text-[10px] shrink-0">
+                · {entry.summary.completedCheckpoints}/{entry.summary.totalCheckpoints}
               </span>
             )}
             {entry.runElapsedMs > 0 && (
-              <span className="font-mono text-[10px] text-hud-ok">
+              <span className="font-mono text-[10px] text-hud-ok shrink-0">
                 · {formatRunTimerClock(entry.runElapsedMs)}
               </span>
             )}
           </div>
-
-          {entry.notes && (
-            <p className="text-[10px] text-hud-muted truncate mt-0.5">{entry.notes}</p>
-          )}
         </button>
 
-        <div className="flex items-center gap-0.5 shrink-0">
-          {!isActive && (
+        <div ref={menuRef} className="relative flex items-center gap-1 shrink-0">
+          {isActive ? (
+            <span className="text-[10px] font-mono font-semibold text-hud-ok px-1.5">
+              {appMsg.desktop.activeBadge}
+            </span>
+          ) : (
             <button
               type="button"
               disabled={busy}
               onClick={() => void onActivate(entry.relativePath)}
-              title={appMsg.desktop.openBuildBtn}
-              className="rounded px-1.5 py-1 text-[10px] font-semibold text-hud-accent hover:bg-hud-bg/70 inline-flex items-center gap-1 cursor-pointer"
+              className="px-2 py-1 rounded-lg bg-hud-surface border border-hud-hairline hover:border-hud-accent/50 text-[11px] font-medium text-hud-text cursor-pointer transition-colors"
             >
-              <Play className="h-3 w-3" />
               {appMsg.desktop.openBuildBtn}
             </button>
           )}
+
           <button
             type="button"
             disabled={busy}
-            onClick={() => void onEdit(entry.relativePath)}
-            title={appMsg.desktop.editBuildBtn}
-            className="p-1 rounded text-hud-muted hover:text-hud-text hover:bg-hud-bg/60 cursor-pointer"
+            aria-expanded={menuOpen}
+            aria-label={appMsg.desktop.moreActionsTitle}
+            title={appMsg.desktop.moreActionsTitle}
+            onClick={() => setMenuOpen((v) => !v)}
+            className="p-1.5 rounded-lg text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
           >
-            <Pencil className="h-3 w-3" />
+            <MoreHorizontal className="h-3.5 w-3.5" />
           </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void onDuplicate(entry)}
-            title={appMsg.desktop.duplicateBuildBtn}
-            className="p-1 rounded text-hud-muted hover:text-hud-text hover:bg-hud-bg/60 cursor-pointer"
-          >
-            <Copy className="h-3 w-3" />
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => {
-              setTargetFolder(entry.folderPath);
-              setMoving((v) => !v);
-              setConfirmDelete(false);
-            }}
-            title={appMsg.desktop.moveBuildBtn}
-            className="p-1 rounded text-hud-muted hover:text-hud-text hover:bg-hud-bg/60 cursor-pointer"
-          >
-            <FolderInput className="h-3 w-3" />
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => {
-              setConfirmDelete((v) => !v);
-              setMoving(false);
-            }}
-            title={appMsg.desktop.deleteBuildBtn}
-            className="p-1 rounded text-hud-muted hover:text-hud-danger hover:bg-hud-bg/60 cursor-pointer"
-          >
-            <Trash2 className="h-3 w-3" />
-          </button>
+
+          {menuOpen && (
+            <div className="absolute right-0 top-full mt-1 z-30 w-36 rounded-xl bg-hud-surface border border-hud-hairline p-1 shadow-2xl text-xs space-y-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  void onEdit(entry.relativePath);
+                }}
+                className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-hud-subtle text-hud-text flex items-center gap-2 cursor-pointer"
+              >
+                <Pencil className="h-3 w-3 text-hud-muted" />
+                {appMsg.desktop.editBuildBtn}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  void onDuplicate(entry);
+                }}
+                className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-hud-subtle text-hud-text flex items-center gap-2 cursor-pointer"
+              >
+                <Copy className="h-3 w-3 text-hud-muted" />
+                {appMsg.desktop.duplicateBuildBtn}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setTargetFolder(entry.folderPath);
+                  setMoving((v) => !v);
+                  setConfirmDelete(false);
+                }}
+                className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-hud-subtle text-hud-text flex items-center gap-2 cursor-pointer"
+              >
+                <FolderInput className="h-3 w-3 text-hud-muted" />
+                {appMsg.desktop.moveBuildBtn}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setConfirmDelete((v) => !v);
+                  setMoving(false);
+                }}
+                className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-hud-subtle text-hud-danger flex items-center gap-2 cursor-pointer"
+              >
+                <Trash2 className="h-3 w-3" />
+                {appMsg.desktop.deleteBuildBtn}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {moving && (
-        <div className="flex items-center gap-1.5 pt-1 border-t border-hud-hairline/70">
+        <div className="flex items-center gap-1.5 pt-2 border-t border-hud-hairline/70">
           <select
             value={targetFolder}
             onChange={(e) => setTargetFolder(e.target.value)}
-            className="flex-1 min-w-0 rounded bg-hud-bg border border-hud-hairline px-2 py-1 text-[11px] text-hud-text focus:outline-none focus:border-hud-accent"
+            className="flex-1 min-w-0 rounded-lg bg-hud-bg border border-hud-hairline px-2 py-1 text-[11px] text-hud-text focus:outline-none focus:border-hud-accent"
           >
             <option value="">{appMsg.desktop.moveTargetRoot}</option>
             {allFolders.map((folder) => (
@@ -185,14 +211,14 @@ export function BuildLibraryRowItem({
               setMoving(false);
               void onMove(entry.relativePath, targetFolder);
             }}
-            className="rounded bg-hud-accent text-hud-accent-fg disabled:opacity-45 px-2 py-1 text-[10px] font-semibold cursor-pointer"
+            className="rounded-lg bg-hud-accent text-hud-accent-fg disabled:opacity-45 px-2.5 py-1 text-[10px] font-semibold cursor-pointer"
           >
             {appMsg.desktop.moveHereBtn}
           </button>
           <button
             type="button"
             onClick={() => setMoving(false)}
-            className="rounded px-1.5 py-1 text-[10px] text-hud-muted hover:text-hud-text cursor-pointer"
+            className="rounded-lg px-2 py-1 text-[10px] text-hud-muted hover:text-hud-text cursor-pointer"
           >
             {appMsg.desktop.cancel}
           </button>
@@ -200,7 +226,7 @@ export function BuildLibraryRowItem({
       )}
 
       {confirmDelete && (
-        <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-hud-hairline/70">
+        <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-hud-hairline/70">
           <button
             type="button"
             disabled={busy}
@@ -208,14 +234,14 @@ export function BuildLibraryRowItem({
               setConfirmDelete(false);
               void onDelete(entry.relativePath);
             }}
-            className="rounded bg-hud-danger px-2.5 py-0.5 text-[10px] font-semibold text-white cursor-pointer"
+            className="rounded-lg bg-hud-danger px-2.5 py-1 text-[10px] font-semibold text-white cursor-pointer"
           >
             {appMsg.desktop.deleteBuildBtn}
           </button>
           <button
             type="button"
             onClick={() => setConfirmDelete(false)}
-            className="rounded px-2 py-0.5 text-[10px] text-hud-muted hover:text-hud-text cursor-pointer"
+            className="rounded-lg px-2 py-1 text-[10px] text-hud-muted hover:text-hud-text cursor-pointer"
           >
             {appMsg.desktop.cancel}
           </button>

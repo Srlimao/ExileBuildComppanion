@@ -1,9 +1,9 @@
 import type { PobBuildPreview, PobSetSelection } from "@exile-hud/core";
 import { useHudI18n } from "@exile-hud/hud-ui";
-import { ArrowLeft, RefreshCw, Route, Save, Sparkles } from "lucide-react";
+import { ArrowLeft, Save, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { PobSetSelectorSection } from "../pob_profile_panel/pob_set_selector_section.js";
 import { BuildLibraryEditorMetadataFields } from "./build_library_editor_metadata_fields.js";
+import { BuildLibraryEditorPobTab } from "./build_library_editor_pob_tab.js";
 import type { BuildEditorMode } from "./build_library_types.js";
 
 export interface BuildEditorSubmitPayload {
@@ -36,6 +36,9 @@ interface BuildLibraryEditorPanelProps {
   onCancel: () => void;
 }
 
+type EditorTab = "pob" | "meta";
+
+/** Streamlined 2-tab PoB build editor tailored for the compact tray companion layout. */
 export function BuildLibraryEditorPanel({
   mode,
   allFolders,
@@ -49,6 +52,7 @@ export function BuildLibraryEditorPanel({
   const { appMsg } = useHudI18n();
   const initialRecord = mode.kind === "edit" ? mode.record : null;
 
+  const [editorTab, setEditorTab] = useState<EditorTab>("pob");
   const [name, setName] = useState(initialRecord?.name ?? "");
   const [nameTouched, setNameTouched] = useState(mode.kind === "edit");
   const [folderPath, setFolderPath] = useState(mode.targetFolder);
@@ -110,6 +114,11 @@ export function BuildLibraryEditorPanel({
 
   const isEditingActive = mode.kind === "edit" && mode.targetPath === activeBuildPath;
   const canSubmit = !busy && Boolean(rawInput.trim() || cachedXml?.xml) && Boolean(name.trim());
+  const primaryLabel = busy
+    ? appMsg.desktop.savingBuildBtn
+    : isEditingActive
+      ? appMsg.desktop.saveAndApplyBtn
+      : appMsg.desktop.saveAndOpenBtn;
 
   const submit = (activateAfterSave: boolean) => {
     void onSave({
@@ -130,119 +139,92 @@ export function BuildLibraryEditorPanel({
 
   return (
     <section className="space-y-3">
-      <div className="flex items-center justify-between gap-2 border-b border-hud-hairline pb-2">
+      <div className="flex items-center justify-between gap-2 pb-2 border-b border-hud-hairline">
         <button
           type="button"
           onClick={onCancel}
-          className="text-xs text-hud-muted hover:text-hud-text inline-flex items-center gap-1 cursor-pointer"
+          className="text-xs text-hud-muted hover:text-hud-text inline-flex items-center gap-1 cursor-pointer shrink-0"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           {appMsg.desktop.backToBuilds}
         </button>
-        <span className="text-xs font-semibold uppercase tracking-[0.1em] text-hud-accent">
+
+        <span className="text-xs font-semibold text-hud-text truncate">
           {mode.kind === "create"
             ? appMsg.desktop.newBuildEditorTitle
             : appMsg.desktop.editBuildEditorTitle}
         </span>
-      </div>
 
-      <div className="grid grid-cols-2 gap-2.5">
-        <label className="space-y-1 min-w-0">
-          <span className="text-[11px] text-hud-muted block">{appMsg.desktop.buildNameLabel}</span>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => {
-              setNameTouched(true);
-              setName(e.target.value);
-            }}
-            placeholder={appMsg.desktop.buildNamePlaceholder}
-            className="w-full rounded-md bg-hud-subtle border-b border-hud-hairline px-2.5 py-1.5 text-xs text-hud-text focus:outline-none focus:border-hud-accent"
-          />
-        </label>
-        <label className="space-y-1 min-w-0">
-          <span className="text-[11px] text-hud-muted block">{appMsg.desktop.folderLabel}</span>
-          <select
-            value={folderPath}
-            onChange={(e) => setFolderPath(e.target.value)}
-            className="w-full rounded-md bg-hud-subtle border-b border-hud-hairline px-2 py-1.5 text-xs text-hud-text focus:outline-none focus:border-hud-accent"
-          >
-            <option value="">{appMsg.desktop.moveTargetRoot}</option>
-            {allFolders.map((folder) => (
-              <option key={folder} value={folder}>
-                {folder}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] text-hud-muted">{appMsg.desktop.pobInputLabel}</span>
-        <div className="inline-flex items-center gap-3 text-[11px]">
-          {[
-            { label: appMsg.desktop.leagueStart, val: true },
-            { label: appMsg.desktop.twink, val: false },
-          ].map((opt) => (
-            <button
-              key={opt.label}
-              type="button"
-              onClick={() => setLeagueStart(opt.val)}
-              className={`pb-0.5 border-b-2 cursor-pointer transition-colors ${
-                leagueStart === opt.val
-                  ? "border-hud-accent text-hud-text font-semibold"
-                  : "border-transparent text-hud-muted hover:text-hud-text"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <textarea
-        rows={3}
-        value={rawInput}
-        onChange={(e) => setRawInput(e.target.value)}
-        placeholder={appMsg.desktop.pobInputPlaceholder}
-        className="w-full rounded-md bg-hud-subtle border-b border-hud-hairline p-2.5 text-xs font-mono text-hud-text focus:outline-none focus:border-hud-accent resize-none"
-      />
-
-      <div className="flex flex-wrap items-center justify-between gap-2">
         <button
           type="button"
-          onClick={() => setShowCustomRoute((v) => !v)}
-          className="text-[11px] text-hud-muted hover:text-hud-text inline-flex items-center gap-1 cursor-pointer"
+          disabled={!canSubmit}
+          onClick={() => submit(true)}
+          className="rounded-lg bg-hud-accent text-hud-accent-fg hover:opacity-90 disabled:opacity-45 px-2.5 py-1 text-[11px] font-semibold inline-flex items-center gap-1 cursor-pointer shrink-0"
         >
-          <Route className="h-3.5 w-3.5" />
-          {showCustomRoute ? appMsg.desktop.hideCustomRoute : appMsg.desktop.customRoute}
-        </button>
-        <button
-          type="button"
-          disabled={inspecting || !rawInput.trim()}
-          onClick={() => void runInspect(rawInput, null)}
-          className="rounded-md hover:bg-hud-subtle disabled:opacity-45 px-2.5 py-1 text-[11px] text-hud-text inline-flex items-center gap-1 cursor-pointer"
-        >
-          <RefreshCw className={`h-3 w-3 ${inspecting ? "animate-spin" : ""}`} />
-          {inspecting ? appMsg.desktop.readingSets : appMsg.desktop.inspectSets}
+          <Sparkles className="h-3 w-3" />
+          {primaryLabel}
         </button>
       </div>
 
-      {preview && selection && (
-        <PobSetSelectorSection preview={preview} selection={selection} onChange={setSelection} />
+      <div className="grid grid-cols-2 p-0.5 rounded-lg bg-hud-subtle text-[11px] font-medium">
+        <button
+          type="button"
+          onClick={() => setEditorTab("pob")}
+          className={`py-1 rounded-md cursor-pointer transition-colors ${
+            editorTab === "pob"
+              ? "bg-hud-surface text-hud-text font-semibold shadow-sm"
+              : "text-hud-muted hover:text-hud-text"
+          }`}
+        >
+          {appMsg.desktop.editorTabPob}
+        </button>
+        <button
+          type="button"
+          onClick={() => setEditorTab("meta")}
+          className={`py-1 rounded-md cursor-pointer transition-colors ${
+            editorTab === "meta"
+              ? "bg-hud-surface text-hud-text font-semibold shadow-sm"
+              : "text-hud-muted hover:text-hud-text"
+          }`}
+        >
+          {appMsg.desktop.editorTabMeta}
+        </button>
+      </div>
+
+      {editorTab === "pob" ? (
+        <BuildLibraryEditorPobTab
+          name={name}
+          folderPath={folderPath}
+          allFolders={allFolders}
+          rawInput={rawInput}
+          leagueStart={leagueStart}
+          preview={preview}
+          selection={selection}
+          inspecting={inspecting}
+          onChangeName={(nextName) => {
+            setNameTouched(true);
+            setName(nextName);
+          }}
+          onChangeFolderPath={setFolderPath}
+          onChangeRawInput={setRawInput}
+          onChangeLeagueStart={setLeagueStart}
+          onInspect={() => void runInspect(rawInput, null)}
+          onChangeSelection={setSelection}
+        />
+      ) : (
+        <BuildLibraryEditorMetadataFields
+          characterName={characterName}
+          selectedLeague={selectedLeague}
+          notes={notes}
+          customRouteText={customRouteText}
+          showCustomRoute={showCustomRoute}
+          onToggleCustomRoute={() => setShowCustomRoute((v) => !v)}
+          onChangeCharacterName={setCharacterName}
+          onChangeSelectedLeague={setSelectedLeague}
+          onChangeNotes={setNotes}
+          onChangeCustomRoute={setCustomRouteText}
+        />
       )}
-
-      <BuildLibraryEditorMetadataFields
-        characterName={characterName}
-        selectedLeague={selectedLeague}
-        notes={notes}
-        customRouteText={customRouteText}
-        showCustomRoute={showCustomRoute}
-        onChangeCharacterName={setCharacterName}
-        onChangeSelectedLeague={setSelectedLeague}
-        onChangeNotes={setNotes}
-        onChangeCustomRoute={setCustomRouteText}
-      />
 
       {(error || inspectError) && (
         <p className="border-l-2 border-hud-danger pl-2.5 py-0.5 text-[11px] text-hud-danger">
@@ -250,11 +232,11 @@ export function BuildLibraryEditorPanel({
         </p>
       )}
 
-      <div className="flex flex-wrap items-center justify-end gap-2 pt-1 border-t border-hud-hairline">
+      <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-hud-hairline">
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-md px-2.5 py-1.5 text-xs text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
+          className="rounded-lg px-2.5 py-1.5 text-xs text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
         >
           {appMsg.desktop.cancel}
         </button>
@@ -263,7 +245,7 @@ export function BuildLibraryEditorPanel({
             type="button"
             disabled={!canSubmit}
             onClick={() => submit(false)}
-            className="rounded-md bg-hud-subtle hover:bg-hud-hairline/50 disabled:opacity-45 px-3 py-1.5 text-xs font-medium text-hud-text inline-flex items-center gap-1.5 cursor-pointer"
+            className="rounded-lg bg-hud-subtle hover:bg-hud-hairline/50 disabled:opacity-45 px-3 py-1.5 text-xs font-medium text-hud-text inline-flex items-center gap-1.5 cursor-pointer"
           >
             <Save className="h-3.5 w-3.5" />
             {appMsg.desktop.saveOnlyBtn}
@@ -273,14 +255,10 @@ export function BuildLibraryEditorPanel({
           type="button"
           disabled={!canSubmit}
           onClick={() => submit(true)}
-          className="rounded-md bg-hud-accent text-hud-accent-fg hover:opacity-90 disabled:opacity-45 px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+          className="rounded-lg bg-hud-accent text-hud-accent-fg hover:opacity-90 disabled:opacity-45 px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
         >
           <Sparkles className="h-3.5 w-3.5" />
-          {busy
-            ? appMsg.desktop.savingBuildBtn
-            : isEditingActive
-              ? appMsg.desktop.saveAndApplyBtn
-              : appMsg.desktop.saveAndOpenBtn}
+          {primaryLabel}
         </button>
       </div>
     </section>

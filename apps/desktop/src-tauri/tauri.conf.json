@@ -14,8 +14,10 @@
       {
         "label": "main",
         "title": "Exile Relay Control Center",
-        "width": 420,
-        "height": 660,
+        "width": 460,
+        "height": 640,
+        "minWidth": 420,
+        "minHeight": 540,
         "resizable": true,
         "visible": true,
         "additionalBrowserArgs": "--disable-background-timer-throttling --disable-renderer-backgrounding"

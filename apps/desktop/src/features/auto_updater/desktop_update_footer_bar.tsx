@@ -7,6 +7,7 @@ function formatMegabytes(bytes: number | null): string | null {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/** Pinned slim footer showing version/update status or an expanded accent CTA when an update is ready. */
 export function DesktopUpdateFooterBar() {
   const { appMsg } = useHudI18n();
   const { state, checkNow, installNow } = useDesktopAutoUpdater();
@@ -24,9 +25,9 @@ export function DesktopUpdateFooterBar() {
   if (state.updateAvailable) {
     const versionTag = state.latestVersion ?? appMsg.desktop.newRelease;
     return (
-      <footer className="mt-auto pt-3 border-t border-hud-hairline space-y-2">
+      <footer className="shrink-0 border-t border-hud-hairline bg-hud-surface">
         {state.error && (
-          <div className="flex items-start gap-1.5 border-l-2 border-hud-warn pl-2.5 py-0.5 text-[11px] text-hud-warn">
+          <div className="px-4 pt-2 flex items-start gap-1.5 text-[11px] text-hud-warn">
             <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
             <span className="leading-snug">{state.error}</span>
           </div>
@@ -36,7 +37,7 @@ export function DesktopUpdateFooterBar() {
           type="button"
           disabled={isBusy}
           onClick={() => void installNow()}
-          className="w-full relative overflow-hidden rounded-md bg-hud-accent text-hud-accent-fg hover:opacity-90 disabled:opacity-60 px-3.5 py-2.5 text-xs font-semibold transition-opacity cursor-pointer disabled:cursor-wait flex items-center justify-between gap-2"
+          className="w-full relative overflow-hidden bg-hud-accent text-hud-accent-fg hover:opacity-95 disabled:opacity-60 px-4 py-2.5 text-xs font-semibold transition-opacity cursor-pointer disabled:cursor-wait flex items-center justify-between gap-2"
         >
           {isBusy && (
             <span
@@ -66,27 +67,29 @@ export function DesktopUpdateFooterBar() {
   }
 
   return (
-    <footer className="mt-auto pt-2.5 border-t border-hud-hairline space-y-1.5">
+    <footer className="shrink-0 border-t border-hud-hairline bg-hud-surface">
       {state.error && (
-        <div className="flex items-start gap-1.5 border-l-2 border-hud-warn pl-2.5 py-0.5 text-[11px] text-hud-warn">
+        <div className="px-4 pt-2 flex items-start gap-1.5 text-[11px] text-hud-warn">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
           <span className="leading-snug">{state.error}</span>
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-2 text-[11px] text-hud-muted">
+      <div className="px-4 py-2 flex items-center justify-between gap-2 text-[10px] font-mono text-hud-muted">
         <span className="inline-flex items-center gap-1.5 min-w-0 truncate">
-          <CheckCircle2 className="h-3.5 w-3.5 text-hud-ok shrink-0" />
-          <span className="font-mono tabular-nums text-hud-text">v{state.currentVersion}</span>
+          <CheckCircle2 className="h-3 w-3 text-hud-ok shrink-0" />
+          <span className="tabular-nums text-hud-text">v{state.currentVersion}</span>
           <span>· {variantLabel} ·</span>
-          <span>{isChecking ? appMsg.desktop.checkingUpdates : appMsg.desktop.upToDate}</span>
+          <span className="truncate">
+            {isChecking ? appMsg.desktop.checkingUpdates : appMsg.desktop.upToDate}
+          </span>
         </span>
 
         <button
           type="button"
           disabled={isChecking}
           onClick={() => void checkNow()}
-          className="inline-flex items-center gap-1 rounded-md hover:bg-hud-subtle hover:text-hud-text px-2 py-1 text-[11px] text-hud-muted cursor-pointer disabled:opacity-60 disabled:cursor-wait shrink-0"
+          className="inline-flex items-center gap-1 rounded-md hover:bg-hud-subtle hover:text-hud-text px-2 py-0.5 text-[10px] font-sans text-hud-muted cursor-pointer disabled:opacity-60 disabled:cursor-wait shrink-0"
         >
           <RefreshCw className={`h-3 w-3 ${isChecking ? "animate-spin" : ""}`} />
           <span>{appMsg.desktop.checkUpdatesBtn}</span>

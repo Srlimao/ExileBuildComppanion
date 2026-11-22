@@ -1,11 +1,12 @@
-import { ExileRelayBrandIcon, ThemeSelectorPopover, useHudI18n } from "@exile-hud/hud-ui";
-import { Eye, EyeOff } from "lucide-react";
+import { useHudI18n } from "@exile-hud/hud-ui";
 import { useEffect, useState } from "react";
 import { DesktopUpdateFooterBar } from "./features/auto_updater/desktop_update_footer_bar.js";
 import { BuildLibraryManagerView } from "./features/build_library/build_library_manager_view.js";
-import { ClientLogAndSimulatorCard } from "./features/environment_panel/client_log_and_simulator_card.js";
-import { CharacterSyncSettingsCard } from "./features/ggg_sync_panel/character_sync_settings_card.js";
+import { DesktopControlHeader, type DesktopTabKey } from "./features/control_shell/desktop_control_header.js";
+import { CampaignSimulatorDrawer } from "./features/environment_panel/campaign_simulator_drawer.js";
+import { ClientLogSettingsCard } from "./features/environment_panel/client_log_settings_card.js";
 import { useDesktopHostController } from "./features/host_coordinator/use_desktop_host_controller.js";
+import { LeagueStarterFilterCard } from "./features/loot_filter/league_starter_filter_card.js";
 import { OverlayControlCenterCard } from "./features/overlay_hud/overlay_control_center_card.js";
 import {
   DEFAULT_OVERLAY_CONFIG,
@@ -16,14 +17,12 @@ import {
   updateOverlayConfigIpc,
   type SavedOverlayConfig,
 } from "./features/overlay_hud/overlay_types_and_ipc.js";
-import { QrRoomPairingCard } from "./features/pairing_panel/qr_room_pairing_card.js";
-import { CampaignProgressResetBar } from "./features/pob_profile_panel/campaign_progress_reset_bar.js";
+import { ConnectTabView } from "./features/pairing_panel/connect_tab_view.js";
 
-type TabKey = "builds" | "pairing" | "overlay" | "simulator";
-
+/** Precision Tray Companion shell for the Windows desktop Control Center. */
 export function App() {
-  const { msg, appMsg } = useHudI18n();
-  const [tab, setTab] = useState<TabKey>("builds");
+  const { appMsg } = useHudI18n();
+  const [tab, setTab] = useState<DesktopTabKey>("builds");
   const ctl = useDesktopHostController();
   const [overlayConfig, setOverlayConfig] = useState<SavedOverlayConfig>(DEFAULT_OVERLAY_CONFIG);
 
@@ -42,89 +41,63 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-hud-bg text-hud-text px-4 py-3.5 flex flex-col gap-4 transition-colors">
-      <header className="flex items-center justify-between gap-2 border-b border-hud-hairline pb-2.5">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <ExileRelayBrandIcon className="h-7 w-7 shrink-0" />
-          <div className="min-w-0">
-            <h1 className="text-base font-bold tracking-tight text-hud-text truncate">Exile Relay</h1>
-            <p className="text-[11px] font-mono text-hud-muted truncate">
-              {ctl.snapshot
-                ? `${msg.modes[ctl.snapshot.mode]} · ${ctl.snapshot.currentAreaName}`
-                : appMsg.desktop.initializing}
-            </p>
-          </div>
-        </div>
+    <div className="h-screen flex flex-col bg-hud-bg text-hud-text overflow-hidden transition-colors">
+      <DesktopControlHeader
+        tab={tab}
+        onSelectTab={setTab}
+        snapshot={ctl.snapshot}
+        overlayEnabled={overlayConfig.enabled}
+        overlayToggleHotkey={overlayConfig.toggleVisibilityHotkey}
+        onToggleOverlay={() => void toggleOverlayVisibilityIpc()}
+        roomId={ctl.roomId}
+        pin={ctl.pin}
+        relayUrl={ctl.relayUrl}
+        relayConnected={ctl.relayConnected}
+        viewerCount={ctl.viewers.length}
+        onRotatePin={ctl.rotatePin}
+      />
 
-        <div className="flex items-center gap-2.5 shrink-0">
-          <button
-            type="button"
-            onClick={() => void toggleOverlayVisibilityIpc()}
-            title={appMsg.desktop.toggleOverlayTitle(overlayConfig.toggleVisibilityHotkey)}
-            className={`px-2 py-1 rounded-md text-[11px] font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors ${
-              overlayConfig.enabled
-                ? "text-hud-ok bg-hud-subtle"
-                : "text-hud-muted hover:text-hud-text hover:bg-hud-subtle"
-            }`}
-          >
-            {overlayConfig.enabled ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-            HUD
-          </button>
+      <main className="flex-1 min-h-0 overflow-y-auto px-4 py-3.5">
+        {tab === "builds" && (
+          <BuildLibraryManagerView
+            listing={ctl.buildLibrary.listing}
+            snapshot={ctl.snapshot}
+            currentFolder={ctl.buildLibrary.currentFolder}
+            editorMode={ctl.buildLibrary.editorMode}
+            busy={ctl.buildLibrary.busy}
+            error={ctl.buildLibrary.error}
+            onChangeFolder={ctl.buildLibrary.setCurrentFolder}
+            onOpenCreateEditor={ctl.buildLibrary.openCreateEditor}
+            onOpenEditEditor={ctl.buildLibrary.openEditEditor}
+            onCloseEditor={ctl.buildLibrary.closeEditor}
+            onInspectBuild={ctl.buildLibrary.inspectBuild}
+            onSaveFromEditor={ctl.buildLibrary.saveFromEditor}
+            onActivateBuild={ctl.buildLibrary.activateBuild}
+            onDuplicateBuild={(entry) =>
+              ctl.buildLibrary.handleDuplicateBuild(entry, appMsg.desktop.copySuffix)
+            }
+            onMoveBuild={ctl.buildLibrary.handleMoveBuild}
+            onDeleteBuild={ctl.buildLibrary.handleDeleteBuild}
+            onCreateFolder={ctl.buildLibrary.handleCreateFolder}
+            onRenameFolder={ctl.buildLibrary.handleRenameFolder}
+            onDeleteFolder={ctl.buildLibrary.handleDeleteFolder}
+            onOpenLibraryFolder={ctl.buildLibrary.openBuildsFolder}
+            onResetProgress={ctl.resetProgress}
+          />
+        )}
 
-          <nav className="flex items-center gap-2.5 text-xs">
-            {(["builds", "pairing", "overlay", "simulator"] as TabKey[]).map((key) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setTab(key)}
-                className={`pb-0.5 border-b-2 cursor-pointer transition-colors ${
-                  tab === key
-                    ? "border-hud-accent text-hud-accent font-semibold"
-                    : "border-transparent text-hud-muted hover:text-hud-text"
-                }`}
-              >
-                {appMsg.desktop.tabs[key]}
-              </button>
-            ))}
-          </nav>
+        {tab === "overlay" && (
+          <OverlayControlCenterCard
+            config={overlayConfig}
+            onUpdateConfig={handleUpdateOverlayConfig}
+            onToggleVisibility={() => void toggleOverlayVisibilityIpc()}
+            onToggleLock={() => void toggleOverlayClickThroughIpc()}
+            onResetOverlayLayouts={() => handleUpdateOverlayConfig({ ...overlayConfig, modeLayouts: {} })}
+          />
+        )}
 
-          <ThemeSelectorPopover compact />
-        </div>
-      </header>
-
-      {ctl.snapshot && (
-        <CampaignProgressResetBar snapshot={ctl.snapshot} onResetProgress={ctl.resetProgress} />
-      )}
-
-      {tab === "builds" && (
-        <BuildLibraryManagerView
-          listing={ctl.buildLibrary.listing}
-          currentFolder={ctl.buildLibrary.currentFolder}
-          editorMode={ctl.buildLibrary.editorMode}
-          busy={ctl.buildLibrary.busy}
-          error={ctl.buildLibrary.error}
-          onChangeFolder={ctl.buildLibrary.setCurrentFolder}
-          onOpenCreateEditor={ctl.buildLibrary.openCreateEditor}
-          onOpenEditEditor={ctl.buildLibrary.openEditEditor}
-          onCloseEditor={ctl.buildLibrary.closeEditor}
-          onInspectBuild={ctl.buildLibrary.inspectBuild}
-          onSaveFromEditor={ctl.buildLibrary.saveFromEditor}
-          onActivateBuild={ctl.buildLibrary.activateBuild}
-          onDuplicateBuild={(entry) =>
-            ctl.buildLibrary.handleDuplicateBuild(entry, appMsg.desktop.copySuffix)
-          }
-          onMoveBuild={ctl.buildLibrary.handleMoveBuild}
-          onDeleteBuild={ctl.buildLibrary.handleDeleteBuild}
-          onCreateFolder={ctl.buildLibrary.handleCreateFolder}
-          onRenameFolder={ctl.buildLibrary.handleRenameFolder}
-          onDeleteFolder={ctl.buildLibrary.handleDeleteFolder}
-          onOpenLibraryFolder={ctl.buildLibrary.openBuildsFolder}
-        />
-      )}
-
-      {tab === "pairing" && (
-        <div className="space-y-5">
-          <QrRoomPairingCard
+        {tab === "connect" && (
+          <ConnectTabView
             roomId={ctl.roomId}
             pin={ctl.pin}
             relayUrl={ctl.relayUrl}
@@ -134,57 +107,51 @@ export function App() {
             onChangeRelayUrl={ctl.setRelayUrl}
             onRotatePin={ctl.rotatePin}
             onReconnectRelay={ctl.reconnectRelay}
+            accountName={ctl.accountName}
+            selectedLeague={ctl.selectedLeague}
+            characterName={ctl.characterName}
+            pobCharacterClass={ctl.snapshot?.characterClass ?? null}
+            syncStatus={ctl.snapshot?.characterSyncStatus ?? "UNCONFIGURED"}
+            syncMessage={ctl.syncMessage}
+            onChangeAccount={ctl.setAccountName}
+            onChangeLeague={ctl.setSelectedLeague}
+            onChangeCharacter={ctl.setCharacterName}
+            onSelectCharacter={ctl.selectCharacter}
+            onForceSync={ctl.forceSync}
           />
+        )}
 
-          <div className="border-t border-hud-hairline pt-4">
-            <CharacterSyncSettingsCard
-              accountName={ctl.accountName}
-              selectedLeague={ctl.selectedLeague}
-              characterName={ctl.characterName}
-              pobCharacterClass={ctl.snapshot?.characterClass ?? null}
-              syncStatus={ctl.snapshot?.characterSyncStatus ?? "UNCONFIGURED"}
-              syncMessage={ctl.syncMessage}
-              onChangeAccount={ctl.setAccountName}
-              onChangeLeague={ctl.setSelectedLeague}
-              onChangeCharacter={ctl.setCharacterName}
-              onSelectCharacter={ctl.selectCharacter}
-              onForceSync={ctl.forceSync}
+        {tab === "game" && (
+          <div className="space-y-3">
+            <ClientLogSettingsCard
+              clientLogPath={ctl.clientLogPath}
+              clientLogFound={ctl.clientLogFound}
+              autoClipboard={ctl.snapshot?.autoClipboardEnabled ?? true}
+              inGameTreeOpen={ctl.snapshot?.inGameTreeOpen ?? false}
+              passiveTreeHotkey={ctl.passiveTreeHotkey}
+              activeVendorRegex={ctl.snapshot?.activeVendorRegex ?? ""}
+              onSetLogPath={ctl.setLogPath}
+              onAutoDetectPath={ctl.autoDetectPath}
+              onToggleAutoClipboard={ctl.toggleAutoClipboard}
+              onChangePassiveTreeHotkey={ctl.setPassiveTreeHotkey}
+              onCopyRegexNow={ctl.copyRegexNow}
+            />
+
+            <LeagueStarterFilterCard />
+
+            <CampaignSimulatorDrawer
+              poeRunning={ctl.snapshot?.poeRunning ?? false}
+              inGameTreeOpen={ctl.snapshot?.inGameTreeOpen ?? false}
+              passiveTreeHotkey={ctl.passiveTreeHotkey}
+              simulatedOutage={ctl.simulatedOutage}
+              onSimulateLogLines={ctl.simulateLogLines}
+              onToggleSimPoeRunning={ctl.toggleSimPoeRunning}
+              onToggleSimInGameTree={ctl.toggleSimInGameTree}
+              onToggleSimulatedOutage={ctl.toggleSimulatedOutage}
             />
           </div>
-        </div>
-      )}
-
-      {tab === "overlay" && (
-        <OverlayControlCenterCard
-          config={overlayConfig}
-          onUpdateConfig={handleUpdateOverlayConfig}
-          onToggleVisibility={() => void toggleOverlayVisibilityIpc()}
-          onToggleLock={() => void toggleOverlayClickThroughIpc()}
-          onResetOverlayLayouts={() => handleUpdateOverlayConfig({ ...overlayConfig, modeLayouts: {} })}
-        />
-      )}
-
-      {tab === "simulator" && (
-        <ClientLogAndSimulatorCard
-          clientLogPath={ctl.clientLogPath}
-          clientLogFound={ctl.clientLogFound}
-          autoClipboard={ctl.snapshot?.autoClipboardEnabled ?? true}
-          poeRunning={ctl.snapshot?.poeRunning ?? false}
-          inGameTreeOpen={ctl.snapshot?.inGameTreeOpen ?? false}
-          passiveTreeHotkey={ctl.passiveTreeHotkey}
-          simulatedOutage={ctl.simulatedOutage}
-          activeVendorRegex={ctl.snapshot?.activeVendorRegex ?? ""}
-          onSetLogPath={ctl.setLogPath}
-          onAutoDetectPath={ctl.autoDetectPath}
-          onToggleAutoClipboard={ctl.toggleAutoClipboard}
-          onChangePassiveTreeHotkey={ctl.setPassiveTreeHotkey}
-          onCopyRegexNow={ctl.copyRegexNow}
-          onSimulateLogLines={ctl.simulateLogLines}
-          onToggleSimPoeRunning={ctl.toggleSimPoeRunning}
-          onToggleSimInGameTree={ctl.toggleSimInGameTree}
-          onToggleSimulatedOutage={ctl.toggleSimulatedOutage}
-        />
-      )}
+        )}
+      </main>
 
       <DesktopUpdateFooterBar />
     </div>
