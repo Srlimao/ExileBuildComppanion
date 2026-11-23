@@ -92,8 +92,9 @@ export function GearHygieneWidget({ snapshot }: { snapshot: HudSessionSnapshot }
                 <button
                   key={set.id}
                   type="button"
+                  aria-pressed={isSelected}
                   onClick={() => setSelectedSetId(set.id)}
-                  className={`pb-0.5 text-xs whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
+                  className={`py-1.5 text-xs whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
                     isSelected
                       ? "border-hud-accent text-hud-text font-semibold"
                       : "border-transparent text-hud-muted hover:text-hud-text"

@@ -39,7 +39,11 @@ export function TwinkGearWidget({ snapshot, onPushToPcClipboard }: TwinkGearWidg
     const containerRect = container.getBoundingClientRect();
     const targetRect = targetEl.getBoundingClientRect();
     const nextTop = Math.max(0, container.scrollTop + (targetRect.top - containerRect.top) - 4);
-    container.scrollTo({ top: nextTop, behavior: "smooth" });
+    const prefersReduced =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    container.scrollTo({ top: nextTop, behavior: prefersReduced ? "auto" : "smooth" });
   }, [timeline.activeBracketId, archetypeOverride]);
 
   const handleCopyRegex = async () => {
@@ -72,7 +76,7 @@ export function TwinkGearWidget({ snapshot, onPushToPcClipboard }: TwinkGearWidg
           disabled={!timeline.stashRegex}
           onClick={() => void handleCopyRegex()}
           title={timeline.stashRegex || undefined}
-          className="px-2 py-1 rounded-md bg-hud-subtle hover:bg-hud-subtle/80 disabled:opacity-40 text-[11px] font-medium text-hud-text inline-flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors"
+          className="px-2.5 py-1.5 rounded-lg bg-hud-subtle hover:bg-hud-subtle/80 disabled:opacity-40 text-[11px] font-medium text-hud-text inline-flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors"
         >
           {copied ? <Check className="h-3 w-3 text-hud-ok" /> : <ClipboardCopy className="h-3 w-3 text-hud-accent" />}
           <span>{copied ? t.copiedRegex : t.copyStashRegex}</span>
@@ -82,8 +86,9 @@ export function TwinkGearWidget({ snapshot, onPushToPcClipboard }: TwinkGearWidg
       <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 shrink-0">
         <button
           type="button"
+          aria-pressed={archetypeOverride === null}
           onClick={() => setArchetypeOverride(null)}
-          className={`px-2 py-0.5 rounded-md text-[11px] whitespace-nowrap border transition-colors cursor-pointer ${
+          className={`px-2.5 py-1.5 rounded-lg text-[11px] whitespace-nowrap border transition-colors cursor-pointer ${
             archetypeOverride === null
               ? "border-hud-accent bg-hud-accent/15 text-hud-text font-semibold"
               : "border-hud-hairline text-hud-muted hover:text-hud-text"
@@ -98,8 +103,9 @@ export function TwinkGearWidget({ snapshot, onPushToPcClipboard }: TwinkGearWidg
             <button
               key={arch}
               type="button"
+              aria-pressed={selected}
               onClick={() => setArchetypeOverride(arch)}
-              className={`px-2 py-0.5 rounded-md text-[11px] whitespace-nowrap border transition-colors cursor-pointer ${
+              className={`px-2.5 py-1.5 rounded-lg text-[11px] whitespace-nowrap border transition-colors cursor-pointer ${
                 selected
                   ? "border-hud-accent bg-hud-accent/15 text-hud-text font-semibold"
                   : "border-hud-hairline text-hud-muted hover:text-hud-text"

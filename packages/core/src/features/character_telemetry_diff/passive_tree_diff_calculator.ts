@@ -39,10 +39,11 @@ function computeFromSpecSummaries(params: {
   specs: PassiveTreeSpecSummary[];
   allocatedNodeIds: string[];
   allocatedMasteries: Record<string, string>;
+  ascendancyNoteOrderIds?: string[];
   characterLevel: number;
   adapter: GameAdapter;
 }): PassiveTreeTelemetry {
-  const { specs, allocatedNodeIds, allocatedMasteries, characterLevel, adapter } = params;
+  const { specs, allocatedNodeIds, allocatedMasteries, ascendancyNoteOrderIds, characterLevel, adapter } = params;
   const spec = selectActiveTreeSpec(specs, characterLevel);
   if (!spec) {
     return {
@@ -56,6 +57,7 @@ function computeFromSpecSummaries(params: {
       allocatedNodeIds,
       allocatedMasteries,
       specs,
+      ...(ascendancyNoteOrderIds?.length ? { ascendancyNoteOrderIds } : {}),
     };
   }
 
@@ -109,6 +111,7 @@ function computeFromSpecSummaries(params: {
     allocatedNodeIds,
     allocatedMasteries,
     specs,
+    ...(ascendancyNoteOrderIds?.length ? { ascendancyNoteOrderIds } : {}),
   };
 }
 
@@ -117,6 +120,7 @@ export function computePassiveTreeDiff(params: {
   treeSpecs: ExtractedTreeSpec[];
   allocatedHashes: number[];
   allocatedMasteries?: Record<string, string>;
+  ascendancyNoteOrderIds?: string[];
   characterLevel: number;
   adapter: GameAdapter;
 }): PassiveTreeTelemetry {
@@ -124,6 +128,7 @@ export function computePassiveTreeDiff(params: {
     specs: toSpecSummaries(params.treeSpecs),
     allocatedNodeIds: [...new Set(params.allocatedHashes.map(String))],
     allocatedMasteries: params.allocatedMasteries ?? {},
+    ascendancyNoteOrderIds: params.ascendancyNoteOrderIds,
     characterLevel: params.characterLevel,
     adapter: params.adapter,
   });

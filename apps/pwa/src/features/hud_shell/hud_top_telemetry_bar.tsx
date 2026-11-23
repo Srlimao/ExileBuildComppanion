@@ -56,16 +56,16 @@ export function HudTopTelemetryBar({
 
   return (
     <>
-      <header className="sticky top-0 z-30 bg-hud-bg/92 backdrop-blur border-b border-hud-hairline px-4 sm:px-6 py-3 transition-colors">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
+      <header className="sticky top-0 z-30 bg-hud-bg/92 backdrop-blur border-b border-hud-hairline pt-[max(0.5rem,env(safe-area-inset-top))] sm:pt-[max(0.75rem,env(safe-area-inset-top))] pb-2 sm:pb-3 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:pl-[max(1.5rem,env(safe-area-inset-left))] sm:pr-[max(1.5rem,env(safe-area-inset-right))] transition-colors">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             {onOpenPairingModal ? (
               <button
                 type="button"
                 onClick={onOpenPairingModal}
                 title={appMsg.pwa.homeTooltip}
                 aria-label={appMsg.pwa.homeTooltip}
-                className="shrink-0 rounded-lg hover:opacity-85 transition-opacity cursor-pointer"
+                className="shrink-0 p-1 -m-1 rounded-lg hover:opacity-85 transition-opacity cursor-pointer"
               >
                 <ExileRelayBrandIcon className="h-7 w-7" />
               </button>
@@ -74,8 +74,8 @@ export function HudTopTelemetryBar({
             )}
 
             <div className="min-w-0">
-              <div className="flex items-baseline gap-2.5 flex-wrap">
-                <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-hud-text truncate">
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <h1 className="text-lg sm:text-2xl font-semibold tracking-tight text-hud-text truncate">
                   {snapshot.currentAreaName}
                 </h1>
                 <span className={`text-xs font-mono tabular-nums ${xp.ok ? "text-hud-ok" : "text-hud-warn"}`}>
@@ -87,7 +87,7 @@ export function HudTopTelemetryBar({
                 <span>
                   {appMsg.pwa.actSummary(snapshot.currentAct, snapshot.characterLevel, snapshot.characterClass)}
                 </span>
-                {snapshot.characterName && <span className="text-hud-dim">({snapshot.characterName})</span>}
+                {snapshot.characterName && <span className="text-hud-muted">({snapshot.characterName})</span>}
                 {snapshot.isEndgameOnlyFallback && (
                   <span className="inline-flex items-center gap-1 text-hud-warn font-medium">
                     <ShieldAlert className="h-3 w-3" /> {appMsg.pwa.fallbackLeveling}
@@ -97,8 +97,8 @@ export function HudTopTelemetryBar({
             </div>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
-            <nav className="flex items-center gap-3" aria-label="HUD context mode">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <nav className="flex items-center gap-1 sm:gap-2" aria-label={msg.a11y.hudModesNavLabel}>
               {modePills.map((m) => {
                 const selected = activeDisplayMode === m;
                 const isPinned = previewModeOverride === m;
@@ -108,16 +108,21 @@ export function HudTopTelemetryBar({
                   <button
                     key={m}
                     type="button"
+                    aria-current={selected ? "page" : undefined}
+                    aria-pressed={isPinned}
                     title={appMsg.pwa.pinModeTitle(modeLabel, isPinned)}
                     onClick={() => onSelectPreviewMode(previewModeOverride === m ? null : m)}
-                    className={`inline-flex items-center gap-1.5 pb-0.5 border-b-2 text-xs font-semibold tracking-wide transition-colors cursor-pointer ${
+                    className={`inline-flex items-center gap-1.5 px-2 py-2 -my-1 border-b-2 rounded-t-lg text-xs font-semibold tracking-wide transition-colors cursor-pointer ${
                       selected
                         ? "border-hud-accent text-hud-accent"
                         : "border-transparent text-hud-muted hover:text-hud-text"
                     }`}
                   >
                     {treePulse && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-hud-ok animate-pulse" aria-hidden="true" />
+                      <span
+                        className="h-1.5 w-1.5 rounded-full bg-hud-ok motion-safe:animate-pulse"
+                        aria-hidden="true"
+                      />
                     )}
                     <span>{modeLabel}</span>
                     {isPinned && (
@@ -143,43 +148,45 @@ export function HudTopTelemetryBar({
                   data-testid="hud-finish-layout-btn"
                   onClick={onToggleEditLayout}
                   title={appMsg.pwa.finishLayoutTitle(formFactor)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-hud-accent text-hud-accent-fg text-xs font-semibold cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-hud-accent text-hud-accent-fg text-xs font-semibold cursor-pointer"
                 >
                   <Unlock className="h-3.5 w-3.5" />
                   <span>{appMsg.pwa.done}</span>
                 </button>
               )}
 
-              {!isDemo && connectionPhase !== "connected" && onReconnectNow ? (
-                <button
-                  type="button"
-                  onClick={onReconnectNow}
-                  title={appMsg.pwa.reconnectNowTitle}
-                  className="inline-flex items-center gap-1 text-xs font-mono text-hud-warn hover:underline cursor-pointer"
-                >
-                  <WifiOff className="h-3.5 w-3.5" />
-                  <span>{appMsg.pwa.connectionPhases[connectionPhase]}</span>
-                  {wakeLocked && <span className="text-hud-ok">· {appMsg.pwa.awakeTag}</span>}
-                </button>
-              ) : (
-                <span
-                  className={`inline-flex items-center gap-1 text-xs font-mono ${
-                    isDemo
-                      ? "text-hud-accent"
-                      : connectionPhase === "connected"
-                        ? "text-hud-ok"
-                        : "text-hud-warn"
-                  }`}
-                >
-                  {connectionPhase === "connected" || isDemo ? (
-                    <Wifi className="h-3.5 w-3.5" />
-                  ) : (
+              <div role="status" aria-live="polite" className="inline-flex items-center">
+                {!isDemo && connectionPhase !== "connected" && onReconnectNow ? (
+                  <button
+                    type="button"
+                    onClick={onReconnectNow}
+                    title={appMsg.pwa.reconnectNowTitle}
+                    className="inline-flex items-center gap-1 px-1.5 py-1 rounded-lg text-xs font-mono text-hud-warn hover:underline cursor-pointer"
+                  >
                     <WifiOff className="h-3.5 w-3.5" />
-                  )}
-                  <span>{isDemo ? appMsg.pwa.demoTag : appMsg.pwa.connectionPhases[connectionPhase]}</span>
-                  {wakeLocked && <span className="text-hud-ok">· {appMsg.pwa.awakeTag}</span>}
-                </span>
-              )}
+                    <span>{appMsg.pwa.connectionPhases[connectionPhase]}</span>
+                    {wakeLocked && <span className="text-hud-ok">· {appMsg.pwa.awakeTag}</span>}
+                  </button>
+                ) : (
+                  <span
+                    className={`inline-flex items-center gap-1 text-xs font-mono ${
+                      isDemo
+                        ? "text-hud-accent"
+                        : connectionPhase === "connected"
+                          ? "text-hud-ok"
+                          : "text-hud-warn"
+                    }`}
+                  >
+                    {connectionPhase === "connected" || isDemo ? (
+                      <Wifi className="h-3.5 w-3.5" />
+                    ) : (
+                      <WifiOff className="h-3.5 w-3.5" />
+                    )}
+                    <span>{isDemo ? appMsg.pwa.demoTag : appMsg.pwa.connectionPhases[connectionPhase]}</span>
+                    {wakeLocked && <span className="text-hud-ok">· {appMsg.pwa.awakeTag}</span>}
+                  </span>
+                )}
+              </div>
 
               <button
                 type="button"
@@ -188,7 +195,7 @@ export function HudTopTelemetryBar({
                 aria-expanded={settingsOpen}
                 title={appMsg.pwa.settingsTitle}
                 onClick={() => setSettingsOpen(true)}
-                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-hud-muted hover:text-hud-text hover:bg-hud-subtle transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 p-2 rounded-lg text-hud-muted hover:text-hud-text hover:bg-hud-subtle transition-colors cursor-pointer"
               >
                 <Settings className="h-4 w-4" />
                 <span

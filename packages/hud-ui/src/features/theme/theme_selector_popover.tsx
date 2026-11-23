@@ -39,8 +39,8 @@ export function ThemeSelectorPopover({ compact = false }: { compact?: boolean })
         aria-expanded={open}
         aria-label={msg.theme.triggerLabel}
         onClick={() => setOpen((v) => !v)}
-        className={`inline-flex items-center gap-1.5 rounded-md transition-colors cursor-pointer hover:bg-hud-subtle text-hud-muted hover:text-hud-text ${
-          compact ? "px-1.5 py-1 text-[11px]" : "px-2 py-1 text-xs"
+        className={`inline-flex items-center gap-1.5 rounded-lg transition-colors cursor-pointer hover:bg-hud-subtle text-hud-muted hover:text-hud-text ${
+          compact ? "px-2 py-1.5 text-[11px]" : "px-2.5 py-1.5 text-xs"
         }`}
         title={msg.theme.triggerTitle}
       >

@@ -20,11 +20,11 @@ export function inferLevelFromTitle(title: string, fallback = 1): number {
     }
   }
 
-  if (/\b(?:uber\s*lab|red\s*maps)\b/i.test(cleaned)) return 75;
+  if (/\b(?:uber\s*lab|eternal\s*lab|4th\s*lab|fourth\s*lab|red\s*maps)\b/i.test(cleaned)) return 75;
   if (/\b(?:endgame|maps|mapping|final|late)\b/i.test(cleaned)) return Math.max(fallback, 68);
-  if (/\b(?:merc\s*lab|merciless\s*lab)\b/i.test(cleaned)) return 68;
-  if (/\b(?:cruel\s*lab)\b/i.test(cleaned)) return 55;
-  if (/\b(?:normal\s*lab)\b/i.test(cleaned)) return 33;
+  if (/\b(?:merc\s*lab|merciless\s*lab|3rd\s*lab|third\s*lab)\b/i.test(cleaned)) return 68;
+  if (/\b(?:cruel\s*lab|2nd\s*lab|second\s*lab)\b/i.test(cleaned)) return 55;
+  if (/\b(?:normal\s*lab|1st\s*lab|first\s*lab)\b/i.test(cleaned)) return 33;
   if (/\b(?:starter|twilight|strand|leveling\s*start)\b/i.test(cleaned)) return 1;
 
   return fallback;

@@ -93,6 +93,8 @@ export function syncBuildSetsForLevel(
         treeSpecs: build.treeSpecs,
         allocatedHashes: existingAllocated,
         allocatedMasteries: snapshot.passiveTree.allocatedMasteries,
+        ascendancyNoteOrderIds:
+          build.ascendancyNoteOrderIds ?? snapshot.passiveTree.ascendancyNoteOrderIds,
         characterLevel: snapshot.characterLevel,
         adapter: poe1GameAdapter,
       }),

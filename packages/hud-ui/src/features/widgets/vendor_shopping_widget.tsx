@@ -36,9 +36,10 @@ export function VendorShoppingWidget({ snapshot, onToggleGem }: VendorShoppingWi
           {doneCount > 0 && (
             <button
               type="button"
+              aria-pressed={showCompleted}
               data-testid="toggle-completed-gems"
               onClick={() => setShowCompleted((v) => !v)}
-              className="text-hud-muted hover:text-hud-text transition-colors cursor-pointer"
+              className="px-2 py-1 rounded-lg text-hud-muted hover:text-hud-text hover:bg-hud-subtle transition-colors cursor-pointer"
             >
               {showCompleted ? msg.widgets.hideDone : msg.widgets.doneCount(doneCount)}
             </button>
@@ -61,8 +62,9 @@ export function VendorShoppingWidget({ snapshot, onToggleGem }: VendorShoppingWi
             <button
               key={g.id}
               type="button"
+              aria-pressed={done}
               onClick={() => onToggleGem(g.id)}
-              className={`w-full text-left px-2 py-1.5 -mx-2 rounded-md hover:bg-hud-subtle flex items-baseline justify-between gap-3 cursor-pointer ${
+              className={`w-full text-left px-2 py-1.5 rounded-lg hover:bg-hud-subtle flex items-baseline justify-between gap-3 cursor-pointer ${
                 done ? "opacity-45 line-through" : ""
               }`}
             >

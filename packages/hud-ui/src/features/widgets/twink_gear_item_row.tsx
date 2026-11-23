@@ -23,14 +23,17 @@ export function TwinkGearItemRow({ item }: TwinkGearItemRowProps) {
         type="button"
         aria-expanded={expanded}
         onClick={() => setExpanded((v) => !v)}
-        className="w-full text-left flex items-center gap-2.5 group cursor-pointer rounded-md px-1 py-0.5 -mx-1 hover:bg-hud-subtle/45 transition-colors"
+        className="w-full text-left flex items-center gap-2.5 group cursor-pointer rounded-lg px-1.5 py-1 hover:bg-hud-subtle/45 transition-colors"
       >
-        <div className="h-9 w-9 shrink-0 rounded-md bg-hud-subtle/80 border border-hud-hairline flex items-center justify-center p-0.5 overflow-hidden">
+        <div className="h-9 w-9 shrink-0 rounded-lg bg-hud-subtle/80 border border-hud-hairline flex items-center justify-center p-0.5 overflow-hidden">
           {showImage ? (
             <img
               src={item.iconUrl ?? ""}
               alt={item.itemName}
+              width={36}
+              height={36}
               loading="lazy"
+              decoding="async"
               onError={() => setImgError(true)}
               className="max-h-full max-w-full object-contain"
             />

@@ -27,7 +27,7 @@ export function StandbySessionSummaryView({
         <button
           type="button"
           onClick={onOverridePreview}
-          className="px-3.5 py-1.5 rounded-md bg-hud-accent text-hud-accent-fg hover:opacity-90 text-xs font-semibold cursor-pointer"
+          className="px-3.5 py-2 rounded-lg bg-hud-accent text-hud-accent-fg hover:opacity-90 text-xs font-semibold cursor-pointer"
         >
           {msg.standby.previewButton}
         </button>

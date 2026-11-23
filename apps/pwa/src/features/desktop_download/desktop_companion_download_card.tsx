@@ -30,7 +30,7 @@ export function DesktopCompanionDownloadCard() {
 
       <a
         href={release.portableUrl}
-        className="w-full rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 font-semibold py-2.5 px-3.5 text-sm transition-colors flex items-center justify-center gap-2"
+        className="w-full rounded-lg bg-emerald-700 text-white hover:bg-emerald-600 font-semibold py-2.5 px-3.5 text-sm transition-colors flex items-center justify-center gap-2"
       >
         <Download className="h-4 w-4 shrink-0" />
         <span>{appMsg.pwa.downloadPortable}</span>

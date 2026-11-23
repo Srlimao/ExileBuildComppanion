@@ -23,6 +23,17 @@ function buildBadgeSvg(accentHex, innerHex, options = {}) {
   </svg>`;
 }
 
+function buildMaskableBadgeSvg(accentHex, innerHex) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+    <rect width="256" height="256" fill="#09090B"/>
+    <g transform="translate(41, 41) scale(0.68)">
+      <rect x="10" y="10" width="236" height="236" rx="44" fill="none" stroke="${accentHex}" stroke-width="14"/>
+      <path d="M128 46 L194 128 L128 210 L62 128 Z" fill="none" stroke="${innerHex}" stroke-width="18" stroke-linejoin="round"/>
+      <circle cx="128" cy="128" r="24" fill="${accentHex}"/>
+    </g>
+  </svg>`;
+}
+
 async function renderRgbaPng(svg, size) {
   return sharp(Buffer.from(svg))
     .resize(size, size)
@@ -63,6 +74,7 @@ async function main() {
   fs.mkdirSync(DESKTOP_PUBLIC_DIR, { recursive: true });
 
   const mainSvg = buildBadgeSvg("#6366F1", "#EAB308");
+  const maskableMainSvg = buildMaskableBadgeSvg("#6366F1", "#EAB308");
   const trayGraySvg = buildBadgeSvg("#71717A", "#D4D4D8");
   const trayGreenSvg = buildBadgeSvg("#22C55E", "#ECFDF5");
   const trayAmberSvg = buildBadgeSvg("#F59E0B", "#FEF3C7");
@@ -77,6 +89,8 @@ async function main() {
     png192,
     png256,
     png512,
+    maskablePng192,
+    maskablePng512,
     trayGray,
     trayGreen,
     trayAmber,
@@ -90,6 +104,8 @@ async function main() {
     renderRgbaPng(mainSvg, 192),
     renderRgbaPng(mainSvg, 256),
     renderRgbaPng(mainSvg, 512),
+    renderRgbaPng(maskableMainSvg, 192),
+    renderRgbaPng(maskableMainSvg, 512),
     renderRgbaPng(trayGraySvg, 64),
     renderRgbaPng(trayGreenSvg, 64),
     renderRgbaPng(trayAmberSvg, 64),
@@ -120,6 +136,8 @@ async function main() {
   fs.writeFileSync(path.join(PWA_PUBLIC_DIR, "apple-touch-icon.png"), png180);
   fs.writeFileSync(path.join(PWA_PUBLIC_DIR, "icon-192.png"), png192);
   fs.writeFileSync(path.join(PWA_PUBLIC_DIR, "icon-512.png"), png512);
+  fs.writeFileSync(path.join(PWA_PUBLIC_DIR, "icon-192-maskable.png"), maskablePng192);
+  fs.writeFileSync(path.join(PWA_PUBLIC_DIR, "icon-512-maskable.png"), maskablePng512);
   fs.writeFileSync(path.join(DESKTOP_PUBLIC_DIR, "favicon.svg"), mainSvg);
 
   console.log(`Generated Tauri & Web/PWA icon assets in ${ICONS_DIR}, ${PWA_PUBLIC_DIR}, and ${DESKTOP_PUBLIC_DIR}`);

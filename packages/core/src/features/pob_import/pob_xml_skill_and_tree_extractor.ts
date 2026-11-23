@@ -1,4 +1,5 @@
 import type { GameAdapter, GemDefinition } from "@exile-hud/game-data";
+import { extractAscendancyNoteOrderIds } from "../lab_compass/ascendancy_notes_order_parser.js";
 import { decodeBase64UrlToBytes } from "./pob_code_zlib_xml_decoder.js";
 import { extractPobItemSets, type ExtractedItemSet } from "./pob_xml_item_set_extractor.js";
 import { cleanPobColorCodes, inferLevelFromTitle, parseXmlMasteryEffectsAttr } from "./pob_xml_text_helpers.js";
@@ -58,6 +59,7 @@ export interface ExtractedPobBuild {
   treeSpecs: ExtractedTreeSpec[];
   itemSets: ExtractedItemSet[];
   uniqueRequiredGems: Array<{ id: string; note: string; count: number }>;
+  ascendancyNoteOrderIds?: string[];
 }
 
 /** Collects deduplicated required gems across the provided skill sets. */
@@ -233,6 +235,10 @@ export function extractPobBuild(parsedXml: Record<string, any>, adapter: GameAda
 
   const itemSets = extractPobItemSets(parsedXml, buildLevel);
   const uniqueRequiredGems = collectUniqueRequiredGems(skillSets);
+  const rawNotes = Array.isArray(root.Notes) ? String(root.Notes[0] ?? "") : String(root.Notes ?? "");
+  const ascendancyNoteOrderIds = rawNotes
+    ? extractAscendancyNoteOrderIds(rawNotes, ascendancyName, treeSpecs, adapter)
+    : [];
 
   return {
     buildName: cleanPobColorCodes(buildNode["@_buildName"]) || buildNameFallback,
@@ -244,5 +250,6 @@ export function extractPobBuild(parsedXml: Record<string, any>, adapter: GameAda
     treeSpecs,
     itemSets,
     uniqueRequiredGems,
+    ...(ascendancyNoteOrderIds.length > 0 ? { ascendancyNoteOrderIds } : {}),
   };
 }

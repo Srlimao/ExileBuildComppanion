@@ -4,6 +4,7 @@ import { poe1GameAdapter } from "@exile-hud/game-data";
 import { Minus, Plus, X } from "lucide-react";
 import { memo, useMemo } from "react";
 import { useHudI18n } from "../i18n/hud_i18n_provider.js";
+import { useHudTheme } from "../theme/hud_theme_provider.js";
 import type { BuiltPoe1TreeGeometry } from "./passive_tree_geometry_builder.js";
 
 interface PassiveTreeCanvasOverlaysProps {
@@ -29,6 +30,7 @@ export const PassiveTreeCanvasOverlays = memo(function PassiveTreeCanvasOverlays
   onZoomOut,
 }: PassiveTreeCanvasOverlaysProps) {
   const { msg } = useHudI18n();
+  const { treePalette } = useHudTheme();
   const specMasteries = diff.selectedSpec?.masteries ?? {};
   const inspectedNode = selectedNodeId ? geometry.nodes[selectedNodeId] ?? null : null;
   const inspectedAllocated = inspectedNode ? allocatedIds.has(inspectedNode.id) : false;
@@ -53,29 +55,49 @@ export const PassiveTreeCanvasOverlays = memo(function PassiveTreeCanvasOverlays
     <>
       <div
         data-tree-overlay-ui="true"
-        className="absolute bottom-3 left-3 flex flex-wrap gap-2.5 rounded-lg bg-hud-surface/95 border border-hud-hairline px-3 py-1.5 text-[11px] text-hud-muted"
+        className="absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 flex flex-wrap gap-2.5 rounded-lg bg-hud-surface/95 border border-hud-hairline px-3 py-1.5 text-[11px] text-hud-muted"
       >
-        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" />{msg.tree.legendAllocated}</span>
-        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" />{msg.tree.legendNewBracket}</span>
-        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-cyan-500" />{msg.tree.legendEarlier}</span>
-        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-500" />{msg.tree.legendRespec}</span>
-        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-indigo-500" />{msg.tree.legendMastery}</span>
+        <span className="inline-flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: treePalette.allocated }} />
+          {msg.tree.legendAllocated}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: treePalette.newBracket }} />
+          {msg.tree.legendNewBracket}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: treePalette.earlier }} />
+          {msg.tree.legendEarlier}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: treePalette.respec }} />
+          {msg.tree.legendRespec}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: treePalette.masteryActive }} />
+          {msg.tree.legendMastery}
+        </span>
       </div>
 
-      <div data-tree-overlay-ui="true" className="absolute bottom-3 right-3 flex flex-col gap-1">
+      <div
+        data-tree-overlay-ui="true"
+        className="absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-3 flex flex-col gap-1"
+      >
         <button
           type="button"
           onClick={onZoomIn}
-          className="p-2 rounded-lg bg-hud-surface/95 border border-hud-hairline hover:bg-hud-subtle text-hud-text cursor-pointer"
+          aria-label={msg.tree.zoomIn}
           title={msg.tree.zoomIn}
+          className="p-2.5 rounded-lg bg-hud-surface/95 border border-hud-hairline hover:bg-hud-subtle text-hud-text cursor-pointer"
         >
           <Plus className="h-4 w-4" />
         </button>
         <button
           type="button"
           onClick={onZoomOut}
-          className="p-2 rounded-lg bg-hud-surface/95 border border-hud-hairline hover:bg-hud-subtle text-hud-text cursor-pointer"
+          aria-label={msg.tree.zoomOut}
           title={msg.tree.zoomOut}
+          className="p-2.5 rounded-lg bg-hud-surface/95 border border-hud-hairline hover:bg-hud-subtle text-hud-text cursor-pointer"
         >
           <Minus className="h-4 w-4" />
         </button>
@@ -105,8 +127,9 @@ export const PassiveTreeCanvasOverlays = memo(function PassiveTreeCanvasOverlays
             <button
               type="button"
               onClick={() => onSelectNode(null)}
-              className="text-hud-muted hover:text-hud-text cursor-pointer"
+              aria-label={msg.tree.closeInspector}
               title={msg.tree.closeInspector}
+              className="p-1.5 -m-1 rounded-lg text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
             >
               <X className="h-4 w-4" />
             </button>

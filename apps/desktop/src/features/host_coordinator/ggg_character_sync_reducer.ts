@@ -83,6 +83,8 @@ export function applyGggCharacterResponseToSnapshot(
     treeSpecs: build.treeSpecs,
     allocatedHashes,
     allocatedMasteries,
+    ascendancyNoteOrderIds:
+      build.ascendancyNoteOrderIds ?? snapshot.passiveTree.ascendancyNoteOrderIds,
     characterLevel,
     adapter: poe1GameAdapter,
   });

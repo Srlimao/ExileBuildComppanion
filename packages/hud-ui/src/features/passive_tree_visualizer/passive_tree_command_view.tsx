@@ -226,7 +226,7 @@ export function PassiveTreeCommandView({
   const handleZoomOut = useCallback(() => zoomBy(1.33), [zoomBy]);
 
   return (
-    <main className="max-w-7xl mx-auto px-3 sm:px-5 pt-3 space-y-3">
+    <div className="max-w-7xl mx-auto px-3 sm:px-5 pt-3 space-y-3">
       <PassiveTreeLevelStepperBar
         characterLevel={snapshot.characterLevel}
         specs={specs}
@@ -272,6 +272,6 @@ export function PassiveTreeCommandView({
           onTriggerManualSync={onTriggerManualSync}
         />
       </div>
-    </main>
+    </div>
   );
 }

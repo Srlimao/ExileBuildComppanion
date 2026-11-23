@@ -189,8 +189,13 @@ describe("Mode labels, widget catalog, and telemetry advisor localization", () =
     const enCatalog = getLocalizedWidgetCatalog("en");
     expect(ptCatalog).toHaveLength(enCatalog.length);
     expect(ptCatalog.find((w) => w.widgetId === "resistance_cap")?.label).toBe("Resistências");
+    expect(ptCatalog.find((w) => w.widgetId === "ascendancy_order")?.label).toBe("Ascendência");
+    expect(enCatalog.find((w) => w.widgetId === "ascendancy_order")?.label).toBe("Ascendancy");
     expect(ptCatalog.find((w) => w.widgetId === "twink_gear")?.label).toBe("Gear de Twink");
     expect(enCatalog.find((w) => w.widgetId === "twink_gear")?.label).toBe("Twink Gear");
+    expect(getDefaultLayoutForMode("tablet-landscape", "LAB").some((i) => i.widgetId === "ascendancy_order")).toBe(true);
+    expect(getDefaultLayoutForMode("tablet-portrait", "LAB").some((i) => i.widgetId === "ascendancy_order")).toBe(true);
+    expect(getDefaultLayoutForMode("phone", "LAB").some((i) => i.widgetId === "ascendancy_order")).toBe(true);
     expect(getDefaultLayoutForMode("tablet-landscape", "TOWN", { leagueStart: true }).some((i) => i.widgetId === "twink_gear")).toBe(false);
     expect(getDefaultLayoutForMode("tablet-landscape", "TOWN", { leagueStart: false }).some((i) => i.widgetId === "twink_gear")).toBe(true);
 

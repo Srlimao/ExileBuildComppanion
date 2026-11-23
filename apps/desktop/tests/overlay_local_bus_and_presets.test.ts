@@ -51,7 +51,12 @@ describe("overlay_default_grid_presets", () => {
       "socket_links",
       "resistance_cap",
     ]);
-    expect(lab.map((i) => i.widgetId)).toEqual(["lab_compass", "run_timer", "resistance_cap"]);
+    expect(lab.map((i) => i.widgetId)).toEqual([
+      "ascendancy_order",
+      "lab_compass",
+      "run_timer",
+      "resistance_cap",
+    ]);
     expect(treeCompact.map((i) => i.widgetId)).toEqual([
       "passive_tree",
       "socket_links",

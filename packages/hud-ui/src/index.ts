@@ -1,7 +1,10 @@
 export { DeathRespawnResumeBanner } from "./features/hud_shell/death_respawn_resume_banner.js";
 export { ExileRelayBrandIcon } from "./features/hud_shell/exile_relay_brand_icon.js";
+export { HudErrorBoundary } from "./features/hud_shell/hud_error_boundary.js";
 export { StandbySessionSummaryView } from "./features/hud_shell/standby_session_summary_view.js";
+export { useAccessibleDialog } from "./features/hud_shell/use_accessible_dialog.js";
 export { HudThemeProvider, useHudTheme } from "./features/theme/hud_theme_provider.js";
+export type { HudA11yMessages } from "./features/i18n/hud_a11y_messages.js";
 export { HudI18nProvider, useHudI18n, type AppMessagesBundle, type DesktopSurfaceMessages, type HudI18nContextValue, type HudMessagesBundle } from "./features/i18n/hud_i18n_provider.js";
 export {
   applyHudLocaleToDocument,
@@ -39,6 +42,7 @@ export {
 export { ThemeAppearanceControls } from "./features/theme/theme_appearance_controls.js";
 export { ThemeSelectorPopover } from "./features/theme/theme_selector_popover.js";
 export {
+  computeContrastRatio,
   computeRelativeLuminance,
   DEFAULT_HUD_THEME,
   HUD_ACCENT_SWATCHES,
@@ -128,6 +132,8 @@ export {
   type HudWidgetDispatchHandlers,
 } from "./features/widget_grid_engine/hud_widget_dispatcher.js";
 export { ActiveChecklistWidget, selectChecklistWindow, type ChecklistWindowSelection } from "./features/widgets/active_checklist_widget.js";
+export { AscendancyOrderWidget } from "./features/widgets/ascendancy_order_widget.js";
+export { AscendancyTreeSvgPreview } from "./features/widgets/ascendancy_tree_svg_preview.js";
 export { DeferredBacklogWidget } from "./features/widgets/deferred_backlog_widget.js";
 export { GearHygieneWidget } from "./features/widgets/gear_hygiene_widget.js";
 export { LabCompassWidget } from "./features/widgets/lab_compass_widget.js";

@@ -20,6 +20,7 @@ const ORDERED_WIDGET_IDS: readonly WidgetId[] = [
   "gear_hygiene",
   "twink_gear",
   "run_timer",
+  "ascendancy_order",
   "lab_compass",
 ];
 
@@ -59,11 +60,18 @@ export function getDefaultLayoutForMode(
   }
 
   if (mode === "LAB") {
+    const isPortrait = formFactor === "tablet-portrait";
     return [
-      { widgetId: "lab_compass", colSpan: isPhone ? 1 : 2, rowSpan: 2, order: 0 },
-      { widgetId: "resistance_cap", colSpan: 1, rowSpan: 1, order: 1 },
-      { widgetId: "run_timer", colSpan: 1, rowSpan: 1, order: 2 },
-      { widgetId: "gear_hygiene", colSpan: 1, rowSpan: 1, order: 3 },
+      {
+        widgetId: "ascendancy_order",
+        colSpan: isPortrait ? 2 : 1,
+        rowSpan: isPhone || isPortrait ? 1 : 2,
+        order: 0,
+      },
+      { widgetId: "lab_compass", colSpan: isPhone ? 1 : 2, rowSpan: 2, order: 1 },
+      { widgetId: "resistance_cap", colSpan: 1, rowSpan: 1, order: 2 },
+      { widgetId: "run_timer", colSpan: 1, rowSpan: 1, order: 3 },
+      { widgetId: "gear_hygiene", colSpan: 1, rowSpan: 1, order: 4 },
     ];
   }
 

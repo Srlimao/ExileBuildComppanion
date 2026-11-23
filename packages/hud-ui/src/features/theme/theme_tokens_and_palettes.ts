@@ -51,8 +51,8 @@ export const HUD_ACCENT_SWATCHES: readonly HudAccentSwatch[] = [
   { id: "chalk", label: "Chalk", darkHex: "#ffffff", lightHex: "#09090b", previewHex: "#e4e4e7" },
   { id: "gold", label: "Exile Gold", darkHex: "#eab308", lightHex: "#b45309", previewHex: "#eab308" },
   { id: "crimson", label: "Vaal Crimson", darkHex: "#f87171", lightHex: "#dc2626", previewHex: "#ef4444" },
-  { id: "cyan", label: "Mana Cyan", darkHex: "#22d3ee", lightHex: "#0891b2", previewHex: "#06b6d4" },
-  { id: "viridian", label: "Viridian", darkHex: "#34d399", lightHex: "#059669", previewHex: "#10b981" },
+  { id: "cyan", label: "Mana Cyan", darkHex: "#22d3ee", lightHex: "#0e7490", previewHex: "#06b6d4" },
+  { id: "viridian", label: "Viridian", darkHex: "#34d399", lightHex: "#047857", previewHex: "#10b981" },
   { id: "amethyst", label: "Amethyst", darkHex: "#c084fc", lightHex: "#7e22ce", previewHex: "#a855f7" },
 ];
 
@@ -95,6 +95,15 @@ export function computeRelativeLuminance(hex: string): number {
   return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
 }
 
+/** Computes WCAG 2.x contrast ratio between two hex colors in [1, 21]. */
+export function computeContrastRatio(hexA: string, hexB: string): number {
+  const l1 = computeRelativeLuminance(hexA);
+  const l2 = computeRelativeLuminance(hexB);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 /** Adjusts custom accent brightness if needed so it stays readable against Light or OLED backgrounds. */
 export function resolveReadableAccentForMode(hex: string, mode: HudAppearanceMode): string {
   const norm = normalizeHexColor(hex);
@@ -129,8 +138,10 @@ export function resolveThemeCssVariables(theme: SavedHudTheme): Record<string, s
   const isLight = theme.mode === "light";
   const accentHex = resolveAccentHex(theme);
   const [ar, ag, ab] = hexToRgbTuple(accentHex);
-  const accentLum = computeRelativeLuminance(accentHex);
-  const accentFg = accentLum > 0.42 ? "#09090b" : "#ffffff";
+  const accentFg =
+    computeContrastRatio(accentHex, "#09090b") >= computeContrastRatio(accentHex, "#ffffff")
+      ? "#09090b"
+      : "#ffffff";
 
   const surfaceTokens = isLight
     ? {
@@ -141,14 +152,16 @@ export function resolveThemeCssVariables(theme: SavedHudTheme): Record<string, s
         "--hud-hairline": "rgba(9, 9, 11, 0.11)",
         "--hud-text": "#09090b",
         "--hud-muted": "#52525b",
-        "--hud-dim": "#a1a1aa",
-        "--hud-quest": "#b45309",
-        "--hud-ok": "#059669",
-        "--hud-warn": "#d97706",
+        "--hud-dim": "#71717a",
+        "--hud-quest": "#92400e",
+        "--hud-ok": "#047857",
+        "--hud-warn": "#b45309",
         "--hud-danger": "#dc2626",
+        "--hud-danger-bg": "#dc2626",
+        "--hud-danger-fg": "#ffffff",
         "--hud-fire": "#dc2626",
         "--hud-cold": "#2563eb",
-        "--hud-lightning": "#ca8a04",
+        "--hud-lightning": "#a16207",
         "--hud-chaos": "#a21caf",
         "--hud-socket-ring": "rgba(9, 9, 11, 0.42)",
       }
@@ -161,11 +174,13 @@ export function resolveThemeCssVariables(theme: SavedHudTheme): Record<string, s
           "--hud-hairline": "rgba(255, 255, 255, 0.1)",
           "--hud-text": "#f4f4f5",
           "--hud-muted": "#a1a1aa",
-          "--hud-dim": "#52525b",
+          "--hud-dim": "#858590",
           "--hud-quest": "#eab308",
           "--hud-ok": "#34d399",
           "--hud-warn": "#fbbf24",
           "--hud-danger": "#f87171",
+          "--hud-danger-bg": "#dc2626",
+          "--hud-danger-fg": "#ffffff",
           "--hud-fire": "#ef4444",
           "--hud-cold": "#3b82f6",
           "--hud-lightning": "#eab308",
@@ -179,12 +194,14 @@ export function resolveThemeCssVariables(theme: SavedHudTheme): Record<string, s
           "--hud-subtle": "rgba(255, 255, 255, 0.04)",
           "--hud-hairline": "rgba(255, 255, 255, 0.09)",
           "--hud-text": "#f4f4f5",
-          "--hud-muted": "#71717a",
-          "--hud-dim": "#3f3f46",
+          "--hud-muted": "#a1a1aa",
+          "--hud-dim": "#7c7c86",
           "--hud-quest": "#eab308",
           "--hud-ok": "#34d399",
           "--hud-warn": "#fbbf24",
           "--hud-danger": "#f87171",
+          "--hud-danger-bg": "#dc2626",
+          "--hud-danger-fg": "#ffffff",
           "--hud-fire": "#ef4444",
           "--hud-cold": "#3b82f6",
           "--hud-lightning": "#eab308",

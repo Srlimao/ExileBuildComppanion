@@ -1,5 +1,5 @@
 import type { DeviceFormFactor, HudContextMode, HudSessionSnapshot } from "@exile-hud/core";
-import { ThemeAppearanceControls, useHudI18n } from "@exile-hud/hud-ui";
+import { ThemeAppearanceControls, useAccessibleDialog, useHudI18n } from "@exile-hud/hud-ui";
 import { Download, LayoutGrid, QrCode, RefreshCw, RotateCcw, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { LATEST_PORTABLE_EXE_URL } from "../desktop_download/github_latest_release_client.js";
@@ -40,19 +40,14 @@ export function HudSettingsDrawer({
   const { appMsg } = useHudI18n();
   const [confirmingReset, setConfirmingReset] = useState(false);
   const [syncRequested, setSyncRequested] = useState(false);
+  const dialogRef = useAccessibleDialog({ open, onClose });
 
   useEffect(() => {
     if (!open) {
       setConfirmingReset(false);
       setSyncRequested(false);
-      return;
     }
-    const onKeyDown = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
+  }, [open]);
 
   useEffect(() => {
     if (!confirmingReset) return;
@@ -80,11 +75,13 @@ export function HudSettingsDrawer({
       />
 
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label={appMsg.pwa.settingsTitle}
         data-testid="hud-settings-drawer"
-        className="relative z-10 h-full w-full max-w-xs sm:max-w-sm bg-hud-surface border-l border-hud-hairline px-5 py-4 overflow-y-auto flex flex-col gap-5 shadow-2xl"
+        className="relative z-10 h-full w-full max-w-xs sm:max-w-sm bg-hud-surface border-l border-hud-hairline pl-5 pr-[max(1.25rem,env(safe-area-inset-right))] pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] overflow-y-auto flex flex-col gap-5 shadow-2xl focus:outline-none"
       >
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -101,7 +98,7 @@ export function HudSettingsDrawer({
             data-testid="hud-settings-close"
             aria-label={appMsg.pwa.closeSettings}
             onClick={onClose}
-            className="p-1.5 -mr-1 rounded-md text-hud-muted hover:text-hud-text hover:bg-hud-subtle transition-colors cursor-pointer"
+            className="p-2 -mr-1.5 rounded-lg text-hud-muted hover:text-hud-text hover:bg-hud-subtle transition-colors cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
@@ -124,7 +121,7 @@ export function HudSettingsDrawer({
                 onTriggerManualSync();
                 setSyncRequested(true);
               }}
-              className="w-full py-2.5 flex items-center justify-between gap-3 text-left group cursor-pointer"
+              className="w-full py-2.5 flex items-center justify-between gap-3 text-left group rounded-lg cursor-pointer"
             >
               <span className="flex items-start gap-2.5 min-w-0">
                 <RefreshCw
@@ -141,9 +138,9 @@ export function HudSettingsDrawer({
                   </span>
                 </span>
               </span>
-              {syncRequested && (
-                <span className="text-[11px] font-mono text-hud-ok shrink-0">{appMsg.pwa.requested}</span>
-              )}
+              <span aria-live="polite" className="text-[11px] font-mono text-hud-ok shrink-0">
+                {syncRequested ? appMsg.pwa.requested : ""}
+              </span>
             </button>
 
             <button
@@ -155,7 +152,7 @@ export function HudSettingsDrawer({
                 onToggleEditLayout();
                 onClose();
               }}
-              className={`w-full py-2.5 flex items-center justify-between gap-3 text-left group ${
+              className={`w-full py-2.5 flex items-center justify-between gap-3 text-left group rounded-lg ${
                 canEditLayout ? "cursor-pointer" : "opacity-50 cursor-not-allowed"
               }`}
             >
@@ -189,7 +186,7 @@ export function HudSettingsDrawer({
                   onClose();
                   onOpenPairingModal();
                 }}
-                className="w-full py-2.5 flex items-start gap-2.5 text-left group cursor-pointer"
+                className="w-full py-2.5 flex items-start gap-2.5 text-left group rounded-lg cursor-pointer"
               >
                 <QrCode className="h-4 w-4 mt-0.5 shrink-0 text-hud-accent" />
                 <span className="min-w-0">
@@ -205,7 +202,7 @@ export function HudSettingsDrawer({
 
             <a
               href={LATEST_PORTABLE_EXE_URL}
-              className="w-full py-2.5 flex items-start gap-2.5 text-left group"
+              className="w-full py-2.5 flex items-start gap-2.5 text-left group rounded-lg"
             >
               <Download className="h-4 w-4 mt-0.5 shrink-0 text-hud-ok" />
               <span className="min-w-0">
@@ -236,7 +233,7 @@ export function HudSettingsDrawer({
                     onResetProgress();
                     setConfirmingReset(false);
                   }}
-                  className="px-3 py-1.5 rounded-md bg-hud-danger text-white text-xs font-semibold cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg bg-hud-danger-bg text-hud-danger-fg hover:opacity-90 text-xs font-semibold cursor-pointer"
                 >
                   {appMsg.pwa.confirmResetBtn}
                 </button>
@@ -244,7 +241,7 @@ export function HudSettingsDrawer({
                   type="button"
                   data-testid="pwa-cancel-reset-progress-btn"
                   onClick={() => setConfirmingReset(false)}
-                  className="px-3 py-1.5 rounded-md text-xs text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg text-xs text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
                 >
                   {appMsg.pwa.cancel}
                 </button>
@@ -255,7 +252,7 @@ export function HudSettingsDrawer({
               type="button"
               data-testid="pwa-reset-progress-btn"
               onClick={() => setConfirmingReset(true)}
-              className="w-full py-1.5 flex items-start gap-2.5 text-left group cursor-pointer"
+              className="w-full py-1.5 flex items-start gap-2.5 text-left group rounded-lg cursor-pointer"
             >
               <RotateCcw className="h-4 w-4 mt-0.5 shrink-0 text-hud-muted group-hover:text-hud-danger transition-colors" />
               <span className="min-w-0">

@@ -1,4 +1,4 @@
-import type { HudSessionSnapshot } from "@exile-hud/core";
+import { parsePoelabDailyJson, type HudSessionSnapshot } from "@exile-hud/core";
 import { poe1GameAdapter } from "@exile-hud/game-data";
 import { Upload } from "lucide-react";
 import { useState, type ChangeEvent } from "react";
@@ -14,13 +14,27 @@ export function LabCompassWidget({ snapshot, onImportPoelabJson }: LabCompassWid
   const { locale, msg } = useHudI18n();
   const [showPaste, setShowPaste] = useState(false);
   const [pasteText, setPasteText] = useState("");
+  const [importError, setImportError] = useState<string | null>(null);
   const izaroGuides = poe1GameAdapter.getIzaroMechanics().map((g) => localizeIzaroGuide(g, locale));
   const trials = poe1GameAdapter.getLabTrials();
+
+  const tryImport = (rawText: string): boolean => {
+    try {
+      parsePoelabDailyJson(rawText);
+      setImportError(null);
+      onImportPoelabJson(rawText);
+      return true;
+    } catch {
+      setImportError(msg.a11y.invalidPoelabJson);
+      return false;
+    }
+  };
 
   const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    onImportPoelabJson(await file.text());
+    tryImport(await file.text());
+    e.target.value = "";
   };
 
   return (
@@ -29,16 +43,25 @@ export function LabCompassWidget({ snapshot, onImportPoelabJson }: LabCompassWid
         <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
           {msg.widgets.labCompass} · {snapshot.lab.difficultyLabel}
         </h2>
-        <div className="flex items-center gap-3 text-xs">
-          <label className="text-hud-muted hover:text-hud-text inline-flex items-center gap-1 cursor-pointer transition-colors">
+        <div className="flex items-center gap-2 text-xs">
+          <label className="px-2 py-1 rounded-lg text-hud-muted hover:text-hud-text hover:bg-hud-subtle inline-flex items-center gap-1 cursor-pointer transition-colors focus-within:outline-2 focus-within:outline-hud-accent">
             <Upload className="h-3.5 w-3.5" />
             <span>{msg.widgets.importJson}</span>
-            <input type="file" accept=".json,application/json" className="hidden" onChange={(e) => void handleFileUpload(e)} />
+            <input
+              type="file"
+              accept=".json,application/json"
+              className="sr-only"
+              onChange={(e) => void handleFileUpload(e)}
+            />
           </label>
           <button
             type="button"
-            onClick={() => setShowPaste((v) => !v)}
-            className="text-hud-muted hover:text-hud-text cursor-pointer transition-colors"
+            aria-expanded={showPaste}
+            onClick={() => {
+              setShowPaste((v) => !v);
+              setImportError(null);
+            }}
+            className="px-2 py-1 rounded-lg text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer transition-colors"
           >
             {showPaste ? msg.widgets.hidePaste : msg.widgets.paste}
           </button>
@@ -49,24 +72,35 @@ export function LabCompassWidget({ snapshot, onImportPoelabJson }: LabCompassWid
         <div className="flex gap-2 items-center">
           <input
             type="text"
+            aria-label={msg.widgets.pastePlaceholder}
             value={pasteText}
-            onChange={(e) => setPasteText(e.target.value)}
+            onChange={(e) => {
+              setPasteText(e.target.value);
+              if (importError) setImportError(null);
+            }}
             placeholder={msg.widgets.pastePlaceholder}
-            className="flex-1 rounded-md bg-hud-subtle border-b border-hud-hairline focus:border-hud-accent focus:outline-none px-2.5 py-1.5 text-xs font-mono text-hud-text"
+            className="flex-1 rounded-lg bg-hud-subtle border-b border-hud-hairline focus:border-hud-accent px-2.5 py-1.5 text-xs font-mono text-hud-text"
           />
           <button
             type="button"
             onClick={() => {
               if (!pasteText.trim()) return;
-              onImportPoelabJson(pasteText);
-              setShowPaste(false);
-              setPasteText("");
+              if (tryImport(pasteText)) {
+                setShowPaste(false);
+                setPasteText("");
+              }
             }}
-            className="px-3 py-1.5 rounded-md bg-hud-accent text-hud-accent-fg text-xs font-semibold cursor-pointer"
+            className="px-3 py-1.5 rounded-lg bg-hud-accent text-hud-accent-fg text-xs font-semibold cursor-pointer"
           >
             {msg.widgets.load}
           </button>
         </div>
+      )}
+
+      {importError && (
+        <p role="alert" className="text-xs text-hud-danger border-l-2 border-hud-danger pl-2.5 py-0.5">
+          {importError}
+        </p>
       )}
 
       {snapshot.lab.hasDailyLayout ? (
@@ -76,7 +110,7 @@ export function LabCompassWidget({ snapshot, onImportPoelabJson }: LabCompassWid
             return (
               <div
                 key={room.id}
-                className={`px-2 py-1.5 -mx-2 rounded-md flex items-baseline justify-between gap-2 text-sm ${
+                className={`px-2 py-1.5 rounded-lg flex items-baseline justify-between gap-2 text-sm ${
                   active ? "bg-hud-subtle text-hud-text font-semibold" : "text-hud-text/80"
                 }`}
               >

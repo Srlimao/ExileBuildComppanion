@@ -54,6 +54,9 @@ Use `pnpm run build:all` so `@exile-hud/core` compiles before `@exile-hud/pwa` a
   - Never add PoE process memory reading, network packet capture, or automated keyboard/mouse input injection. Foreground key-state polling (`foreground_poe_hotkey_poller.rs`) exists solely to toggle companion view mode (`TREE` <-> field/town), with chat-open (`Enter`/`Esc`) guards.
 - **Desktop Build Library ("One Save, One Progression"):**
   - The desktop Control Center opens on the `Builds` tab (`builds | overlay | connect | game`). Each saved build `.json` under `builds/` owns independent campaign progress, `runElapsedMs`, `actSplitsMs`, and linked character/league. Switching builds MUST flush outgoing progress first and compile with `carryProgressFromPrevious: false`. Do not add a local PoB `Documents/Path of Building/Builds` `.xml` folder importer unless explicitly requested.
+- **Desktop Control Center ("Precision Tray Companion"):**
+  - Keep the `main` window compact (`460 × 640`, `minWidth: 420`, `minHeight: 540` in `apps/desktop/src-tauri/tauri.conf.json`) using a fixed `h-screen` shell (`DesktopControlHeader` with `HUD` toggle, `QuickQrPairPopover`, `ThemeSelectorPopover`, and 4-segment `builds | overlay | connect | game` nav; scrollable `<main>`; pinned slim `DesktopUpdateFooterBar` expanding to an accent CTA only when an update is available).
+  - Enforce progressive disclosure across desktop tabs: unify active build info, progress bar, and 2-step reset inside `ActiveBuildRunCard` on `Builds` only (preserving `data-testid="pc-reset-progress-btn"`, `pc-confirm-reset-progress-btn`, and `pc-cancel-reset-progress-btn`); keep build/folder rows to 2 lines with `⋯` overflow menus; keep the Build Editor split into `PoB & Sets` / `Character & Notes`; keep `LeagueStarterFilterCard` and collapsed-by-default `CampaignSimulatorDrawer` under `Game`; keep `Advanced Relay URL` collapsed under `Connect` (`Second Screen` | `GGG Character`); and place raw disk paths (`rootDir`, `filterDir`) in icon tooltips instead of footer text.
 - **Android PWA Auto-Reconnect & Mobile WebSocket Resilience:**
   - Installed Android PWAs undergo OS eviction, Workbox `autoUpdate` reloads, and silent TCP suspension. Preserve `exile_hud_recent_room_session_v1` + 24h `exile_hud_last_snapshot_v1` auto-reconnect on cold start (disabling `autoConnect` only when the user manually opens Pairing / switches rooms), keep `visibilitychange`/`online`/`pageshow`/`focus` recovery probes, ping/pong watchdogs, and socket generation guards (`this.socket !== ws`) in `EdgeWebSocketRoomClient`, and stop auto-retry cleanly on `4003` (clear stale PIN, keep room code) and `4001` (disable `autoConnect`).
 
@@ -80,7 +83,7 @@ Run all applicable checks after edits (and re-run after final edits):
 pnpm run check:lines                                      # Mandatory <300-line check across all 228+ files
 pnpm test                                                 # Core, edge-worker, pwa, and desktop Vitest suites
 pnpm run build:all                                        # Type-check & production build (core -> pwa & desktop)
-cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml   # Required whenever Rust code changes
+cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml   # Required whenever Rust code or tauri.conf.json changes
 ```
 
 **Known Gotchas:**
@@ -90,6 +93,7 @@ cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml   # Required whenev
 - **Desktop preview command:** `apps/desktop/package.json` defines `dev`, `build`, and `tauri` (no `preview` script). To preview its built frontend directly, run `pnpm --filter @exile-hud/desktop exec vite preview --host 127.0.0.1 --port 4174 --strictPort`.
 - **PWA Service Worker cache during local/prod UI checks:** `@exile-hud/pwa` ships a Workbox Service Worker (`dist/sw.js`). When testing freshly built PWA bundles locally (`vite preview`) or in production (`?demo=1`), unregister existing service workers via `navigator.serviceWorker.getRegistrations()` before reloading so stale cached assets do not mask changes.
 - **GitHub & Remote Safety:** Never push to GitHub, create tags/releases, or deploy without explicit user request and confirmation.
+- **Windows concurrent same-file edits:** Do not issue parallel `edit_file` calls targeting the same file path on Windows (can fail with `"user-mapped section open"`); edit distinct files in parallel or apply multiple edits to one file sequentially.
 
 ---
 
@@ -97,7 +101,7 @@ cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml   # Required whenev
 
 - **CI (`.github/workflows/ci.yml`):** Triggers on `push` / `pull_request` to `main`. Runs `pnpm run check:lines`, `pnpm run build:all`, and `pnpm test` on `ubuntu-latest`, plus desktop Vite build and `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml` on `windows-latest`.
 - **Cloudflare Worker (`wrangler.jsonc`):** Pushing to `main` triggers Cloudflare Workers Builds to deploy `exilebuildcomppanion` (`https://exile.dunhas.com`), serving both the built PWA static bundle (`./apps/pwa/dist`) and the `SessionRoomDurableObject` WebSocket/API routes. Local non-interactive shells generally do not hold Cloudflare credentials; avoid committing secrets into `wrangler.jsonc`.
-- **Windows Desktop Release (`.github/workflows/release-desktop.yml`):** Pushing changes under `apps/desktop/**`, `packages/core/**`, `packages/game-data/**`, `packages/hud-ui/**`, `apps/pwa/public/**`, or `scripts/generate_tauri_icons.mjs` to `main` (or manual `workflow_dispatch`) builds `ExileCompanionHUD.exe`, `ExileCompanionHUD-Setup.exe`, and `SHA256SUMS.txt` and publishes the latest GitHub Release.
+- **Windows Desktop Release (`.github/workflows/release-desktop.yml`):** Pushing changes under `apps/desktop/**`, `packages/core/**`, `packages/game-data/**`, `packages/hud-ui/**`, `apps/pwa/public/**`, or `scripts/generate_tauri_icons.mjs` to `main` (or manual `workflow_dispatch`) stamps `v0.1.<run_number>`, builds `ExileRelay.exe`, `ExileRelay-Setup.exe`, `ExileCompanionHUD.exe`, `ExileCompanionHUD-Setup.exe`, and `SHA256SUMS.txt`, and publishes the latest GitHub Release.
 
 ---
 

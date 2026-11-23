@@ -8,6 +8,7 @@ import {
   type DesktopOverlayAndUpdaterMessages,
 } from "./desktop_overlay_and_updater_messages.js";
 import { DESKTOP_CONTROL_MESSAGES, type DesktopControlMessages } from "./desktop_surface_messages.js";
+import { HUD_A11Y_MESSAGES, type HudA11yMessages } from "./hud_a11y_messages.js";
 import { HUD_SHELL_AND_TREE_MESSAGES, type HudShellAndTreeMessages } from "./hud_shell_messages.js";
 import { HUD_WIDGET_MESSAGES, type HudWidgetsMessages } from "./hud_widgets_messages.js";
 import {
@@ -20,7 +21,10 @@ import {
 } from "./locale_storage_and_types.js";
 import { PWA_SURFACE_MESSAGES, type PwaSurfaceMessages } from "./pwa_surface_messages.js";
 
-export type HudMessagesBundle = HudShellAndTreeMessages & { widgets: HudWidgetsMessages };
+export type HudMessagesBundle = HudShellAndTreeMessages & {
+  widgets: HudWidgetsMessages;
+  a11y: HudA11yMessages;
+};
 export type DesktopSurfaceMessages = DesktopControlMessages &
   DesktopOverlayAndUpdaterMessages &
   DesktopBuildLibraryMessages;
@@ -42,6 +46,7 @@ export interface HudI18nContextValue {
 function buildContextValue(locale: HudLocale, setLocale: (next: HudLocale) => void): HudI18nContextValue {
   const shell = HUD_SHELL_AND_TREE_MESSAGES[locale];
   const widgets = HUD_WIDGET_MESSAGES[locale];
+  const a11y = HUD_A11Y_MESSAGES[locale];
   const pwa = PWA_SURFACE_MESSAGES[locale];
   const desktop = {
     ...DESKTOP_CONTROL_MESSAGES[locale],
@@ -52,7 +57,7 @@ function buildContextValue(locale: HudLocale, setLocale: (next: HudLocale) => vo
     locale,
     isPtBr: locale === "pt-BR",
     setLocale,
-    msg: { ...shell, widgets },
+    msg: { ...shell, widgets, a11y },
     appMsg: { legalDisclaimer: pwa.legalDisclaimer, pwa, desktop },
   };
 }

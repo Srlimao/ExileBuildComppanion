@@ -37,6 +37,7 @@ export const WidgetIdSchema = z.enum([
   "gear_hygiene",
   "run_timer",
   "lab_compass",
+  "ascendancy_order",
   "twink_gear",
 ]);
 export type WidgetId = z.infer<typeof WidgetIdSchema>;
@@ -188,6 +189,7 @@ export interface PassiveTreeTelemetry {
   allocatedNodeIds?: string[];
   allocatedMasteries?: Record<string, string>;
   specs?: PassiveTreeSpecSummary[];
+  ascendancyNoteOrderIds?: string[];
 }
 
 export interface LabTelemetry {

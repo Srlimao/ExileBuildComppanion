@@ -1,5 +1,6 @@
 import type { HudSessionSnapshot, WidgetId } from "@exile-hud/core";
 import { ActiveChecklistWidget } from "../widgets/active_checklist_widget.js";
+import { AscendancyOrderWidget } from "../widgets/ascendancy_order_widget.js";
 import { DeferredBacklogWidget } from "../widgets/deferred_backlog_widget.js";
 import { GearHygieneWidget } from "../widgets/gear_hygiene_widget.js";
 import { LabCompassWidget } from "../widgets/lab_compass_widget.js";
@@ -49,6 +50,8 @@ export function renderHudWidget(widgetId: WidgetId, handlers: HudWidgetDispatchH
       return <TwinkGearWidget snapshot={snapshot} onPushToPcClipboard={handlers.onPushToPcClipboard} />;
     case "run_timer":
       return <RunTimerWidget snapshot={snapshot} />;
+    case "ascendancy_order":
+      return <AscendancyOrderWidget snapshot={snapshot} />;
     case "lab_compass":
       return <LabCompassWidget snapshot={snapshot} onImportPoelabJson={handlers.onImportPoelabJson} />;
   }

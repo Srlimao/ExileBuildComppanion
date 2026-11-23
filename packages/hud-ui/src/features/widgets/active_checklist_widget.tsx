@@ -127,9 +127,10 @@ export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveCh
           {(doneCount > 0 || earlierPendingCount > 0) && (
             <button
               type="button"
+              aria-pressed={showCompleted}
               data-testid="toggle-completed-steps"
               onClick={() => setShowCompleted((v) => !v)}
-              className="text-hud-muted hover:text-hud-text transition-colors cursor-pointer"
+              className="px-2 py-1 rounded-lg text-hud-muted hover:text-hud-text hover:bg-hud-subtle transition-colors cursor-pointer"
             >
               {showCompleted
                 ? msg.widgets.pendingOnly
@@ -151,8 +152,9 @@ export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveCh
             <button
               key={cp.id}
               type="button"
+              aria-pressed={cp.completed}
               onClick={() => onToggleCheckpoint(cp.id)}
-              className={`w-full text-left px-2 py-1.5 -mx-2 rounded-md transition-colors hover:bg-hud-subtle flex items-baseline justify-between gap-3 cursor-pointer ${
+              className={`w-full text-left px-2 py-1.5 rounded-lg transition-colors hover:bg-hud-subtle flex items-baseline justify-between gap-3 cursor-pointer ${
                 cp.completed ? "text-hud-dim line-through" : ""
               }`}
             >

@@ -34,9 +34,10 @@ export function ThemeAppearanceControls() {
               <button
                 key={opt.id}
                 type="button"
+                aria-pressed={active}
                 data-testid={`hud-locale-${opt.id}`}
                 onClick={() => setLocale(opt.id)}
-                className={`py-1 rounded text-xs transition-colors cursor-pointer ${
+                className={`py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
                   active
                     ? "bg-hud-accent text-hud-accent-fg font-semibold"
                     : "text-hud-muted hover:text-hud-text hover:bg-hud-subtle"
@@ -60,9 +61,10 @@ export function ThemeAppearanceControls() {
               <button
                 key={modeId}
                 type="button"
+                aria-pressed={active}
                 data-testid={`hud-mode-${modeId}`}
                 onClick={() => setMode(modeId)}
-                className={`py-1 rounded text-xs transition-colors cursor-pointer ${
+                className={`py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
                   active
                     ? "bg-hud-accent text-hud-accent-fg font-semibold"
                     : "text-hud-muted hover:text-hud-text hover:bg-hud-subtle"
@@ -83,7 +85,7 @@ export function ThemeAppearanceControls() {
           <span className="text-hud-dim font-mono">{activeSwatch}</span>
         </div>
 
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-1">
           {HUD_ACCENT_SWATCHES.map((swatch) => {
             const selected = theme.accentId === swatch.id;
             const dotColor = theme.mode === "light" ? swatch.lightHex : swatch.darkHex;
@@ -92,20 +94,25 @@ export function ThemeAppearanceControls() {
               <button
                 key={swatch.id}
                 type="button"
+                aria-pressed={selected}
                 data-testid={`hud-accent-${swatch.id}`}
                 aria-label={label}
                 title={label}
                 onClick={() => setAccentId(swatch.id)}
-                className={`h-6 w-6 rounded-full transition-transform cursor-pointer flex items-center justify-center ${
-                  selected ? "scale-110" : "hover:scale-105 opacity-85 hover:opacity-100"
-                }`}
-                style={{
-                  backgroundColor: dotColor,
-                  boxShadow: selected
-                    ? "0 0 0 2px var(--hud-surface), 0 0 0 3.5px var(--hud-text)"
-                    : "0 0 0 1px var(--hud-hairline)",
-                }}
-              />
+                className="h-8 w-8 rounded-full cursor-pointer flex items-center justify-center"
+              >
+                <span
+                  className={`h-5 w-5 rounded-full block transition-transform ${
+                    selected ? "scale-110" : "hover:scale-105 opacity-85 hover:opacity-100"
+                  }`}
+                  style={{
+                    backgroundColor: dotColor,
+                    boxShadow: selected
+                      ? "0 0 0 2px var(--hud-surface), 0 0 0 3.5px var(--hud-text)"
+                      : "0 0 0 1px var(--hud-hairline)",
+                  }}
+                />
+              </button>
             );
           })}
         </div>

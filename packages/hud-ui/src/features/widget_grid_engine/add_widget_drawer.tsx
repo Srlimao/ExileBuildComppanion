@@ -1,5 +1,6 @@
 import type { WidgetGridItemLayout, WidgetId } from "@exile-hud/core";
 import { Plus, X } from "lucide-react";
+import { useAccessibleDialog } from "../hud_shell/use_accessible_dialog.js";
 import { useHudI18n } from "../i18n/hud_i18n_provider.js";
 import type { WidgetGridFormFactor, WidgetGridMode } from "./customizable_mode_widget_grid.js";
 import { getLocalizedWidgetCatalog } from "./default_mode_grid_presets.js";
@@ -24,31 +25,49 @@ export function AddWidgetDrawer({
   onClose,
 }: AddWidgetDrawerProps) {
   const { locale, msg } = useHudI18n();
+  const dialogRef = useAccessibleDialog({ open, onClose });
   if (!open) return null;
   const activeSet = new Set(activeItems.map((i) => i.widgetId));
   const catalog = getLocalizedWidgetCatalog(locale);
   const modeLabel = mode === "TREE_COMPACT" ? msg.modes.TREE : msg.modes[mode];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-hud-surface border border-hud-hairline rounded-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-black/65 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-widget-drawer-title"
+        className="relative z-10 w-full max-w-2xl bg-hud-surface border border-hud-hairline rounded-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl focus:outline-none"
+      >
         <div className="flex items-center justify-between gap-3 pb-3 border-b border-hud-hairline">
           <div>
-            <h2 className="text-lg font-bold text-hud-text">{msg.grid.customizeTitle(modeLabel)}</h2>
+            <h2 id="add-widget-drawer-title" className="text-lg font-bold text-hud-text">
+              {msg.grid.customizeTitle(modeLabel)}
+            </h2>
             <p className="text-xs text-hud-muted">{msg.grid.savedForViewport(formFactor)}</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onResetDefaults}
-              className="px-2.5 py-1 rounded-md text-xs text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg text-xs text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
             >
               {msg.grid.resetDefaults}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-md text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
+              aria-label={msg.a11y.closeDialog}
+              title={msg.a11y.closeDialog}
+              className="p-2 rounded-lg text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
             >
               <X className="h-4 w-4" />
             </button>
@@ -68,7 +87,7 @@ export function AddWidgetDrawer({
                   type="button"
                   disabled={added}
                   onClick={() => onAddWidget(entry.widgetId)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-semibold shrink-0 inline-flex items-center gap-1 ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 inline-flex items-center gap-1 ${
                     added
                       ? "text-hud-dim cursor-default"
                       : "bg-hud-accent text-hud-accent-fg hover:opacity-90 cursor-pointer"

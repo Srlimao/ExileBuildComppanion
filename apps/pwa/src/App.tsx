@@ -11,6 +11,7 @@ import {
   CustomizableModeWidgetGrid,
   DeathRespawnResumeBanner,
   getDefaultLayoutForMode,
+  HudErrorBoundary,
   localizeConnectionOrSyncMessage,
   PassiveTreeCommandView,
   renderHudWidget,
@@ -27,7 +28,7 @@ import { useScreenWakeLock } from "./features/pairing_and_connection/screen_wake
 import { usePwaRoomSession } from "./features/pairing_and_connection/use_pwa_room_session.js";
 
 export function App() {
-  const { locale, appMsg } = useHudI18n();
+  const { locale, msg, appMsg } = useHudI18n();
   const session = usePwaRoomSession();
   const {
     roomId,
@@ -125,19 +126,25 @@ export function App() {
   );
 
   if (window.location.pathname.startsWith("/oauth/callback")) {
-    return <GggOauthCallbackView />;
+    return (
+      <HudErrorBoundary variant="app" resetKey="oauth">
+        <GggOauthCallbackView />
+      </HudErrorBoundary>
+    );
   }
 
   if (!snapshot) {
     return (
-      <QrPinJoinModal
-        initialRoomId={roomId}
-        initialPin={pin}
-        connectionPhase={connectionPhase}
-        errorMessage={localizeConnectionOrSyncMessage(errorMsg, locale)}
-        onJoinRoom={joinRoom}
-        onStartDemo={startDemo}
-      />
+      <HudErrorBoundary variant="app" resetKey={`pairing:${roomId}`}>
+        <QrPinJoinModal
+          initialRoomId={roomId}
+          initialPin={pin}
+          connectionPhase={connectionPhase}
+          errorMessage={localizeConnectionOrSyncMessage(errorMsg, locale)}
+          onJoinRoom={joinRoom}
+          onStartDemo={startDemo}
+        />
+      </HudErrorBoundary>
     );
   }
 
@@ -148,67 +155,78 @@ export function App() {
     getDefaultLayoutForMode(formFactor, effectiveMode, { leagueStart: snapshot.leagueStart });
 
   return (
-    <div className="min-h-screen bg-hud-bg text-hud-text pb-10 transition-colors">
-      <HudTopTelemetryBar
-        snapshot={snapshot}
-        activeDisplayMode={effectiveMode}
-        previewModeOverride={previewModeOverride}
-        editLayoutMode={editMode}
-        formFactor={formFactor}
-        connectionPhase={connectionPhase}
-        wakeLocked={wake.locked}
-        isDemo={isDemo}
-        onToggleEditLayout={() => setEditMode((v) => !v)}
-        onSelectPreviewMode={(m) => setPreviewModeOverride(m)}
-        onTriggerManualSync={() => sendCommand({ type: "viewer:request_character_sync" })}
-        onResetProgress={handleResetProgress}
-        onOpenPairingModal={openPairingModal}
-        onReconnectNow={reconnectNow}
-      />
+    <HudErrorBoundary variant="app" resetKey={`${roomId}:${effectiveMode}`}>
+      <div className="min-h-screen bg-hud-bg text-hud-text pb-[max(2.5rem,calc(1.5rem+env(safe-area-inset-bottom)))] transition-colors">
+        <a
+          href="#hud-main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-hud-accent focus:text-hud-accent-fg focus:px-3 focus:py-2 focus:text-xs focus:font-semibold"
+        >
+          {msg.a11y.skipToContent}
+        </a>
 
-      {snapshot.resumeZoneBanner && (
-        <DeathRespawnResumeBanner
-          areaName={snapshot.resumeZoneBanner.areaName}
-          onDismiss={() => setSnapshot((prev) => (prev ? { ...prev, resumeZoneBanner: null } : prev))}
-        />
-      )}
-
-      {effectiveMode === "STANDBY" ? (
-        <StandbySessionSummaryView
+        <HudTopTelemetryBar
           snapshot={snapshot}
-          onOverridePreview={() => setPreviewModeOverride("FIELD")}
-        />
-      ) : effectiveMode === "TREE" ? (
-        <PassiveTreeCommandView
-          snapshot={snapshot}
-          onTriggerManualSync={() => sendCommand({ type: "viewer:request_character_sync" })}
-        />
-      ) : (
-        <CustomizableModeWidgetGrid
-          mode={effectiveMode}
+          activeDisplayMode={effectiveMode}
+          previewModeOverride={previewModeOverride}
+          editLayoutMode={editMode}
           formFactor={formFactor}
-          items={activeGridItems}
-          editMode={editMode}
-          renderWidget={(widgetId) =>
-            renderHudWidget(widgetId, {
-              snapshot,
-              onToggleCheckpoint: handleToggleCheckpoint,
-              onToggleGem: handleToggleGem,
-              onOpenFullTree: () => setPreviewModeOverride("TREE"),
-              onPushToPcClipboard: (regex) => sendCommand({ type: "viewer:request_regex_copy", regex }),
-              onImportPoelabJson: handleImportPoelab,
-            })
-          }
-          onUpdateLayout={(next) => handleUpdateLayout(effectiveMode, next)}
-          onResetDefaults={() =>
-            handleUpdateLayout(effectiveMode, getDefaultLayoutForMode(formFactor, effectiveMode, { leagueStart: snapshot.leagueStart }))
-          }
+          connectionPhase={connectionPhase}
+          wakeLocked={wake.locked}
+          isDemo={isDemo}
+          onToggleEditLayout={() => setEditMode((v) => !v)}
+          onSelectPreviewMode={(m) => setPreviewModeOverride(m)}
+          onTriggerManualSync={() => sendCommand({ type: "viewer:request_character_sync" })}
+          onResetProgress={handleResetProgress}
+          onOpenPairingModal={openPairingModal}
+          onReconnectNow={reconnectNow}
         />
-      )}
 
-      <footer className="max-w-7xl mx-auto px-4 pt-6 pb-2 text-center text-[11px] text-hud-dim">
-        {appMsg.legalDisclaimer}
-      </footer>
-    </div>
+        {snapshot.resumeZoneBanner && (
+          <DeathRespawnResumeBanner
+            areaName={snapshot.resumeZoneBanner.areaName}
+            onDismiss={() => setSnapshot((prev) => (prev ? { ...prev, resumeZoneBanner: null } : prev))}
+          />
+        )}
+
+        <main id="hud-main-content" tabIndex={-1} className="safe-x focus:outline-none">
+          {effectiveMode === "STANDBY" ? (
+            <StandbySessionSummaryView
+              snapshot={snapshot}
+              onOverridePreview={() => setPreviewModeOverride("FIELD")}
+            />
+          ) : effectiveMode === "TREE" ? (
+            <PassiveTreeCommandView
+              snapshot={snapshot}
+              onTriggerManualSync={() => sendCommand({ type: "viewer:request_character_sync" })}
+            />
+          ) : (
+            <CustomizableModeWidgetGrid
+              mode={effectiveMode}
+              formFactor={formFactor}
+              items={activeGridItems}
+              editMode={editMode}
+              renderWidget={(widgetId) =>
+                renderHudWidget(widgetId, {
+                  snapshot,
+                  onToggleCheckpoint: handleToggleCheckpoint,
+                  onToggleGem: handleToggleGem,
+                  onOpenFullTree: () => setPreviewModeOverride("TREE"),
+                  onPushToPcClipboard: (regex) => sendCommand({ type: "viewer:request_regex_copy", regex }),
+                  onImportPoelabJson: handleImportPoelab,
+                })
+              }
+              onUpdateLayout={(next) => handleUpdateLayout(effectiveMode, next)}
+              onResetDefaults={() =>
+                handleUpdateLayout(effectiveMode, getDefaultLayoutForMode(formFactor, effectiveMode, { leagueStart: snapshot.leagueStart }))
+              }
+            />
+          )}
+        </main>
+
+        <footer className="max-w-7xl mx-auto px-4 safe-x pt-6 pb-2 text-center text-[11px] text-hud-dim">
+          {appMsg.legalDisclaimer}
+        </footer>
+      </div>
+    </HudErrorBoundary>
   );
 }

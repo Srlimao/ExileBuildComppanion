@@ -8,8 +8,8 @@
   --hud-subtle: rgba(255, 255, 255, 0.04);
   --hud-hairline: rgba(255, 255, 255, 0.09);
   --hud-text: #f4f4f5;
-  --hud-muted: #71717a;
-  --hud-dim: #3f3f46;
+  --hud-muted: #a1a1aa;
+  --hud-dim: #7c7c86;
   --hud-accent: #ffffff;
   --hud-accent-fg: #09090b;
   --hud-accent-soft: rgba(255, 255, 255, 0.14);
@@ -18,6 +18,8 @@
   --hud-ok: #34d399;
   --hud-warn: #fbbf24;
   --hud-danger: #f87171;
+  --hud-danger-bg: #dc2626;
+  --hud-danger-fg: #ffffff;
   --hud-fire: #ef4444;
   --hud-cold: #3b82f6;
   --hud-lightning: #eab308;
@@ -42,6 +44,8 @@
   --color-hud-ok: var(--hud-ok);
   --color-hud-warn: var(--hud-warn);
   --color-hud-danger: var(--hud-danger);
+  --color-hud-danger-bg: var(--hud-danger-bg);
+  --color-hud-danger-fg: var(--hud-danger-fg);
   --color-hud-fire: var(--hud-fire);
   --color-hud-cold: var(--hud-cold);
   --color-hud-lightning: var(--hud-lightning);
@@ -53,6 +57,30 @@ body {
   background-color: var(--hud-bg);
   color: var(--hud-text);
   font-family: var(--font-sans);
+}
+
+@layer base {
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  summary:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--hud-accent);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 ::-webkit-scrollbar {

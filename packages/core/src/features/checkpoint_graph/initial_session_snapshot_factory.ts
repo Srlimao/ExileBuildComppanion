@@ -18,6 +18,7 @@ export function buildInitialSessionSnapshot(params: {
   const passiveTree = computePassiveTreeDiff({
     treeSpecs: build.treeSpecs,
     allocatedHashes: [],
+    ascendancyNoteOrderIds: build.ascendancyNoteOrderIds,
     characterLevel: 1,
     adapter,
   });

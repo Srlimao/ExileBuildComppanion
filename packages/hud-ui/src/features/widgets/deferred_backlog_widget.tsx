@@ -32,8 +32,9 @@ export function DeferredBacklogWidget({ snapshot, onToggleCheckpoint }: Deferred
           <button
             key={cp.id}
             type="button"
+            aria-pressed={false}
             onClick={() => onToggleCheckpoint(cp.id)}
-            className="w-full text-left px-2 py-1.5 -mx-2 rounded-md hover:bg-hud-subtle flex items-baseline justify-between gap-3 cursor-pointer"
+            className="w-full text-left px-2 py-1.5 rounded-lg hover:bg-hud-subtle flex items-baseline justify-between gap-3 cursor-pointer"
           >
             <div className="min-w-0">
               <div className="text-sm font-medium text-hud-text truncate">

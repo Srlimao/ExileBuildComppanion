@@ -30,9 +30,10 @@ export function LandingThemePlaygroundBar() {
             <button
               key={opt.id}
               type="button"
+              aria-pressed={active}
               data-testid={`landing-locale-${opt.id}`}
               onClick={() => setLocale(opt.id)}
-              className={`px-2 py-1 rounded-md text-[11px] leading-none transition-colors cursor-pointer ${
+              className={`px-2.5 py-1.5 rounded-lg text-[11px] leading-none transition-colors cursor-pointer ${
                 active
                   ? "bg-hud-accent text-hud-accent-fg font-semibold"
                   : "text-hud-muted hover:text-hud-text hover:bg-hud-subtle"
@@ -53,9 +54,10 @@ export function LandingThemePlaygroundBar() {
             <button
               key={modeId}
               type="button"
+              aria-pressed={active}
               data-testid={`landing-mode-${modeId}`}
               onClick={() => setMode(modeId)}
-              className={`px-2 py-1 rounded-md text-[11px] leading-none transition-colors cursor-pointer ${
+              className={`px-2.5 py-1.5 rounded-lg text-[11px] leading-none transition-colors cursor-pointer ${
                 active
                   ? "bg-hud-accent text-hud-accent-fg font-semibold"
                   : "text-hud-muted hover:text-hud-text hover:bg-hud-subtle"
@@ -69,7 +71,7 @@ export function LandingThemePlaygroundBar() {
 
       <span className="h-3.5 w-px bg-hud-hairline" aria-hidden="true" />
 
-      <div className="inline-flex items-center gap-1.5" role="group" aria-label={msg.theme.accentLabel}>
+      <div className="inline-flex items-center gap-0.5" role="group" aria-label={msg.theme.accentLabel}>
         {HUD_ACCENT_SWATCHES.map((swatch) => {
           const selected = theme.accentId === swatch.id;
           const dotColor = theme.mode === "light" ? swatch.lightHex : swatch.darkHex;
@@ -78,20 +80,25 @@ export function LandingThemePlaygroundBar() {
             <button
               key={swatch.id}
               type="button"
+              aria-pressed={selected}
               data-testid={`landing-accent-${swatch.id}`}
               aria-label={`${msg.theme.accentLabel} ${label}`}
               title={label}
               onClick={() => setAccentId(swatch.id)}
-              className={`h-4 w-4 rounded-full transition-transform cursor-pointer ${
-                selected ? "scale-110" : "opacity-80 hover:opacity-100 hover:scale-105"
-              }`}
-              style={{
-                backgroundColor: dotColor,
-                boxShadow: selected
-                  ? "0 0 0 2px var(--hud-surface), 0 0 0 3px var(--hud-text)"
-                  : "0 0 0 1px var(--hud-hairline)",
-              }}
-            />
+              className="h-7 w-7 rounded-full inline-flex items-center justify-center cursor-pointer"
+            >
+              <span
+                className={`h-4 w-4 rounded-full block transition-transform ${
+                  selected ? "scale-110" : "opacity-80 hover:opacity-100 hover:scale-105"
+                }`}
+                style={{
+                  backgroundColor: dotColor,
+                  boxShadow: selected
+                    ? "0 0 0 2px var(--hud-surface), 0 0 0 3px var(--hud-text)"
+                    : "0 0 0 1px var(--hud-hairline)",
+                }}
+              />
+            </button>
           );
         })}
       </div>

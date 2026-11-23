@@ -50,11 +50,12 @@ export const PassiveTreeLevelStepperBar = memo(function PassiveTreeLevelStepperB
   return (
     <div className="space-y-2.5 pb-2 border-b border-hud-hairline">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
           <button
             type="button"
+            aria-pressed={manualSpecId === null}
             onClick={() => onSelectManualSpec(null)}
-            className={`inline-flex items-center gap-1 pb-1 border-b-2 text-xs font-semibold cursor-pointer transition-colors ${
+            className={`inline-flex items-center gap-1 py-1.5 border-b-2 text-xs font-semibold cursor-pointer transition-colors ${
               manualSpecId === null
                 ? "border-hud-accent text-hud-text"
                 : "border-transparent text-hud-muted hover:text-hud-text"
@@ -71,8 +72,9 @@ export const PassiveTreeLevelStepperBar = memo(function PassiveTreeLevelStepperB
               <button
                 key={spec.id}
                 type="button"
+                aria-pressed={active}
                 onClick={() => onSelectManualSpec(spec.id)}
-                className={`inline-flex items-baseline gap-1.5 pb-1 border-b-2 text-xs cursor-pointer transition-colors ${
+                className={`inline-flex items-baseline gap-1.5 py-1.5 border-b-2 text-xs cursor-pointer transition-colors ${
                   active
                     ? "border-hud-accent text-hud-text font-semibold"
                     : "border-transparent text-hud-muted hover:text-hud-text"
@@ -107,21 +109,24 @@ export const PassiveTreeLevelStepperBar = memo(function PassiveTreeLevelStepperB
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="h-3.5 w-3.5 text-hud-muted absolute left-2.5 top-1/2 -translate-y-1/2" />
+          <Search className="h-3.5 w-3.5 text-hud-muted absolute left-2.5 top-1/2 -translate-y-1/2" aria-hidden="true" />
           <input
             type="text"
+            aria-label={msg.a11y.searchTreeLabel}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={msg.tree.searchPlaceholder}
-            className="w-full rounded-md bg-hud-subtle border-b border-hud-hairline pl-8 pr-16 py-1.5 text-xs text-hud-text placeholder:text-hud-muted focus:outline-none focus:border-hud-accent"
+            className="w-full rounded-lg bg-hud-subtle border-b border-hud-hairline pl-8 pr-16 py-2 text-xs text-hud-text placeholder:text-hud-muted focus:border-hud-accent"
           />
           {searchQuery && (
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
               <span className="text-[11px] font-mono text-hud-accent">{searchMatchCount}</span>
               <button
                 type="button"
+                aria-label={msg.a11y.clearSearch}
+                title={msg.a11y.clearSearch}
                 onClick={() => onSearchChange("")}
-                className="text-hud-muted hover:text-hud-text cursor-pointer"
+                className="p-1.5 rounded-lg text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -129,11 +134,11 @@ export const PassiveTreeLevelStepperBar = memo(function PassiveTreeLevelStepperB
           )}
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap text-xs">
+        <div className="flex items-center gap-2 flex-wrap text-xs">
           <button
             type="button"
             onClick={onFitBracket}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
           >
             <LocateFixed className="h-3.5 w-3.5 text-hud-accent" />
             {msg.tree.fitBracket}
@@ -142,7 +147,7 @@ export const PassiveTreeLevelStepperBar = memo(function PassiveTreeLevelStepperB
             type="button"
             onClick={onFocusNextTarget}
             disabled={diff.nextNotableTargets.length === 0}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-hud-muted hover:text-hud-text hover:bg-hud-subtle disabled:opacity-40 cursor-pointer"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-hud-muted hover:text-hud-text hover:bg-hud-subtle disabled:opacity-40 cursor-pointer"
           >
             <Crosshair className="h-3.5 w-3.5 text-hud-quest" />
             {msg.tree.nextPoint}
@@ -151,15 +156,16 @@ export const PassiveTreeLevelStepperBar = memo(function PassiveTreeLevelStepperB
             <button
               type="button"
               onClick={onFocusAscendancy}
-              className="px-2 py-1 rounded-md text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
             >
               {msg.tree.ascendancy}
             </button>
           )}
           <button
             type="button"
+            aria-pressed={showFuture}
             onClick={onToggleShowFuture}
-            className={`inline-flex items-center gap-1 px-2 py-1 rounded-md cursor-pointer transition-colors ${
+            className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors ${
               showFuture
                 ? "text-hud-accent font-semibold bg-hud-subtle"
                 : "text-hud-muted hover:text-hud-text hover:bg-hud-subtle"

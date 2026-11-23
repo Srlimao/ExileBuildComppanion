@@ -22,9 +22,10 @@ export function getDefaultOverlayLayoutForMode(
 
   if (mode === "LAB") {
     return [
-      { widgetId: "lab_compass", colSpan: 1, rowSpan: 2, order: 0 },
-      { widgetId: "run_timer", colSpan: 1, rowSpan: 1, order: 1 },
-      { widgetId: "resistance_cap", colSpan: 1, rowSpan: 1, order: 2 },
+      { widgetId: "ascendancy_order", colSpan: 1, rowSpan: 2, order: 0 },
+      { widgetId: "lab_compass", colSpan: 1, rowSpan: 2, order: 1 },
+      { widgetId: "run_timer", colSpan: 1, rowSpan: 1, order: 2 },
+      { widgetId: "resistance_cap", colSpan: 1, rowSpan: 1, order: 3 },
     ];
   }
 

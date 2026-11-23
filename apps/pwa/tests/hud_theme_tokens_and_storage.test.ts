@@ -3,6 +3,7 @@ import {
   DEFAULT_HUD_THEME,
   HUD_ACCENT_SWATCHES,
   HUD_THEME_STORAGE_KEY,
+  computeContrastRatio,
   computeRelativeLuminance,
   loadSavedHudTheme,
   normalizeHexColor,
@@ -11,6 +12,7 @@ import {
   resolveReadableAccentForMode,
   resolveThemeCssVariables,
   saveHudTheme,
+  type HudAppearanceMode,
   type SavedHudTheme
 } from "@exile-hud/hud-ui";
 
@@ -156,6 +158,40 @@ describe("HUD theme tokens and contrast guards", () => {
     expect(lightTree.canvasBg).toBe("#f4f4f5");
     expect(lightTree.wireframeEdge).not.toBe(oledTree.wireframeEdge);
     expect(lightTree.nodeFill).not.toBe(oledTree.nodeFill);
+  });
+
+  it("maintains WCAG AA >= 4.5 contrast across all appearance modes and accent presets", () => {
+    const modes: readonly HudAppearanceMode[] = ["oled", "soft-dark", "light"];
+    for (const mode of modes) {
+      for (const swatch of HUD_ACCENT_SWATCHES) {
+        const vars = resolveThemeCssVariables({
+          mode,
+          accentId: swatch.id,
+          customHex: "#eab308",
+        });
+        const surface = vars["--hud-surface"]!;
+        const bg = vars["--hud-bg"]!;
+
+        expect(
+          computeContrastRatio(vars["--hud-accent"]!, vars["--hud-accent-fg"]!),
+          `${mode}/${swatch.id} accent fg`,
+        ).toBeGreaterThanOrEqual(4.5);
+        expect(
+          computeContrastRatio(vars["--hud-accent"]!, surface),
+          `${mode}/${swatch.id} accent on surface`,
+        ).toBeGreaterThanOrEqual(4.5);
+        expect(computeContrastRatio(vars["--hud-danger-bg"]!, vars["--hud-danger-fg"]!)).toBeGreaterThanOrEqual(4.5);
+        expect(computeContrastRatio(vars["--hud-text"]!, surface)).toBeGreaterThanOrEqual(4.5);
+        expect(computeContrastRatio(vars["--hud-muted"]!, surface)).toBeGreaterThanOrEqual(4.5);
+        expect(computeContrastRatio(vars["--hud-dim"]!, surface)).toBeGreaterThanOrEqual(4.5);
+        expect(computeContrastRatio(vars["--hud-dim"]!, bg)).toBeGreaterThanOrEqual(4.5);
+        expect(computeContrastRatio(vars["--hud-ok"]!, surface)).toBeGreaterThanOrEqual(4.5);
+        expect(computeContrastRatio(vars["--hud-warn"]!, surface)).toBeGreaterThanOrEqual(4.5);
+        expect(computeContrastRatio(vars["--hud-danger"]!, surface)).toBeGreaterThanOrEqual(4.5);
+        expect(computeContrastRatio(vars["--hud-lightning"]!, surface)).toBeGreaterThanOrEqual(4.5);
+        expect(computeContrastRatio(vars["--hud-quest"]!, surface)).toBeGreaterThanOrEqual(4.5);
+      }
+    }
   });
 });
 

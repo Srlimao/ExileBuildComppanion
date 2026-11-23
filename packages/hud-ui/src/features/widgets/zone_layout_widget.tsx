@@ -1,6 +1,7 @@
 import type { HudSessionSnapshot } from "@exile-hud/core";
-import { Compass, ZoomIn } from "lucide-react";
+import { Compass, X, ZoomIn } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useAccessibleDialog } from "../hud_shell/use_accessible_dialog.js";
 import { useHudI18n } from "../i18n/hud_i18n_provider.js";
 import { localizeRouteSubNote } from "../i18n/route_subnote_localizer.js";
 
@@ -8,6 +9,7 @@ export function ZoneLayoutWidget({ snapshot }: { snapshot: HudSessionSnapshot })
   const { locale, msg } = useHudI18n();
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [zoomed, setZoomed] = useState(false);
+  const zoomDialogRef = useAccessibleDialog({ open: zoomed, onClose: () => setZoomed(false) });
 
   useEffect(() => {
     setSelectedIdx(0);
@@ -44,21 +46,26 @@ export function ZoneLayoutWidget({ snapshot }: { snapshot: HudSessionSnapshot })
       </div>
 
       {activeSrc ? (
-        <div className="relative flex-1 min-h-[150px] rounded-md bg-hud-subtle overflow-hidden flex items-center justify-center">
+        <button
+          type="button"
+          onClick={() => setZoomed(true)}
+          aria-label={msg.a11y.zoomZoneImage}
+          title={msg.a11y.zoomZoneImage}
+          className="group relative flex-1 min-h-[150px] w-full rounded-lg bg-hud-subtle overflow-hidden flex items-center justify-center cursor-pointer"
+        >
           <img
             src={activeSrc}
             alt={msg.widgets.layoutAlt(snapshot.currentAreaName, selectedIdx + 1)}
-            className="max-h-64 w-full object-contain cursor-pointer"
-            onClick={() => setZoomed(true)}
+            decoding="async"
+            className="max-h-64 w-full object-contain"
           />
-          <button
-            type="button"
-            onClick={() => setZoomed(true)}
-            className="absolute bottom-2 right-2 p-1.5 rounded-md bg-hud-surface/85 text-hud-muted hover:text-hud-text cursor-pointer"
+          <span
+            aria-hidden="true"
+            className="absolute bottom-2 right-2 p-2 rounded-lg bg-hud-surface/85 text-hud-muted group-hover:text-hud-text"
           >
             <ZoomIn className="h-4 w-4" />
-          </button>
-        </div>
+          </span>
+        </button>
       ) : (
         <p className="text-xs text-hud-muted py-4">{msg.widgets.linearZoneHint}</p>
       )}
@@ -69,8 +76,9 @@ export function ZoneLayoutWidget({ snapshot }: { snapshot: HudSessionSnapshot })
             <button
               key={path}
               type="button"
+              aria-pressed={idx === selectedIdx}
               onClick={() => setSelectedIdx(idx)}
-              className={`pb-0.5 text-xs font-mono border-b-2 shrink-0 cursor-pointer transition-colors ${
+              className={`py-1.5 text-xs font-mono border-b-2 shrink-0 cursor-pointer transition-colors ${
                 idx === selectedIdx
                   ? "border-hud-accent text-hud-text font-semibold"
                   : "border-transparent text-hud-muted hover:text-hud-text"
@@ -94,11 +102,36 @@ export function ZoneLayoutWidget({ snapshot }: { snapshot: HudSessionSnapshot })
       )}
 
       {zoomed && activeSrc && (
-        <div
-          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 cursor-pointer"
-          onClick={() => setZoomed(false)}
-        >
-          <img src={activeSrc} alt={snapshot.currentAreaName} className="max-w-full max-h-[90vh] object-contain" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/90 backdrop-blur-sm"
+            onClick={() => setZoomed(false)}
+            aria-hidden="true"
+          />
+          <div
+            ref={zoomDialogRef}
+            tabIndex={-1}
+            role="dialog"
+            aria-modal="true"
+            aria-label={snapshot.currentAreaName}
+            className="relative z-10 max-w-full max-h-[90vh] flex items-center justify-center focus:outline-none"
+          >
+            <button
+              type="button"
+              onClick={() => setZoomed(false)}
+              aria-label={msg.a11y.closeImageZoom}
+              title={msg.a11y.closeImageZoom}
+              className="fixed top-[max(1rem,env(safe-area-inset-top))] right-[max(1rem,env(safe-area-inset-right))] z-20 p-2.5 rounded-lg bg-hud-surface/90 border border-hud-hairline text-hud-text hover:bg-hud-subtle cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <img
+              src={activeSrc}
+              alt={msg.widgets.layoutAlt(snapshot.currentAreaName, selectedIdx + 1)}
+              decoding="async"
+              className="max-w-full max-h-[85vh] object-contain rounded-lg"
+            />
+          </div>
         </div>
       )}
     </div>

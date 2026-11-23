@@ -42,13 +42,13 @@ export const PassiveTreeSidebarDrawer = memo(function PassiveTreeSidebarDrawer({
     <aside className="w-full lg:w-80 xl:w-96 flex flex-col gap-6">
       <section className="space-y-2">
         <div className="flex items-baseline justify-between gap-2">
-          <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
             {msg.tree.nextPriorityTargets}
-          </h3>
+          </h2>
           <button
             type="button"
             onClick={onTriggerManualSync}
-            className="inline-flex items-center gap-1 text-xs text-hud-muted hover:text-hud-text cursor-pointer"
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-hud-muted hover:text-hud-text hover:bg-hud-subtle cursor-pointer"
           >
             <RefreshCw className="h-3 w-3" />
             {msg.tree.sync}
@@ -64,7 +64,7 @@ export const PassiveTreeSidebarDrawer = memo(function PassiveTreeSidebarDrawer({
                 key={item.nodeId}
                 type="button"
                 onClick={() => onFocusNode(item.nodeId)}
-                className="w-full text-left px-2 py-1.5 -mx-2 rounded-md hover:bg-hud-subtle transition-colors cursor-pointer"
+                className="w-full text-left px-2 py-1.5 rounded-lg hover:bg-hud-subtle transition-colors cursor-pointer"
               >
                 <div className="flex items-baseline justify-between gap-2">
                   <div className="text-xs font-semibold text-hud-text flex items-baseline gap-2 min-w-0">
@@ -92,16 +92,16 @@ export const PassiveTreeSidebarDrawer = memo(function PassiveTreeSidebarDrawer({
 
       {masteryEntries.length > 0 && (
         <section className="pt-4 border-t border-hud-hairline space-y-2">
-          <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
             {msg.tree.bracketMasteries(masteryEntries.length)}
-          </h3>
+          </h2>
           <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
             {masteryEntries.map(({ nodeId, effectId, meta, stats, done }) => (
               <button
                 key={nodeId}
                 type="button"
                 onClick={() => onFocusNode(nodeId)}
-                className="w-full text-left px-2 py-1.5 -mx-2 rounded-md hover:bg-hud-subtle text-xs cursor-pointer transition-colors"
+                className="w-full text-left px-2 py-1.5 rounded-lg hover:bg-hud-subtle text-xs cursor-pointer transition-colors"
               >
                 <div className="font-semibold flex items-baseline justify-between gap-2">
                   <span className={done ? "text-hud-ok" : "text-hud-text"}>
@@ -120,16 +120,16 @@ export const PassiveTreeSidebarDrawer = memo(function PassiveTreeSidebarDrawer({
 
       {respecIds.length > 0 && (
         <section className="pt-4 border-t border-hud-hairline space-y-2">
-          <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-danger">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-danger">
             {msg.tree.respecNodes(respecIds.length)}
-          </h3>
+          </h2>
           <div className="flex flex-wrap gap-x-3 gap-y-1.5 text-xs">
             {respecIds.slice(0, 18).map((id) => (
               <button
                 key={id}
                 type="button"
                 onClick={() => onFocusNode(id)}
-                className="text-hud-danger hover:underline cursor-pointer"
+                className="text-hud-danger hover:underline rounded-lg py-0.5 cursor-pointer"
               >
                 {nodes[id]?.name ?? id}
               </button>
