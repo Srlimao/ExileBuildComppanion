@@ -66,6 +66,7 @@ export const AscendancyTreeSvgPreview = memo(function AscendancyTreeSvgPreview({
 
   const plannedSet = useMemo(() => new Set(plan.plannedNodeIds), [plan.plannedNodeIds]);
   const allocSet = useMemo(() => new Set(plan.allocatedAscendancyNodeIds), [plan.allocatedAscendancyNodeIds]);
+  const respecSet = useMemo(() => new Set(plan.respecSteps.map((r) => r.nodeId)), [plan.respecSteps]);
   const stepById = useMemo(
     () => new Map<string, AscendancyOrderStep>(plan.steps.map((s) => [s.nodeId, s])),
     [plan.steps],
@@ -162,19 +163,22 @@ export const AscendancyTreeSvgPreview = memo(function AscendancyTreeSvgPreview({
           </circle>
         ))}
 
-        {unplannedNotables.map((n) => (
-          <circle
-            key={n.id}
-            cx={n.x}
-            cy={n.y}
-            r={32}
-            fill={treePalette.nodeFill}
-            stroke={treePalette.nodeStroke}
-            strokeWidth={8}
-          >
-            <title>{n.name}</title>
-          </circle>
-        ))}
+        {unplannedNotables.map((n) => {
+          const isRespec = respecSet.has(n.id);
+          return (
+            <circle
+              key={n.id}
+              cx={n.x}
+              cy={n.y}
+              r={isRespec ? 34 : 32}
+              fill={treePalette.nodeFill}
+              stroke={isRespec ? treePalette.respec : treePalette.nodeStroke}
+              strokeWidth={isRespec ? 10 : 8}
+            >
+              <title>{isRespec ? `${n.name} (${t.respecNodesPrefix})` : n.name}</title>
+            </circle>
+          );
+        })}
 
         {startNodes.map((n) => (
           <circle

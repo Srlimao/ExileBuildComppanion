@@ -94,8 +94,29 @@ describe("active_checklist_widget selectChecklistWindow", () => {
 
     const noReadyTurnIn = stepZones(createTestSnapshot(), ["1_2_1", "1_2_town", "1_2_7", "1_2_12", "1_2_town"]);
     const fallbackWin = selectChecklistWindow(noReadyTurnIn);
-    expect(fallbackWin.visibleSteps.some((cp) => cp.areaId === "1_2_11" || cp.areaId === "1_2_12")).toBe(true);
+    expect(fallbackWin.activeGroup?.groupId).toBe("a2_gems_weaver_bandits");
+    expect(fallbackWin.visibleSteps.some((cp) => cp.areaId === "1_2_11")).toBe(false);
     expect(fallbackWin.visibleSteps.some((cp) => cp.questId === "a2q10")).toBe(false);
+  });
+
+  it("pins on the active quest group when mandatory maps are unvisited and advances after manual toggle", () => {
+    let blocked = stepZones(createTestSnapshot(), ["1_1_town", "1_1_2", "1_1_4_1"]);
+    const blockedWin = selectChecklistWindow(blocked);
+    expect(blockedWin.activeGroup?.groupId).toBe("a1_strand_mud");
+    expect(blockedWin.isHoldingForUnvisitedMandatory).toBe(true);
+    expect(blockedWin.missingMandatoryAreaIds).toEqual(["1_1_3"]);
+    expect(blockedWin.visibleSteps.some((cp) => cp.areaId === "1_1_3")).toBe(true);
+
+    for (const cp of blocked.checkpoints.filter((c) => c.sectionAct === 1 && c.areaId === "1_1_3" && c.isMandatoryGate)) {
+      blocked = reduceTelemetrySession(
+        blocked,
+        { type: "toggle_checkpoint", checkpointId: cp.id, completed: true },
+        poe1GameAdapter,
+      );
+    }
+    const unlockedWin = selectChecklistWindow(blocked);
+    expect(unlockedWin.activeGroup?.groupId).toBe("a1_prison_brutus");
+    expect(unlockedWin.isHoldingForUnvisitedMandatory).toBe(false);
   });
 
   it("returns allActDone and an empty visible slice when all current-act steps are completed", () => {

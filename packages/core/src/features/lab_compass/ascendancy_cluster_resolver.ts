@@ -12,6 +12,68 @@ export interface ResolvedAscendancyCluster {
 const ATTRIBUTE_ONLY_NODE_RE =
   /^(Strength|Dexterity|Intelligence)(\s+and\s+(Strength|Dexterity|Intelligence))?$/i;
 
+/** Indexes all Ascendancy clusters in the passive tree by internal `ascendancyName`. */
+export function buildAscendancyClusterIndex(
+  adapter: GameAdapter,
+): Map<string, ResolvedAscendancyCluster> {
+  const allNodes = adapter.getPassiveTreeNodes();
+  const grouped = new Map<string, PassiveTreeNodeMetadata[]>();
+
+  for (const node of Object.values(allNodes)) {
+    if (!node.ascendancyName) continue;
+    const bucket = grouped.get(node.ascendancyName);
+    if (bucket) bucket.push(node);
+    else grouped.set(node.ascendancyName, [node]);
+  }
+
+  const index = new Map<string, ResolvedAscendancyCluster>();
+  for (const [clusterKey, clusterNodes] of grouped) {
+    const startNode = clusterNodes.find((n) => n.isAscendancyStart) ?? null;
+    index.set(clusterKey, {
+      clusterKey,
+      displayName: startNode?.name || clusterKey,
+      startNode,
+      clusterNodes,
+      clusterNodeMap: new Map(clusterNodes.map((n) => [n.id, n])),
+    });
+  }
+  return index;
+}
+
+/** Detects the dominant Ascendancy cluster referenced by a spec's non-start nodes. */
+export function detectSpecAscendancyClusterKey(
+  nodeIds: readonly string[],
+  allNodes: Record<string, PassiveTreeNodeMetadata>,
+): string | null {
+  const scores = new Map<string, number>();
+  const nonStartCounts = new Map<string, number>();
+  const seen = new Set<string>();
+
+  for (const id of nodeIds) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const node = allNodes[id];
+    const ascKey = node?.ascendancyName;
+    if (!ascKey) continue;
+    const weight = node.isAscendancyStart ? 1 : 10;
+    scores.set(ascKey, (scores.get(ascKey) ?? 0) + weight);
+    if (!node.isAscendancyStart) {
+      nonStartCounts.set(ascKey, (nonStartCounts.get(ascKey) ?? 0) + 1);
+    }
+  }
+
+  let bestKey: string | null = null;
+  let bestScore = 0;
+  for (const [ascKey, score] of scores) {
+    if ((nonStartCounts.get(ascKey) ?? 0) < 1) continue;
+    if (score > bestScore) {
+      bestScore = score;
+      bestKey = ascKey;
+    }
+  }
+  return bestKey;
+}
+
 /** Resolves the GGG passive tree Ascendancy cluster and display name (e.g. Warden -> Raider cluster). */
 export function resolveAscendancyCluster(params: {
   ascendancyName?: string | null;
@@ -20,45 +82,23 @@ export function resolveAscendancyCluster(params: {
   adapter: GameAdapter;
 }): ResolvedAscendancyCluster | null {
   const { ascendancyName, specs = [], allocatedNodeIds = [], adapter } = params;
-  const allNodes = adapter.getPassiveTreeNodes();
-  const byCluster = new Map<string, PassiveTreeNodeMetadata[]>();
-
-  for (const node of Object.values(allNodes)) {
-    if (!node.ascendancyName) continue;
-    const bucket = byCluster.get(node.ascendancyName);
-    if (bucket) bucket.push(node);
-    else byCluster.set(node.ascendancyName, [node]);
-  }
-  if (byCluster.size === 0) return null;
-
-  const buildCluster = (
-    clusterKey: string,
-    clusterNodes: PassiveTreeNodeMetadata[],
-  ): ResolvedAscendancyCluster => {
-    const startNode = clusterNodes.find((n) => n.isAscendancyStart) ?? null;
-    return {
-      clusterKey,
-      displayName: startNode?.name || clusterKey,
-      startNode,
-      clusterNodes,
-      clusterNodeMap: new Map(clusterNodes.map((n) => [n.id, n])),
-    };
-  };
+  const clusterIndex = buildAscendancyClusterIndex(adapter);
+  if (clusterIndex.size === 0) return null;
 
   const trimmed = String(ascendancyName ?? "").trim();
   if (trimmed && trimmed.toLowerCase() !== "none") {
     const targetLower = trimmed.toLowerCase();
-    for (const [clusterKey, clusterNodes] of byCluster) {
-      const startNode = clusterNodes.find((n) => n.isAscendancyStart) ?? null;
+    for (const cluster of clusterIndex.values()) {
       if (
-        clusterKey.toLowerCase() === targetLower ||
-        startNode?.name.toLowerCase() === targetLower
+        cluster.clusterKey.toLowerCase() === targetLower ||
+        cluster.startNode?.name.toLowerCase() === targetLower
       ) {
-        return buildCluster(clusterKey, clusterNodes);
+        return cluster;
       }
     }
   }
 
+  const allNodes = adapter.getPassiveTreeNodes();
   const scores = new Map<string, number>();
   const addVote = (id: string, weight: number) => {
     const node = allNodes[id];
@@ -78,9 +118,7 @@ export function resolveAscendancyCluster(params: {
       bestKey = clusterKey;
     }
   }
-  if (!bestKey) return null;
-  const clusterNodes = byCluster.get(bestKey);
-  return clusterNodes ? buildCluster(bestKey, clusterNodes) : null;
+  return bestKey ? clusterIndex.get(bestKey) ?? null : null;
 }
 
 /** Returns true for major Ascendancy milestone nodes shown in the Lab order list. */
@@ -141,4 +179,44 @@ export function bfsDistancesFromStart(
     }
   }
   return dist;
+}
+
+/** Collects allocated node IDs and non-start point count inside one Ascendancy cluster. */
+export function collectClusterAllocation(
+  allocatedSet: ReadonlySet<string>,
+  cluster: ResolvedAscendancyCluster,
+): { allocatedAscendancyNodeIds: string[]; allocatedPoints: number } {
+  const allocatedAscendancyNodeIds: string[] = [];
+  let allocatedPoints = 0;
+  for (const id of allocatedSet) {
+    const node = cluster.clusterNodeMap.get(id);
+    if (!node) continue;
+    allocatedAscendancyNodeIds.push(id);
+    if (!node.isAscendancyStart) allocatedPoints += 1;
+  }
+  return { allocatedAscendancyNodeIds, allocatedPoints };
+}
+
+/** Returns the display name of another Ascendancy if non-start points are currently allocated there. */
+export function detectOtherAllocatedAscendancy(
+  allocatedSet: ReadonlySet<string>,
+  activeClusterKey: string,
+  allNodes: Record<string, PassiveTreeNodeMetadata>,
+  clusterIndex: Map<string, ResolvedAscendancyCluster>,
+): string | null {
+  const counts = new Map<string, number>();
+  for (const id of allocatedSet) {
+    const node = allNodes[id];
+    if (!node?.ascendancyName || node.isAscendancyStart || node.ascendancyName === activeClusterKey) continue;
+    counts.set(node.ascendancyName, (counts.get(node.ascendancyName) ?? 0) + 1);
+  }
+  let bestKey: string | null = null;
+  let bestCount = 0;
+  for (const [key, count] of counts) {
+    if (count > bestCount) {
+      bestCount = count;
+      bestKey = key;
+    }
+  }
+  return bestKey ? (clusterIndex.get(bestKey)?.displayName ?? bestKey) : null;
 }

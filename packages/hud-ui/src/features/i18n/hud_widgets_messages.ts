@@ -12,6 +12,9 @@ import {
 
 export interface HudWidgetsMessages {
   actStepsTitle: (act: number) => string;
+  questGroupLabel: (index: number, total: number, title: string) => string;
+  requiredUnvisitedBadge: string;
+  groupBlockedByUnvisited: (count: number) => string;
   pendingOnly: string;
   showAllEarlier: (count: number) => string;
   showAll: string;
@@ -80,6 +83,10 @@ export interface HudWidgetsMessages {
 
 const PT_BR_WIDGETS: HudWidgetsMessages = {
   actStepsTitle: (act) => `Passos do Ato ${act}`,
+  questGroupLabel: (index, total, title) => `Grupo ${index}/${total} · ${title}`,
+  requiredUnvisitedBadge: "Obrigatório",
+  groupBlockedByUnvisited: (count) =>
+    `${count} ${count === 1 ? "mapa obrigatório pendente" : "mapas obrigatórios pendentes"}`,
   pendingOnly: "Apenas pendentes",
   showAllEarlier: (count) => `Mostrar tudo (${count} anteriores)`,
   showAll: "Mostrar tudo",
@@ -149,6 +156,9 @@ const PT_BR_WIDGETS: HudWidgetsMessages = {
 
 const EN_WIDGETS: HudWidgetsMessages = {
   actStepsTitle: (act) => `Act ${act} Steps`,
+  questGroupLabel: (index, total, title) => `Group ${index}/${total} · ${title}`,
+  requiredUnvisitedBadge: "Required",
+  groupBlockedByUnvisited: (count) => `${count} required ${count === 1 ? "map" : "maps"} unvisited`,
   pendingOnly: "Pending only",
   showAllEarlier: (count) => `Show all (${count} earlier)`,
   showAll: "Show all",

@@ -5,6 +5,7 @@ import type {
   CheckpointStepKind,
 } from "../protocol/session_room_wire_protocol.js";
 import type { ParsedFragment, ParsedRouteStep } from "../route_compiler/route_fragment_ast_parser.js";
+import { assignCampaignQuestGroups } from "./campaign_quest_group_assigner.js";
 import { isTownOrHideoutArea } from "./zone_context_disambiguator.js";
 
 interface StepCategoryInfo {
@@ -266,5 +267,5 @@ export function buildCheckpointGraph(routeSteps: ParsedRouteStep[], adapter: Gam
     }
   }
 
-  return checkpoints;
+  return assignCampaignQuestGroups(checkpoints, adapter);
 }

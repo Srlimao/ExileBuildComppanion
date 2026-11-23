@@ -147,3 +147,47 @@ export function getStrictImpliedAreaIds(
   implied.delete(targetAreaId);
   return implied;
 }
+
+/**
+ * Returns strictly prior-act trunk dominators (`priorAct < targetAct`) upon entering
+ * `targetAreaId` on a new Act or non-town area. Never implies unvisited areas inside
+ * the current Act so intra-act progression requires explicit visits or manual check-off.
+ */
+export function getPriorActImpliedAreaIds(
+  targetAreaId: string,
+  highestUnlockedAct: number,
+  adapter: GameAdapter,
+): ReadonlySet<string> {
+  if (/hideout|labyrinth/i.test(targetAreaId)) {
+    return new Set<string>();
+  }
+
+  const area = adapter.getAreas()[targetAreaId];
+  if (!area) {
+    return new Set<string>();
+  }
+
+  const targetAct = Number(area.act);
+  if (!Number.isFinite(targetAct) || targetAct <= 1 || targetAct > highestUnlockedAct) {
+    return new Set<string>();
+  }
+
+  const canImplyPriorActs =
+    !area.is_town_area || targetAreaId === adapter.getActEntryAreaId(targetAct);
+  if (!canImplyPriorActs) {
+    return new Set<string>();
+  }
+
+  const graph = getOrBuildDominatorGraph(adapter);
+  const implied = new Set<string>();
+  for (let priorAct = 1; priorAct < targetAct; priorAct += 1) {
+    const priorTrunk = graph.actTrunkStrictDominators.get(priorAct);
+    if (!priorTrunk) continue;
+    for (const areaId of priorTrunk) {
+      implied.add(areaId);
+    }
+  }
+
+  implied.delete(targetAreaId);
+  return implied;
+}

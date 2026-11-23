@@ -217,6 +217,25 @@ export interface TwinkCatalogItem {
   keyMods: string[];
 }
 
+export interface CampaignQuestGroupAreaMatcher {
+  areaId: string;
+  minVisitIndex?: number;
+  maxVisitIndex?: number;
+  minGroupOrder?: number;
+  maxGroupOrder?: number;
+  prerequisiteAreaIds?: readonly string[];
+}
+
+export interface CampaignQuestGroupDefinition {
+  id: string;
+  act: number;
+  order: number;
+  titleEn: string;
+  titlePtBr: string;
+  mandatoryAreaIds: readonly string[];
+  areaMatchers?: readonly CampaignQuestGroupAreaMatcher[];
+}
+
 export interface GameAdapter {
   readonly gameId: SupportedGameId;
   getAreas(): Record<string, AreaDefinition>;
@@ -242,6 +261,8 @@ export interface GameAdapter {
   getActEntryAreaId(act: number): string | null;
   getActFinalAreaId(act: number): string | null;
   isIgnoredGraphEdge(fromAreaId: string, toAreaId: string): boolean;
+  getCampaignQuestGroups(act?: number): readonly CampaignQuestGroupDefinition[];
+  getOptionalDetourAreaIds(): ReadonlySet<string>;
   getLabTrials(): LabTrialMeta[];
   getIzaroMechanics(): IzaroMechanicGuide[];
   getBossElementalWarnings(act: number): BossElementalWarning[];

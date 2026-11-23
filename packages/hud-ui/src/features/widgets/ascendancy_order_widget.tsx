@@ -1,7 +1,7 @@
 import { buildAscendancyProgressionPlan, type HudSessionSnapshot } from "@exile-hud/core";
 import { poe1GameAdapter } from "@exile-hud/game-data";
 import { Check } from "lucide-react";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useHudI18n } from "../i18n/hud_i18n_provider.js";
 import { AscendancyTreeSvgPreview } from "./ascendancy_tree_svg_preview.js";
 
@@ -17,6 +17,12 @@ export const AscendancyOrderWidget = memo(function AscendancyOrderWidget({
   const t = msg.widgets.ascendancyOrder;
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [manualPhaseId, setManualPhaseId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setManualPhaseId(null);
+    setSelectedNodeId(null);
+  }, [snapshot.profileId]);
 
   const plan = useMemo(
     () =>
@@ -26,6 +32,9 @@ export const AscendancyOrderWidget = memo(function AscendancyOrderWidget({
         specs: snapshot.passiveTree.specs ?? [],
         allocatedNodeIds: snapshot.passiveTree.allocatedNodeIds,
         ascendancyNoteOrderIds: snapshot.passiveTree.ascendancyNoteOrderIds,
+        characterLevel: snapshot.characterLevel,
+        activeSpecId: snapshot.passiveTree.activeSpecId,
+        manualPhaseId,
         adapter: poe1GameAdapter,
       }),
     [
@@ -34,8 +43,15 @@ export const AscendancyOrderWidget = memo(function AscendancyOrderWidget({
       snapshot.passiveTree.specs,
       snapshot.passiveTree.allocatedNodeIds,
       snapshot.passiveTree.ascendancyNoteOrderIds,
+      snapshot.characterLevel,
+      snapshot.passiveTree.activeSpecId,
+      manualPhaseId,
     ],
   );
+
+  useEffect(() => {
+    setSelectedNodeId(null);
+  }, [plan.activePhaseId]);
 
   const toggleSelected = useCallback((nodeId: string) => {
     setSelectedNodeId((prev) => (prev === nodeId ? null : nodeId));
@@ -50,9 +66,11 @@ export const AscendancyOrderWidget = memo(function AscendancyOrderWidget({
       ? snapshot.ascendancyName
       : t.eyebrow);
   const sourceBadge = t.sourceBadges[plan.orderSource];
+  const hasMultipleSameName =
+    plan.phases.length > 1 && new Set(plan.phases.map((p) => p.displayName)).size < plan.phases.length;
 
   return (
-    <div className="@container flex flex-col h-full gap-3 min-h-0">
+    <div className="@container flex flex-col h-full gap-2.5 min-h-0">
       <div className="flex items-start justify-between gap-2 flex-wrap shrink-0">
         <div className="min-w-0">
           <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-hud-muted">
@@ -85,6 +103,57 @@ export const AscendancyOrderWidget = memo(function AscendancyOrderWidget({
           </div>
         )}
       </div>
+
+      {plan.phases.length > 1 && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 shrink-0">
+          <button
+            type="button"
+            aria-pressed={manualPhaseId === null}
+            onClick={() => setManualPhaseId(null)}
+            className={`px-2 py-1 rounded-lg text-[11px] whitespace-nowrap border transition-colors cursor-pointer ${
+              manualPhaseId === null
+                ? "border-hud-accent bg-hud-accent/15 text-hud-text font-semibold"
+                : "border-hud-hairline text-hud-muted hover:text-hud-text"
+            }`}
+          >
+            {t.autoPhaseLabel(snapshot.characterLevel)}
+          </button>
+
+          {plan.phases.map((phase) => {
+            const active = phase.id === plan.activePhaseId;
+            const phaseLabel = hasMultipleSameName
+              ? `${t.lvShort(phase.minLevel)} · ${phase.finalSpecTitle}`
+              : `${t.lvShort(phase.minLevel)} · ${phase.displayName}`;
+            return (
+              <button
+                key={phase.id}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setManualPhaseId(phase.id)}
+                className={`px-2 py-1 rounded-lg text-[11px] whitespace-nowrap border transition-colors cursor-pointer ${
+                  active
+                    ? "border-hud-accent bg-hud-accent/15 text-hud-text font-semibold"
+                    : "border-hud-hairline text-hud-muted hover:text-hud-text"
+                }`}
+              >
+                {phaseLabel}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {plan.allocatedOtherAscendancyName && plan.displayName && (
+        <div className="px-2.5 py-1.5 rounded-lg border border-hud-warn/45 bg-hud-warn/10 text-[11px] text-hud-warn font-medium shrink-0">
+          {t.swapAscendancyNotice(plan.allocatedOtherAscendancyName, plan.displayName)}
+        </div>
+      )}
+
+      {plan.respecSteps.length > 0 && (
+        <div className="px-2.5 py-1.5 rounded-lg border border-hud-danger/45 bg-hud-danger/10 text-[11px] text-hud-danger font-medium shrink-0">
+          {t.respecNodesPrefix} {plan.respecSteps.map((r) => r.name).join(", ")}
+        </div>
+      )}
 
       {!plan.clusterKey ? (
         <p className="text-xs text-hud-muted my-auto leading-relaxed">{t.noAscendancySelected}</p>
@@ -147,9 +216,14 @@ export const AscendancyOrderWidget = memo(function AscendancyOrderWidget({
                               >
                                 {step.name}
                               </div>
-                              {subLabel && (
-                                <div className="text-[11px] text-hud-muted truncate">
-                                  {subLabel}
+                              {(subLabel || step.respecLater) && (
+                                <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-hud-muted">
+                                  {subLabel && <span className="truncate">{subLabel}</span>}
+                                  {step.respecLater && (
+                                    <span className="text-[10px] font-mono text-hud-warn shrink-0">
+                                      · {t.respecLaterBadge}
+                                    </span>
+                                  )}
                                 </div>
                               )}
                             </div>

@@ -1,4 +1,9 @@
-import type { CheckpointStepItem, HudSessionSnapshot } from "@exile-hud/core";
+import {
+  evaluateActiveActQuestGroups,
+  type CheckpointStepItem,
+  type HudSessionSnapshot,
+  type QuestGroupProgressSummary,
+} from "@exile-hud/core";
 import { useState } from "react";
 import { useHudI18n } from "../i18n/hud_i18n_provider.js";
 import { localizeRouteStepTitle } from "../i18n/route_step_title_localizer.js";
@@ -15,6 +20,9 @@ export interface ChecklistWindowSelection {
   allActDone: boolean;
   earlierPendingCount: number;
   anchorIdx: number;
+  activeGroup: QuestGroupProgressSummary | null;
+  isHoldingForUnvisitedMandatory: boolean;
+  missingMandatoryAreaIds: string[];
 }
 
 function arePrereqsCleared(cp: CheckpointStepItem, cleared: ReadonlySet<string>): boolean {
@@ -24,18 +32,20 @@ function arePrereqsCleared(cp: CheckpointStepItem, cleared: ReadonlySet<string>)
 }
 
 /**
- * Selects the 7-step rolling window anchored on the player's current combat zone or
- * ready town turn-in rather than pinning on an earlier skipped optional branch.
+ * Selects the 7-step rolling window constrained to the earliest unsatisfied Mandatory Quest
+ * Group so the HUD never jumps past unvisited mandatory maps into the next story phase.
  */
 export function selectChecklistWindow(snapshot: HudSessionSnapshot): ChecklistWindowSelection {
   const currentActSteps = snapshot.checkpoints.filter(
     (cp) => cp.sectionAct === snapshot.currentAct || cp.areaId === snapshot.currentAreaId,
   );
   const doneCount = currentActSteps.filter((c) => c.completed).length;
-  const firstPendingIdx = currentActSteps.findIndex((cp) => !cp.completed);
-  const allActDone = currentActSteps.length > 0 && firstPendingIdx === -1;
+  const firstActPendingIdx = currentActSteps.findIndex((cp) => !cp.completed);
+  const allActDone = currentActSteps.length > 0 && firstActPendingIdx === -1;
+  const groupEval = evaluateActiveActQuestGroups(snapshot);
+  const activeGroup = groupEval.activeGroup;
 
-  if (currentActSteps.length === 0 || allActDone) {
+  if (currentActSteps.length === 0 || allActDone || !activeGroup || activeGroup.checkpoints.length === 0) {
     return {
       currentActSteps,
       visibleSteps: [],
@@ -43,22 +53,31 @@ export function selectChecklistWindow(snapshot: HudSessionSnapshot): ChecklistWi
       allActDone,
       earlierPendingCount: 0,
       anchorIdx: -1,
+      activeGroup: allActDone ? null : activeGroup,
+      isHoldingForUnvisitedMandatory: false,
+      missingMandatoryAreaIds: activeGroup?.missingMandatoryAreaIds ?? [],
     };
   }
 
+  const groupSteps = activeGroup.checkpoints;
   const cleared = new Set<string>(snapshot.clearedAreaIds ?? []);
+  const visited = new Set<string>(snapshot.visitedAreaIds ?? []);
+  if (snapshot.currentAreaId && !/hideout/i.test(snapshot.currentAreaId)) {
+    visited.add(snapshot.currentAreaId);
+  }
+  const missingSet = new Set<string>(activeGroup.missingMandatoryAreaIds);
   const findPending = (predicate: (cp: CheckpointStepItem, idx: number) => boolean): number =>
-    currentActSteps.findIndex((cp, idx) => !cp.completed && predicate(cp, idx));
+    groupSteps.findIndex((cp, idx) => !cp.completed && predicate(cp, idx));
 
   let afterCombatIdx = -1;
-  if (snapshot.lastCombatZoneId) {
+  if (!groupEval.isHoldingForUnvisitedMandatory && snapshot.lastCombatZoneId) {
     afterCombatIdx = findPending(
       (cp) => cp.areaId === snapshot.lastCombatZoneId && arePrereqsCleared(cp, cleared),
     );
     if (afterCombatIdx === -1) {
       let lastCombatIdx = -1;
-      for (let i = currentActSteps.length - 1; i >= 0; i -= 1) {
-        if (currentActSteps[i]!.areaId === snapshot.lastCombatZoneId) {
+      for (let i = groupSteps.length - 1; i >= 0; i -= 1) {
+        if (groupSteps[i]!.areaId === snapshot.lastCombatZoneId) {
           lastCombatIdx = i;
           break;
         }
@@ -71,6 +90,7 @@ export function selectChecklistWindow(snapshot: HudSessionSnapshot): ChecklistWi
     }
   }
 
+  const firstGroupPendingIdx = groupSteps.findIndex((cp) => !cp.completed);
   const candidates = [
     findPending(
       (cp) =>
@@ -92,13 +112,21 @@ export function selectChecklistWindow(snapshot: HudSessionSnapshot): ChecklistWi
         cp.stepKind !== "travel_lead_in",
     ),
     afterCombatIdx,
+    findPending((cp) => Boolean(cp.isMandatoryGate) && missingSet.has(cp.areaId) && !visited.has(cp.areaId)),
+    findPending((cp) => Boolean(cp.isMandatoryGate) && missingSet.has(cp.areaId)),
     findPending((cp) => !cp.isOptionalDetour && arePrereqsCleared(cp, cleared)),
-    firstPendingIdx,
+    firstGroupPendingIdx !== -1 ? firstGroupPendingIdx : 0,
   ];
-  const anchorIdx = candidates.find((idx) => idx !== -1) ?? firstPendingIdx;
+  const anchorIdx = candidates.find((idx) => idx !== -1) ?? 0;
   const startIdx = Math.max(0, anchorIdx - 1);
-  const visibleSteps = currentActSteps.slice(startIdx, startIdx + 7);
-  const earlierPendingCount = currentActSteps.slice(0, startIdx).filter((cp) => !cp.completed).length;
+  const visibleSteps = groupSteps.slice(startIdx, startIdx + 7);
+  const firstVisibleActIdx = visibleSteps[0]
+    ? currentActSteps.findIndex((cp) => cp.id === visibleSteps[0]!.id)
+    : 0;
+  const earlierPendingCount =
+    firstVisibleActIdx > 0
+      ? currentActSteps.slice(0, firstVisibleActIdx).filter((cp) => !cp.completed).length
+      : 0;
 
   return {
     currentActSteps,
@@ -107,15 +135,26 @@ export function selectChecklistWindow(snapshot: HudSessionSnapshot): ChecklistWi
     allActDone,
     earlierPendingCount,
     anchorIdx,
+    activeGroup,
+    isHoldingForUnvisitedMandatory: groupEval.isHoldingForUnvisitedMandatory,
+    missingMandatoryAreaIds: activeGroup.missingMandatoryAreaIds,
   };
 }
 
 export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveChecklistWidgetProps) {
   const { locale, msg } = useHudI18n();
   const [showCompleted, setShowCompleted] = useState(false);
-  const { currentActSteps, visibleSteps, doneCount, allActDone, earlierPendingCount } =
-    selectChecklistWindow(snapshot);
+  const {
+    currentActSteps,
+    visibleSteps,
+    doneCount,
+    allActDone,
+    earlierPendingCount,
+    activeGroup,
+    isHoldingForUnvisitedMandatory,
+  } = selectChecklistWindow(snapshot);
   const visible = showCompleted ? currentActSteps : visibleSteps;
+  const unvisitedMandatorySet = new Set<string>(activeGroup?.unvisitedMandatoryAreaIds ?? []);
 
   return (
     <div className="flex flex-col h-full gap-2.5">
@@ -145,9 +184,38 @@ export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveCh
         </div>
       </div>
 
+      {!showCompleted && activeGroup && !allActDone && (
+        <div
+          data-testid="active-quest-group-bar"
+          className="flex items-center justify-between gap-2 px-2 py-1 rounded-md bg-hud-subtle/60 border border-white/5 text-[11px]"
+        >
+          <span className="font-medium text-hud-text/80 truncate">
+            {msg.widgets.questGroupLabel(
+              activeGroup.groupIndex + 1,
+              activeGroup.totalGroups,
+              locale === "pt-BR" ? activeGroup.titlePtBr : activeGroup.titleEn,
+            )}
+          </span>
+          {isHoldingForUnvisitedMandatory && activeGroup.unvisitedMandatoryAreaIds.length > 0 && (
+            <span
+              data-testid="quest-group-blocked-badge"
+              className="shrink-0 font-medium text-hud-warn"
+            >
+              {msg.widgets.groupBlockedByUnvisited(activeGroup.unvisitedMandatoryAreaIds.length)}
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="space-y-0.5 overflow-y-auto pr-1">
         {visible.map((cp) => {
           const isCurrentZone = cp.areaId === snapshot.currentAreaId;
+          const isRequiredBlocker = Boolean(
+            cp.isMandatoryGate &&
+              !cp.completed &&
+              unvisitedMandatorySet.has(cp.areaId) &&
+              (!activeGroup || !cp.questGroupId || cp.questGroupId === activeGroup.groupId),
+          );
           return (
             <button
               key={cp.id}
@@ -164,7 +232,7 @@ export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveCh
                   style={{
                     backgroundColor: cp.completed
                       ? "var(--hud-dim)"
-                      : cp.softCompleted
+                      : cp.softCompleted || (isHoldingForUnvisitedMandatory && isRequiredBlocker)
                         ? "var(--hud-warn)"
                         : isCurrentZone
                           ? "var(--hud-accent)"
@@ -189,6 +257,11 @@ export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveCh
               </div>
 
               <div className="flex items-center gap-2 shrink-0 text-xs font-medium">
+                {isRequiredBlocker && (
+                  <span data-testid="required-unvisited-badge" className="text-hud-warn">
+                    {msg.widgets.requiredUnvisitedBadge}
+                  </span>
+                )}
                 {cp.category === "SKILL_BOOK" && (
                   <span className="text-hud-quest">{msg.widgets.plusOneSkill}</span>
                 )}

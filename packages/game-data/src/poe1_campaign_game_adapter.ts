@@ -1,12 +1,17 @@
 import type {
   AreaDefinition,
   BossElementalWarning,
+  CampaignQuestGroupDefinition,
   CraftingBenchRecipe,
   GameAdapter,
   IzaroMechanicGuide,
   LabTrialMeta,
   TwinkCatalogItem,
 } from "./game_adapter_contract.js";
+import {
+  POE1_CAMPAIGN_QUEST_GROUPS,
+  POE1_OPTIONAL_DETOUR_AREA_IDS,
+} from "./poe1_campaign_quest_groups.js";
 import {
   poe1Areas,
   poe1AwakenedGemLookup,
@@ -185,6 +190,15 @@ export class Poe1CampaignGameAdapter implements GameAdapter {
 
   isIgnoredGraphEdge(fromAreaId: string, toAreaId: string): boolean {
     return POE1_IGNORED_GRAPH_EDGES.has(`${fromAreaId}->${toAreaId}`);
+  }
+
+  getCampaignQuestGroups(act?: number): readonly CampaignQuestGroupDefinition[] {
+    if (act === undefined) return POE1_CAMPAIGN_QUEST_GROUPS;
+    return POE1_CAMPAIGN_QUEST_GROUPS.filter((g) => g.act === act).sort((a, b) => a.order - b.order);
+  }
+
+  getOptionalDetourAreaIds(): ReadonlySet<string> {
+    return POE1_OPTIONAL_DETOUR_AREA_IDS;
   }
 
   getLabTrials(): LabTrialMeta[] {

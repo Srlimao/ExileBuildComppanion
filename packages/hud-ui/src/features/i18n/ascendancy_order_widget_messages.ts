@@ -13,6 +13,11 @@ export interface AscendancyOrderWidgetMessages {
   sourceBadges: Record<AscendancyOrderSource, string>;
   labTiers: Record<1 | 2 | 3 | 4, string>;
   svgAriaLabel: (name: string) => string;
+  autoPhaseLabel: (level: number) => string;
+  lvShort: (level: number) => string;
+  respecLaterBadge: string;
+  respecNodesPrefix: string;
+  swapAscendancyNotice: (fromName: string, toName: string) => string;
 }
 
 export const PT_BR_ASCENDANCY_ORDER_MESSAGES: AscendancyOrderWidgetMessages = {
@@ -38,6 +43,11 @@ export const PT_BR_ASCENDANCY_ORDER_MESSAGES: AscendancyOrderWidgetMessages = {
     4: "Lab Eternal",
   },
   svgAriaLabel: (name) => `Árvore da Ascendência ${name}`,
+  autoPhaseLabel: (level) => `Auto (Nv ${level})`,
+  lvShort: (level) => `Nv ${level}`,
+  respecLaterBadge: "RESPEC DEPOIS",
+  respecNodesPrefix: "Respec:",
+  swapAscendancyNotice: (fromName, toName) => `Trocar Ascendência: ${fromName} → ${toName}`,
 };
 
 export const EN_ASCENDANCY_ORDER_MESSAGES: AscendancyOrderWidgetMessages = {
@@ -63,4 +73,9 @@ export const EN_ASCENDANCY_ORDER_MESSAGES: AscendancyOrderWidgetMessages = {
     4: "Eternal Lab",
   },
   svgAriaLabel: (name) => `${name} Ascendancy tree`,
+  autoPhaseLabel: (level) => `Auto (Lv ${level})`,
+  lvShort: (level) => `Lv ${level}`,
+  respecLaterBadge: "RESPEC LATER",
+  respecNodesPrefix: "Respec:",
+  swapAscendancyNotice: (fromName, toName) => `Swap Ascendancy: ${fromName} → ${toName}`,
 };

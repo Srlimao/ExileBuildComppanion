@@ -9,6 +9,8 @@ export * from "./features/route_compiler/route_dsl_preprocessor.js";
 export * from "./features/route_compiler/route_fragment_ast_parser.js";
 export * from "./features/route_compiler/gem_quest_and_vendor_assigner.js";
 export * from "./features/checkpoint_graph/area_dominator_resolver.js";
+export * from "./features/checkpoint_graph/campaign_quest_group_assigner.js";
+export * from "./features/checkpoint_graph/campaign_quest_group_evaluator.js";
 export * from "./features/checkpoint_graph/checkpoint_directed_graph_builder.js";
 export * from "./features/checkpoint_graph/checkpoint_progression_evaluator.js";
 export * from "./features/checkpoint_graph/zone_context_disambiguator.js";
@@ -25,6 +27,7 @@ export * from "./features/character_telemetry_diff/bench_craft_suggestion_adviso
 export * from "./features/vendor_regex/vendor_search_regex_builder.js";
 export * from "./features/lab_compass/poelab_daily_json_tracker.js";
 export * from "./features/lab_compass/ascendancy_progression_planner.js";
+export * from "./features/lab_compass/ascendancy_phase_partitioner.js";
 export * from "./features/lab_compass/ascendancy_notes_order_parser.js";
 export * from "./features/twink_gear/twink_archetype_detector.js";
 export * from "./features/twink_gear/twink_gear_recommender.js";

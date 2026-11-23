@@ -71,6 +71,10 @@ export interface CheckpointStepItem {
   prerequisiteAreaIds?: string[];
   expectedExitAreaId?: string;
   isOptionalDetour?: boolean;
+  questGroupId?: string;
+  questGroupIndex?: number;
+  questGroupTitle?: string;
+  isMandatoryGate?: boolean;
   completed: boolean;
   softCompleted: boolean;
 }

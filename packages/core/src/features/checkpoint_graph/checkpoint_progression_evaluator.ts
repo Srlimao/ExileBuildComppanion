@@ -1,6 +1,6 @@
 import type { GameAdapter } from "@exile-hud/game-data";
 import type { CheckpointStepItem, HudSessionSnapshot } from "../protocol/session_room_wire_protocol.js";
-import { getStrictImpliedAreaIds } from "./area_dominator_resolver.js";
+import { getPriorActImpliedAreaIds } from "./area_dominator_resolver.js";
 import {
   detectEnteredLabyrinthTier,
   getImpliedPriorLabBossAreaIds,
@@ -143,7 +143,17 @@ export function evaluateZoneTransitionCheckpoints(
   }
   if (!/hideout/i.test(enteredAreaId)) visited.add(enteredAreaId);
 
-  const impliedAreaIds = diedOnExit ? new Set<string>() : getStrictImpliedAreaIds(enteredAreaId, nextHighestAct, adapter);
+  const enteredArea = adapter.getAreas()[enteredAreaId];
+  const enteredAct = Number(enteredArea?.act ?? 0) || nextHighestAct;
+  const canImplyPriorActs =
+    Boolean(enteredArea) &&
+    !/hideout|labyrinth/i.test(enteredAreaId) &&
+    (!enteredArea!.is_town_area || enteredAreaId === adapter.getActEntryAreaId(enteredAct));
+
+  const impliedAreaIds =
+    diedOnExit || !canImplyPriorActs
+      ? new Set<string>()
+      : getPriorActImpliedAreaIds(enteredAreaId, nextHighestAct, adapter);
   for (const impliedId of impliedAreaIds) {
     visited.add(impliedId);
     cleared.add(impliedId);
@@ -154,13 +164,6 @@ export function evaluateZoneTransitionCheckpoints(
     cleared.add(bossAreaId);
   }
   const maxAutoTrialAct = getMaxTrialActForLabyrinthTier(enteredLabTier);
-
-  const enteredArea = adapter.getAreas()[enteredAreaId];
-  const enteredAct = Number(enteredArea?.act ?? 0) || nextHighestAct;
-  const canImplyPriorActs =
-    Boolean(enteredArea) &&
-    !/hideout|labyrinth/i.test(enteredAreaId) &&
-    (!enteredArea!.is_town_area || enteredAreaId === adapter.getActEntryAreaId(enteredAct));
 
   const { blocks, blockIndexByStep } = buildCheckpointBlocks(state.checkpoints);
   const { exactStepSet, fallbackStepSet } = findExitedStepIndices(
