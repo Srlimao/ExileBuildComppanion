@@ -1,9 +1,10 @@
 import type { DeviceFormFactor, HudContextMode, HudSessionSnapshot } from "@exile-hud/core";
 import { ThemeAppearanceControls, useAccessibleDialog, useHudI18n } from "@exile-hud/hud-ui";
-import { Download, LayoutGrid, QrCode, RefreshCw, RotateCcw, X } from "lucide-react";
+import { Download, LayoutGrid, QrCode, RefreshCw, RotateCcw, RotateCw, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { LATEST_PORTABLE_EXE_URL } from "../desktop_download/github_latest_release_client.js";
 import type { ConnectionPhase } from "../pairing_and_connection/edge_websocket_room_client.js";
+import { PWA_REFRESH_MESSAGES } from "../pwa_refresh/pwa_refresh_messages.js";
 
 interface HudSettingsDrawerProps {
   open: boolean;
@@ -19,6 +20,7 @@ interface HudSettingsDrawerProps {
   onTriggerManualSync: () => void;
   onResetProgress: () => void;
   onOpenPairingModal?: () => void;
+  onForceRefresh?: () => void;
 }
 
 /** Slide-over Whisper settings drawer housing appearance, actions, pairing, PC download, and reset. */
@@ -36,8 +38,9 @@ export function HudSettingsDrawer({
   onTriggerManualSync,
   onResetProgress,
   onOpenPairingModal,
+  onForceRefresh,
 }: HudSettingsDrawerProps) {
-  const { appMsg } = useHudI18n();
+  const { locale, appMsg } = useHudI18n();
   const [confirmingReset, setConfirmingReset] = useState(false);
   const [syncRequested, setSyncRequested] = useState(false);
   const dialogRef = useAccessibleDialog({ open, onClose });
@@ -195,6 +198,25 @@ export function HudSettingsDrawer({
                   </span>
                   <span className="block text-[11px] text-hud-muted mt-0.5">
                     {appMsg.pwa.pairPcDesc}
+                  </span>
+                </span>
+              </button>
+            )}
+
+            {onForceRefresh && (
+              <button
+                type="button"
+                data-testid="pwa-force-refresh-btn"
+                onClick={() => { onClose(); onForceRefresh(); }}
+                className="w-full py-2.5 flex items-start gap-2.5 text-left group rounded-lg cursor-pointer"
+              >
+                <RotateCw className="h-4 w-4 mt-0.5 shrink-0 text-hud-muted group-hover:text-hud-accent transition-colors" />
+                <span className="min-w-0">
+                  <span className="block text-xs font-medium text-hud-text group-hover:text-hud-accent transition-colors">
+                    {PWA_REFRESH_MESSAGES[locale].reloadApp}
+                  </span>
+                  <span className="block text-[11px] text-hud-muted mt-0.5">
+                    {PWA_REFRESH_MESSAGES[locale].reloadAppDesc}
                   </span>
                 </span>
               </button>

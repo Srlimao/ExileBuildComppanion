@@ -20,6 +20,7 @@ interface HudTopTelemetryBarProps {
   onResetProgress: () => void;
   onOpenPairingModal?: () => void;
   onReconnectNow?: () => void;
+  onForceRefresh?: () => void;
 }
 
 function getXpRangeLabel(playerLvl: number, zoneLvl: number): { label: string; ok: boolean } {
@@ -46,6 +47,7 @@ export function HudTopTelemetryBar({
   onResetProgress,
   onOpenPairingModal,
   onReconnectNow,
+  onForceRefresh,
 }: HudTopTelemetryBarProps) {
   const { msg, appMsg } = useHudI18n();
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -225,6 +227,7 @@ export function HudTopTelemetryBar({
         onTriggerManualSync={onTriggerManualSync}
         onResetProgress={onResetProgress}
         onOpenPairingModal={onOpenPairingModal}
+        onForceRefresh={onForceRefresh}
       />
     </>
   );
