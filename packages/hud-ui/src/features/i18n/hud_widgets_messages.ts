@@ -5,6 +5,11 @@ import {
   type AscendancyOrderWidgetMessages,
 } from "./ascendancy_order_widget_messages.js";
 import {
+  EN_GEAR_PAPER_DOLL_MESSAGES,
+  PT_BR_GEAR_PAPER_DOLL_MESSAGES,
+  type GearPaperDollMessages,
+} from "./gear_paper_doll_messages.js";
+import {
   EN_TWINK_GEAR_MESSAGES,
   PT_BR_TWINK_GEAR_MESSAGES,
   type TwinkGearWidgetMessages,
@@ -79,6 +84,7 @@ export interface HudWidgetsMessages {
   campaignTrials: string;
   ascendancyOrder: AscendancyOrderWidgetMessages;
   twinkGear: TwinkGearWidgetMessages;
+  gearPaperDoll: GearPaperDollMessages;
 }
 
 const PT_BR_WIDGETS: HudWidgetsMessages = {
@@ -152,6 +158,7 @@ const PT_BR_WIDGETS: HudWidgetsMessages = {
   campaignTrials: "Trials da Campanha",
   ascendancyOrder: PT_BR_ASCENDANCY_ORDER_MESSAGES,
   twinkGear: PT_BR_TWINK_GEAR_MESSAGES,
+  gearPaperDoll: PT_BR_GEAR_PAPER_DOLL_MESSAGES,
 };
 
 const EN_WIDGETS: HudWidgetsMessages = {
@@ -223,6 +230,7 @@ const EN_WIDGETS: HudWidgetsMessages = {
   campaignTrials: "Campaign Trials",
   ascendancyOrder: EN_ASCENDANCY_ORDER_MESSAGES,
   twinkGear: EN_TWINK_GEAR_MESSAGES,
+  gearPaperDoll: EN_GEAR_PAPER_DOLL_MESSAGES,
 };
 
 export const HUD_WIDGET_MESSAGES: Record<HudLocale, HudWidgetsMessages> = {

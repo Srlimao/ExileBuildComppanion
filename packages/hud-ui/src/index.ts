@@ -5,6 +5,7 @@ export { StandbySessionSummaryView } from "./features/hud_shell/standby_session_
 export { useAccessibleDialog } from "./features/hud_shell/use_accessible_dialog.js";
 export { HudThemeProvider, useHudTheme } from "./features/theme/hud_theme_provider.js";
 export type { HudA11yMessages } from "./features/i18n/hud_a11y_messages.js";
+export { HUD_WIDGET_MESSAGES, type HudWidgetsMessages } from "./features/i18n/hud_widgets_messages.js";
 export { HudI18nProvider, useHudI18n, type AppMessagesBundle, type DesktopSurfaceMessages, type HudI18nContextValue, type HudMessagesBundle } from "./features/i18n/hud_i18n_provider.js";
 export { POE2_BUILD_IMPORT_MESSAGES, type Poe2BuildImportMessages } from "./features/i18n/poe2_build_import_messages.js";
 export { POE2_SURFACE_MESSAGES, type Poe2SurfaceMessages } from "./features/i18n/poe2_surface_messages.js";
@@ -146,6 +147,26 @@ export { ActiveChecklistWidget, selectChecklistWindow, type ChecklistWindowSelec
 export { AscendancyOrderWidget } from "./features/widgets/ascendancy_order_widget.js";
 export { AscendancyTreeSvgPreview } from "./features/widgets/ascendancy_tree_svg_preview.js";
 export { DeferredBacklogWidget } from "./features/widgets/deferred_backlog_widget.js";
+export {
+  EquipmentPaperDollView,
+  type EquipmentPaperDollViewProps,
+} from "./features/gear_paper_doll/equipment_paper_doll_view.js";
+export {
+  summarizeGearSlotLabel,
+  type GearSlotDisplaySummary,
+} from "./features/gear_paper_doll/gear_item_mod_summarizer.js";
+export {
+  classifyCharmVisualKind,
+  classifyFlaskVisualKind,
+  normalizeItemSetToPaperDoll,
+  type CharmVisualKind,
+  type ConsumableSlotKey,
+  type CoreGearSlotKey,
+  type FlaskVisualKind,
+  type NormalizedPaperDollModel,
+  type PaperDollSlotKey,
+  type SlotAnchoredAlerts,
+} from "./features/gear_paper_doll/gear_slot_normalizer.js";
 export { GearHygieneWidget } from "./features/widgets/gear_hygiene_widget.js";
 export { LabCompassWidget } from "./features/widgets/lab_compass_widget.js";
 export { PassiveTreeWidget } from "./features/widgets/passive_tree_widget.js";

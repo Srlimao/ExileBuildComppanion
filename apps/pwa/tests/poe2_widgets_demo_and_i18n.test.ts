@@ -72,7 +72,9 @@ describe("poe2_widgets_demo_and_i18n", () => {
       gameId: "poe2",
       leagueStart: false,
     });
-    expect(poe2Field.some((item) => item.widgetId === "zone_layout")).toBe(true);
+    expect(poe2Field.some((item) => item.widgetId === "zone_layout")).toBe(false);
+    expect(poe2Field.some((item) => item.widgetId === "active_checklist")).toBe(true);
+    expect(poe2Field.some((item) => item.widgetId === "vendor_shopping")).toBe(true);
     expect(poe2Field.some((item) => item.widgetId === "socket_links")).toBe(true);
     expect(poe2TwinkTown.some((item) => item.widgetId === "twink_gear")).toBe(true);
   });

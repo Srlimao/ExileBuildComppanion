@@ -65,13 +65,69 @@ Implicits: 0
 +1 to Level of all Fire Spell Skill Gems
 28% increased Elemental Damage
     </Item>
+    <Item id="4">
+Rarity: UNIQUE
+Tabula Rasa
+Simple Robe
+Sockets: W-W-W-W-W-W
+LevelReq: 1
+Implicits: 0
+6-Link White Sockets
+    </Item>
+    <Item id="5">
+Rarity: RARE
+Storm Fist
+Silk Gloves
+Sockets: B-B-G
+LevelReq: 20
+Implicits: 0
++42 to maximum Life
++24% to Fire Resistance
++18% to Cold Resistance
+    </Item>
+    <Item id="6">
+Rarity: RARE
+Gale Stride
+Mesh Boots
+Sockets: R-G-B
+LevelReq: 22
+Implicits: 0
++36 to maximum Life
++22% to Cold Resistance
+    </Item>
+    <Item id="7">
+Rarity: MAGIC
+Bubbling Greater Life Flask
+Greater Life Flask
+LevelReq: 12
+Implicits: 0
+50% of Recovery applied Instantly
+Immunity to Bleeding for 4 seconds
+    </Item>
+    <Item id="8">
+Rarity: MAGIC
+Experimenter's Quicksilver Flask
+Quicksilver Flask
+LevelReq: 4
+Implicits: 0
+40% increased Movement Speed
+32% increased Duration
+    </Item>
     <ItemSet id="1" title="Act 1 Starter">
       <Slot name="Weapon 1" itemId="1"/>
       <Slot name="Helmet" itemId="2"/>
+      <Slot name="Body Armour" itemId="4"/>
+      <Slot name="Flask 1" itemId="7"/>
+      <Slot name="Flask 2" itemId="8"/>
     </ItemSet>
     <ItemSet id="2" title="Act 3 Transition (Lv 24)">
       <Slot name="Weapon 1" itemId="3"/>
       <Slot name="Helmet" itemId="2"/>
+      <Slot name="Body Armour" itemId="4"/>
+      <Slot name="Gloves" itemId="5"/>
+      <Slot name="Boots" itemId="6"/>
+      <Slot name="Flask 1" itemId="7"/>
+      <Slot name="Flask 2" itemId="8"/>
     </ItemSet>
   </Items>
 </PathOfBuilding>`;

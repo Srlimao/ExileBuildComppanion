@@ -63,9 +63,69 @@ LevelReq: 1
 Implicits: 0
 +30% to all Elemental Resistances
     </Item>
+    <Item id="3">
+Rarity: UNIQUE
+Enfolding Dawn
+Pilgrim Vestments
+Sockets: S S
+LevelReq: 1
+Implicits: 0
++100 to Spirit
++14% to all Elemental Resistances
+    </Item>
+    <Item id="4">
+Rarity: RARE
+Siphoning Wand
+Attuned Wand
+Sockets: S
+LevelReq: 18
+Implicits: 0
+Grants Skill: Level 8 Sigil of Power
++2 to Level of all Cold Spell Skills
+    </Item>
+    <Item id="5">
+Rarity: RARE
+Rough Greaves
+Rough Greaves
+LevelReq: 16
+Implicits: 0
++38 to maximum Life
++18% to Fire Resistance
++14% to Cold Resistance
+    </Item>
+    <Item id="6">
+Rarity: MAGIC
+Colossal Life Flask
+Colossal Life Flask
+LevelReq: 23
+Implicits: 0
+50% of Recovery applied Instantly
+    </Item>
+    <Item id="7">
+Rarity: MAGIC
+Colossal Mana Flask
+Colossal Mana Flask
+LevelReq: 23
+Implicits: 0
+Recovers 260 Mana over 3 Seconds
+    </Item>
+    <Item id="8">
+Rarity: MAGIC
+Thawing Charm
+Thawing Charm
+LevelReq: 12
+Implicits: 0
+Used when you become Frozen
+    </Item>
     <ItemSet id="1" title="Act 2 Campaign (Lv 18)">
       <Slot name="Weapon 1" itemId="1"/>
+      <Slot name="Weapon 1 Swap" itemId="4"/>
       <Slot name="Helmet" itemId="2"/>
+      <Slot name="Body Armour" itemId="3"/>
+      <Slot name="Boots" itemId="5"/>
+      <Slot name="Life Flask" itemId="6"/>
+      <Slot name="Mana Flask" itemId="7"/>
+      <Slot name="Charm 1" itemId="8"/>
     </ItemSet>
   </Items>
 </PathOfBuilding2>`;

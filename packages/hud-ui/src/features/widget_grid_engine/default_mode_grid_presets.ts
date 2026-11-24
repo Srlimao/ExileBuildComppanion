@@ -59,7 +59,7 @@ function getPoe2DefaultLayoutForMode(
       { widgetId: "regex_sync", colSpan: 1, rowSpan: 1, order: 1 },
       { widgetId: "socket_links", colSpan: 1, rowSpan: 1, order: 2 },
       { widgetId: "resistance_cap", colSpan: 1, rowSpan: 1, order: 3 },
-      { widgetId: "gear_hygiene", colSpan: 1, rowSpan: 1, order: 4 },
+      { widgetId: "gear_hygiene", colSpan: isPhone ? 1 : 2, rowSpan: isPhone ? 1 : 2, order: 4 },
       { widgetId: "passive_tree", colSpan: isPhone ? 1 : 2, rowSpan: 1, order: 5 },
     ];
     if (leagueStart === false) {
@@ -85,12 +85,11 @@ function getPoe2DefaultLayoutForMode(
   }
 
   return [
-    { widgetId: "zone_layout", colSpan: isPhone ? 1 : 2, rowSpan: 2, order: 0 },
-    { widgetId: "active_checklist", colSpan: 1, rowSpan: 2, order: 1 },
-    { widgetId: "vendor_shopping", colSpan: 1, rowSpan: 1, order: 2 },
-    { widgetId: "resistance_cap", colSpan: 1, rowSpan: 1, order: 3 },
+    { widgetId: "active_checklist", colSpan: isPhone ? 1 : 2, rowSpan: 2, order: 0 },
+    { widgetId: "vendor_shopping", colSpan: 1, rowSpan: 2, order: 1 },
+    { widgetId: "resistance_cap", colSpan: 1, rowSpan: 1, order: 2 },
+    { widgetId: "socket_links", colSpan: 1, rowSpan: 1, order: 3 },
     { widgetId: "run_timer", colSpan: 1, rowSpan: 1, order: 4 },
-    { widgetId: "socket_links", colSpan: 1, rowSpan: 1, order: 5 },
   ];
 }
 
@@ -110,7 +109,7 @@ export function getDefaultLayoutForMode(
       { widgetId: "regex_sync", colSpan: 1, rowSpan: 1, order: 1 },
       { widgetId: "socket_links", colSpan: 1, rowSpan: 1, order: 2 },
       { widgetId: "resistance_cap", colSpan: 1, rowSpan: 1, order: 3 },
-      { widgetId: "gear_hygiene", colSpan: 1, rowSpan: 1, order: 4 },
+      { widgetId: "gear_hygiene", colSpan: isPhone ? 1 : 2, rowSpan: isPhone ? 1 : 2, order: 4 },
       { widgetId: "passive_tree", colSpan: isPhone ? 1 : 2, rowSpan: 1, order: 5 },
     ];
     if (options?.leagueStart === false) {

@@ -63,6 +63,13 @@ describe("overlay_default_grid_presets", () => {
       "resistance_cap",
     ]);
 
+    const poe2Field = getDefaultOverlayLayoutForMode("FIELD", { gameId: "poe2" });
+    expect(poe2Field.map((i) => i.widgetId)).toEqual([
+      "active_checklist",
+      "resistance_cap",
+      "run_timer",
+    ]);
+
     const twinkTown = getDefaultOverlayLayoutForMode("TOWN", { leagueStart: false });
     expect(twinkTown.map((i) => i.widgetId)).toEqual([
       "vendor_shopping",

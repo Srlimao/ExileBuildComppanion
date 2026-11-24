@@ -32,8 +32,11 @@ import {
   poe2PermanentBonuses,
   poe2RuneSocketHints,
   poe2TwinkGearCatalog,
+  poe2UniqueItemIcons,
   poe2ZoneLandmarks,
 } from "./poe2_static_dataset_loader.js";
+
+const POE2_CDN_2DITEMS_BASE = "https://cdn.poe2db.tw/image/Art/2DItems/";
 
 const AREAS_BY_LOWER_NAME = (() => {
   const map = new Map<string, AreaDefinition[]>();
@@ -126,8 +129,11 @@ export class Poe2CampaignGameAdapter implements GameAdapter {
     return poe2TwinkGearCatalog;
   }
 
-  resolveOfficialUniqueIconUrl(): string | null {
-    return null;
+  resolveOfficialUniqueIconUrl(itemName: string): string | null {
+    const key = itemName.trim().toLowerCase();
+    if (!key) return null;
+    const suffix = poe2UniqueItemIcons[key];
+    return suffix ? `${POE2_CDN_2DITEMS_BASE}${suffix}` : null;
   }
 
   resolveAreaById(areaId: string): AreaDefinition | null {

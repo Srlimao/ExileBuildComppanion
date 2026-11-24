@@ -6,6 +6,7 @@ import leagueStarterFilterMetaJson from "../data/poe2/league_starter_filter_meta
 import permanentBonusesJson from "../data/poe2/permanent_bonuses.json" with { type: "json" };
 import runeSocketHintsJson from "../data/poe2/rune_socket_hints.json" with { type: "json" };
 import twinkGearCatalogJson from "../data/poe2/twink_gear_catalog.json" with { type: "json" };
+import uniqueItemIconsJson from "../data/poe2/unique_item_icons.json" with { type: "json" };
 import zoneLandmarksJson from "../data/poe2/zone_landmarks.json" with { type: "json" };
 import type {
   AreaDefinition,
@@ -28,6 +29,7 @@ export const poe2PermanentBonuses = permanentBonusesJson as readonly Poe2Permane
 export const poe2ZoneLandmarks = zoneLandmarksJson as Record<string, Poe2ZoneLandmarkHint>;
 export const poe2RuneSocketHints = runeSocketHintsJson as readonly Poe2RuneSocketSuggestion[];
 export const poe2TwinkGearCatalog = twinkGearCatalogJson as TwinkCatalogItem[];
+export const poe2UniqueItemIcons = uniqueItemIconsJson as Record<string, string>;
 export const poe2LeagueStarterFilterMeta = leagueStarterFilterMetaJson as LeagueStarterFilterMetadata;
 
 export const POE2_EMPTY_GRAPH_META: PassiveTreeGraphMetadata = {

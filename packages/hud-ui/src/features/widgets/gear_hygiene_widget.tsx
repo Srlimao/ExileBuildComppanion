@@ -1,19 +1,22 @@
-import type { HudSessionSnapshot, TargetItemSetSummary, TargetItemSlotSummary } from "@exile-hud/core";
-import { useEffect, useState } from "react";
+import {
+  resolveSnapshotGameId,
+  type HudSessionSnapshot,
+  type TargetItemSetSummary,
+} from "@exile-hud/core";
+import { LayoutGrid, List } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  normalizeItemSetToPaperDoll,
+  type PaperDollSlotKey,
+} from "../gear_paper_doll/gear_slot_normalizer.js";
+import { EquipmentPaperDollView } from "../gear_paper_doll/equipment_paper_doll_view.js";
 import { useHudI18n } from "../i18n/hud_i18n_provider.js";
 import {
   localizeBenchPrescription,
   localizeBenchProblemSummary,
   localizeGearHygieneMessage,
 } from "../i18n/telemetry_advisor_localizer.js";
-
-const RARITY_COLOR_CLASS: Record<TargetItemSlotSummary["rarity"], string> = {
-  unique: "text-hud-warn",
-  rare: "text-hud-quest",
-  magic: "text-hud-cold",
-  normal: "text-hud-text",
-  unknown: "text-hud-text",
-};
+import { GearHygieneListView } from "./gear_hygiene_list_view.js";
 
 function selectDefaultItemSet(itemSets: TargetItemSetSummary[], characterLevel: number): TargetItemSetSummary | null {
   if (itemSets.length === 0) return null;
@@ -24,18 +27,41 @@ function selectDefaultItemSet(itemSets: TargetItemSetSummary[], characterLevel: 
   return active;
 }
 
-/** Displays gear/flask hygiene alerts alongside imported PoB Item Sets and target slots. */
+function findSlotForAlertId(
+  alertsBySlot: Partial<Record<PaperDollSlotKey, { hygiene: Array<{ id: string }>; crafts: Array<{ id: string }>; runes: Array<{ id: string }> }>>,
+  kind: "hygiene" | "crafts" | "runes",
+  id: string,
+): PaperDollSlotKey | null {
+  for (const [slotKey, bucket] of Object.entries(alertsBySlot)) {
+    if (bucket && bucket[kind].some((entry) => entry.id === id)) {
+      return slotKey as PaperDollSlotKey;
+    }
+  }
+  return null;
+}
+
+/** Displays shared PoE 1 & PoE 2 paper-doll gear/flasks UI, anchored alerts, and PoB Item Set switcher. */
 export function GearHygieneWidget({ snapshot }: { snapshot: HudSessionSnapshot }) {
   const { locale, msg, appMsg } = useHudI18n();
-  const isPoe2 = snapshot.gameId === "poe2";
+  const gameId = resolveSnapshotGameId(snapshot);
+  const isPoe2 = gameId === "poe2";
   const issues = snapshot.gearHygiene;
-  const craftSuggestions = (snapshot.benchCraftSuggestions ?? []).filter(
-    (s) => !(s.id === "bench_boots_ms" && issues.some((i) => i.id === "boots_0ms")),
+  const craftSuggestions = useMemo(
+    () =>
+      (snapshot.benchCraftSuggestions ?? []).filter(
+        (s) => !(s.id === "bench_boots_ms" && issues.some((i) => i.id === "boots_0ms")),
+      ),
+    [snapshot.benchCraftSuggestions, issues],
   );
-  const topRunes = isPoe2 ? (snapshot.runeSuggestions ?? []).slice(0, 2) : [];
+  const topRunes = useMemo(
+    () => (isPoe2 ? (snapshot.runeSuggestions ?? []).slice(0, 2) : []),
+    [isPoe2, snapshot.runeSuggestions],
+  );
   const itemSets = snapshot.itemSets ?? [];
   const defaultSet = selectDefaultItemSet(itemSets, snapshot.characterLevel);
   const [selectedSetId, setSelectedSetId] = useState<string | null>(defaultSet?.id ?? null);
+  const [viewMode, setViewMode] = useState<"doll" | "list">("doll");
+  const [pinnedKey, setPinnedKey] = useState<string | null>(null);
 
   useEffect(() => {
     const stillValid = itemSets.some((s) => s.id === selectedSetId);
@@ -45,118 +71,181 @@ export function GearHygieneWidget({ snapshot }: { snapshot: HudSessionSnapshot }
   }, [defaultSet?.id, itemSets, selectedSetId]);
 
   const activeSet = itemSets.find((s) => s.id === selectedSetId) ?? defaultSet;
+  const dollModel = useMemo(
+    () =>
+      normalizeItemSetToPaperDoll({
+        itemSet: activeSet,
+        gameId,
+        hygiene: issues,
+        crafts: craftSuggestions,
+        runes: topRunes,
+      }),
+    [activeSet, gameId, issues, craftSuggestions, topRunes],
+  );
+
+  const t = msg.widgets.gearPaperDoll;
+  const totalAlerts = issues.length + craftSuggestions.length + topRunes.length;
+
+  const pinSlotFromChip = (slotKey: PaperDollSlotKey | null) => {
+    if (!slotKey) return;
+    setViewMode("doll");
+    setPinnedKey((prev) => (prev === slotKey ? null : slotKey));
+  };
 
   return (
-    <div className="flex flex-col h-full gap-2.5 min-h-0">
-      <div className="flex items-baseline justify-between gap-2 shrink-0">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
-          {msg.widgets.gearAndFlasks}
-        </h2>
-        <span className="text-xs font-mono text-hud-muted tabular-nums">
-          {msg.widgets.slotsAndAlerts(activeSet ? activeSet.slots.length : null, issues.length + craftSuggestions.length)}
-        </span>
-      </div>
+    <div className="flex flex-col h-full gap-2 min-h-0">
+      <div className="flex items-center justify-between gap-2 shrink-0">
+        <div className="flex items-baseline gap-2 min-w-0">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted truncate">
+            {msg.widgets.gearAndFlasks}
+          </h2>
+          <span className="text-[11px] font-mono text-hud-muted tabular-nums shrink-0">
+            {msg.widgets.slotsAndAlerts(activeSet ? activeSet.slots.length : null, issues.length + craftSuggestions.length)}
+          </span>
+        </div>
 
-      <div className="space-y-1 shrink-0">
-        {issues.map((issue) => (
-          <div
-            key={issue.id}
-            className={`text-xs flex items-baseline gap-2 ${
-              issue.severity === "warn" ? "text-hud-warn" : "text-hud-text/85"
+        <div className="inline-flex items-center rounded-md border border-hud-hairline bg-hud-subtle/60 p-0.5 shrink-0">
+          <button
+            type="button"
+            aria-pressed={viewMode === "doll"}
+            aria-label={t.paperDollView}
+            title={t.paperDollView}
+            onClick={() => setViewMode("doll")}
+            className={`p-1 rounded transition-colors cursor-pointer ${
+              viewMode === "doll" ? "bg-hud-accent text-hud-accent-fg" : "text-hud-muted hover:text-hud-text"
             }`}
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-current shrink-0 self-center" />
-            <span>{localizeGearHygieneMessage(issue, locale)}</span>
-          </div>
-        ))}
+            <LayoutGrid className="h-3 w-3" />
+          </button>
+          <button
+            type="button"
+            aria-pressed={viewMode === "list"}
+            aria-label={t.listView}
+            title={t.listView}
+            onClick={() => setViewMode("list")}
+            className={`p-1 rounded transition-colors cursor-pointer ${
+              viewMode === "list" ? "bg-hud-accent text-hud-accent-fg" : "text-hud-muted hover:text-hud-text"
+            }`}
+          >
+            <List className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
 
-        {craftSuggestions.map((s) => (
-          <div key={s.id} className="text-xs flex items-baseline justify-between gap-2">
-            <span className="text-hud-text/90">
-              <span className="text-hud-accent font-medium">{msg.widgets.benchPrefix}</span>{" "}
-              {localizeBenchProblemSummary(s.problemSummary, locale)} → {localizeBenchPrescription(s.prescription, locale)}
-            </span>
-            <span className="shrink-0 font-mono text-hud-quest">{s.costLabel}</span>
-          </div>
-        ))}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 shrink-0">
+        {issues.map((issue) => {
+          const targetSlot = findSlotForAlertId(dollModel.alertsBySlot, "hygiene", issue.id);
+          const isSelected = Boolean(targetSlot && pinnedKey === targetSlot);
+          return (
+            <button
+              key={issue.id}
+              type="button"
+              onClick={() => pinSlotFromChip(targetSlot)}
+              title={localizeGearHygieneMessage(issue, locale)}
+              className={`px-2 py-0.5 rounded-md border text-[11px] whitespace-nowrap transition-colors cursor-pointer ${
+                isSelected
+                  ? "border-hud-accent bg-hud-accent text-hud-accent-fg font-semibold"
+                  : issue.severity === "warn"
+                    ? "border-hud-warn/45 bg-hud-warn/10 text-hud-warn hover:bg-hud-warn/20"
+                    : "border-hud-hairline bg-hud-subtle/70 text-hud-text/90 hover:bg-hud-subtle"
+              }`}
+            >
+              {targetSlot ? `${t.slotShortLabels[targetSlot]}: ` : ""}
+              {localizeGearHygieneMessage(issue, locale)}
+            </button>
+          );
+        })}
 
-        {issues.length === 0 && craftSuggestions.length === 0 && topRunes.length > 0 && (
-          <div className="space-y-1">
-            {topRunes.map((rune) => (
-              <div key={rune.id} className="text-xs flex items-baseline justify-between gap-2">
-                <span className="text-hud-text/90">
-                  <span className="text-hud-accent font-medium">{appMsg.poe2.runeSlotPrefix}:</span> {rune.runeName} ({rune.slotHint})
+        {craftSuggestions.map((s) => {
+          const targetSlot = findSlotForAlertId(dollModel.alertsBySlot, "crafts", s.id);
+          const isSelected = Boolean(targetSlot && pinnedKey === targetSlot);
+          return (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => pinSlotFromChip(targetSlot)}
+              title={`${localizeBenchProblemSummary(s.problemSummary, locale)} → ${localizeBenchPrescription(s.prescription, locale)} (${s.costLabel})`}
+              className={`px-2 py-0.5 rounded-md border text-[11px] whitespace-nowrap transition-colors cursor-pointer inline-flex items-center gap-1 ${
+                isSelected
+                  ? "border-hud-accent bg-hud-accent text-hud-accent-fg font-semibold"
+                  : "border-hud-hairline bg-hud-subtle/70 text-hud-text/90 hover:bg-hud-subtle"
+              }`}
+            >
+              <span className={isSelected ? "font-semibold" : "text-hud-accent font-medium"}>
+                {msg.widgets.benchPrefix}
+              </span>
+              <span>{s.slot}</span>
+              <span className="font-mono text-hud-quest">{s.recipeLabel}</span>
+            </button>
+          );
+        })}
+
+        {issues.length === 0 &&
+          craftSuggestions.length === 0 &&
+          topRunes.map((rune) => {
+            const targetSlot = findSlotForAlertId(dollModel.alertsBySlot, "runes", rune.id);
+            const isSelected = Boolean(targetSlot && pinnedKey === targetSlot);
+            return (
+              <button
+                key={rune.id}
+                type="button"
+                onClick={() => pinSlotFromChip(targetSlot)}
+                title={`${rune.runeName} (${rune.slotHint}) · ${rune.effectLabel}`}
+                className={`px-2 py-0.5 rounded-md border text-[11px] whitespace-nowrap transition-colors cursor-pointer inline-flex items-center gap-1 ${
+                  isSelected
+                    ? "border-hud-accent bg-hud-accent text-hud-accent-fg font-semibold"
+                    : "border-hud-hairline bg-hud-subtle/70 text-hud-text/90 hover:bg-hud-subtle"
+                }`}
+              >
+                <span className={isSelected ? "font-semibold" : "text-hud-accent font-medium"}>
+                  {appMsg.poe2.runeSlotPrefix}:
                 </span>
-                <span className="shrink-0 font-mono text-hud-quest">{rune.effectLabel}</span>
-              </div>
-            ))}
-          </div>
-        )}
+                <span>{rune.runeName}</span>
+                <span className="font-mono text-hud-quest">{rune.effectLabel}</span>
+              </button>
+            );
+          })}
 
-        {issues.length === 0 && craftSuggestions.length === 0 && topRunes.length === 0 && (
-          <p className="text-xs text-hud-ok">{msg.widgets.gearLooksGood}</p>
-        )}
+        {totalAlerts === 0 && <p className="text-[11px] text-hud-ok">{msg.widgets.gearLooksGood}</p>}
       </div>
 
       {itemSets.length > 0 && activeSet && (
-        <div className="flex flex-col gap-2 min-h-0 flex-1 border-t border-hud-hairline pt-2.5">
-          <div className="flex items-center gap-3 overflow-x-auto pb-1 shrink-0">
-            {itemSets.map((set) => {
-              const isSelected = set.id === activeSet.id;
-              return (
-                <button
-                  key={set.id}
-                  type="button"
-                  aria-pressed={isSelected}
-                  onClick={() => setSelectedSetId(set.id)}
-                  className={`py-1.5 text-xs whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
-                    isSelected
-                      ? "border-hud-accent text-hud-text font-semibold"
-                      : "border-transparent text-hud-muted hover:text-hud-text"
-                  }`}
-                >
-                  {set.title} · Lv {set.minLevel}+
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="divide-y divide-hud-hairline overflow-y-auto pr-0.5 flex-1">
-            {activeSet.slots.length === 0 ? (
-              <div className="text-xs text-hud-muted py-2">{msg.widgets.noItemsInSet}</div>
-            ) : (
-              activeSet.slots.map((slot) => (
-                <div key={`${slot.slotName}:${slot.itemId}`} className="py-2 first:pt-0 space-y-0.5">
-                  <div className="flex items-baseline justify-between gap-2 text-[11px]">
-                    <span className="uppercase tracking-wider font-semibold text-hud-muted">{slot.slotName}</span>
-                    <div className="flex items-center gap-2 font-mono">
-                      {slot.verifiedEquipped && <span className="text-hud-ok font-sans font-medium">{msg.widgets.equipped}</span>}
-                      {slot.sockets && <span className="text-hud-muted">{slot.sockets}</span>}
-                      <span className="text-hud-dim">Lv {slot.levelReq}</span>
-                    </div>
-                  </div>
-
-                  <div className={`text-xs font-semibold leading-tight ${RARITY_COLOR_CLASS[slot.rarity]}`}>
-                    {slot.itemName}
-                    {slot.baseType !== slot.itemName && (
-                      <span className="text-[11px] font-normal text-hud-muted"> · {slot.baseType}</span>
-                    )}
-                  </div>
-
-                  {slot.mods.length > 0 && (
-                    <ul className="space-y-0.5 pt-0.5">
-                      {slot.mods.slice(0, 4).map((mod, idx) => (
-                        <li key={idx} className="text-[11px] text-hud-muted leading-snug">
-                          {mod}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
+        <div className="flex items-center gap-3 overflow-x-auto pb-0.5 border-b border-hud-hairline shrink-0">
+          {itemSets.map((set) => {
+            const isSelected = set.id === activeSet.id;
+            return (
+              <button
+                key={set.id}
+                type="button"
+                aria-pressed={isSelected}
+                onClick={() => {
+                  setSelectedSetId(set.id);
+                  setPinnedKey(null);
+                }}
+                className={`py-1 text-xs whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
+                  isSelected
+                    ? "border-hud-accent text-hud-text font-semibold"
+                    : "border-transparent text-hud-muted hover:text-hud-text"
+                }`}
+              >
+                {set.title} · Lv {set.minLevel}+
+              </button>
+            );
+          })}
         </div>
+      )}
+
+      {viewMode === "doll" ? (
+        <div className="flex-1 min-h-0">
+          <EquipmentPaperDollView
+            model={dollModel}
+            gameId={gameId}
+            pinnedKey={pinnedKey}
+            onPinnedKeyChange={setPinnedKey}
+          />
+        </div>
+      ) : (
+        <GearHygieneListView activeSet={activeSet} />
       )}
     </div>
   );

@@ -41,9 +41,8 @@ export function getDefaultOverlayLayoutForMode(
   if (isPoe2) {
     return [
       { widgetId: "active_checklist", colSpan: 1, rowSpan: 2, order: 0 },
-      { widgetId: "zone_layout", colSpan: 1, rowSpan: 2, order: 1 },
-      { widgetId: "resistance_cap", colSpan: 1, rowSpan: 1, order: 2 },
-      { widgetId: "run_timer", colSpan: 1, rowSpan: 1, order: 3 },
+      { widgetId: "resistance_cap", colSpan: 1, rowSpan: 1, order: 1 },
+      { widgetId: "run_timer", colSpan: 1, rowSpan: 1, order: 2 },
     ];
   }
 
