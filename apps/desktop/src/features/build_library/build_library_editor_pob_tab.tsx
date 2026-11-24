@@ -1,6 +1,6 @@
 import type { PobBuildPreview, PobSetSelection, SupportedGameId } from "@exile-hud/core";
 import { useHudI18n } from "@exile-hud/hud-ui";
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import { AlertTriangle, Compass, RefreshCw } from "lucide-react";
 import { PobSetSelectorSection } from "../pob_profile_panel/pob_set_selector_section.js";
 import { Poe2BuildPlannerImportPopover } from "./poe2_build_planner_import_popover.js";
 
@@ -21,6 +21,7 @@ interface BuildLibraryEditorPobTabProps {
   onInspect: () => void;
   onChangeSelection: (nextSelection: PobSetSelection) => void;
   onImportRawBuild?: (rawJson: string, fallbackName?: string) => void;
+  onOpenFindBuild?: () => void;
 }
 
 /** First tab of the streamlined build editor: name, folder, PoB/.build source, and set selection. */
@@ -41,6 +42,7 @@ export function BuildLibraryEditorPobTab({
   onInspect,
   onChangeSelection,
   onImportRawBuild,
+  onOpenFindBuild,
 }: BuildLibraryEditorPobTabProps) {
   const { appMsg } = useHudI18n();
 
@@ -83,24 +85,38 @@ export function BuildLibraryEditorPobTab({
       <div className="space-y-1.5">
         <div className="flex items-center justify-between gap-2">
           <span className="text-[11px] text-hud-muted truncate">{appMsg.desktop.pobInputLabel}</span>
-          <div className="inline-flex rounded-lg bg-hud-subtle p-0.5 text-[10px] shrink-0">
-            {[
-              { label: appMsg.desktop.leagueStart, val: true },
-              { label: appMsg.desktop.twink, val: false },
-            ].map((opt) => (
+          <div className="flex items-center gap-1.5 shrink-0">
+            {onOpenFindBuild && (
               <button
-                key={opt.label}
                 type="button"
-                onClick={() => onChangeLeagueStart(opt.val)}
-                className={`px-2 py-0.5 rounded-md cursor-pointer transition-colors ${
-                  leagueStart === opt.val
-                    ? "bg-hud-accent text-hud-accent-fg font-semibold"
-                    : "text-hud-muted hover:text-hud-text"
-                }`}
+                onClick={onOpenFindBuild}
+                title={appMsg.buildFinder.findBuildTooltip}
+                data-testid="pc-find-build-btn"
+                className="rounded-lg bg-hud-accent/15 border border-hud-accent/40 hover:bg-hud-accent/25 px-2 py-0.5 text-[10px] font-semibold text-hud-accent inline-flex items-center gap-1 cursor-pointer transition-colors"
               >
-                {opt.label}
+                <Compass className="h-3 w-3" />
+                {appMsg.buildFinder.findBuildBtn}
               </button>
-            ))}
+            )}
+            <div className="inline-flex rounded-lg bg-hud-subtle p-0.5 text-[10px]">
+              {[
+                { label: appMsg.desktop.leagueStart, val: true },
+                { label: appMsg.desktop.twink, val: false },
+              ].map((opt) => (
+                <button
+                  key={opt.label}
+                  type="button"
+                  onClick={() => onChangeLeagueStart(opt.val)}
+                  className={`px-2 py-0.5 rounded-md cursor-pointer transition-colors ${
+                    leagueStart === opt.val
+                      ? "bg-hud-accent text-hud-accent-fg font-semibold"
+                      : "text-hud-muted hover:text-hud-text"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

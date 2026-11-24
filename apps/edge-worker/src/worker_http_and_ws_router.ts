@@ -1,4 +1,10 @@
 import {
+  handleBuildCatalogRequest,
+} from "./features/build_catalog/build_catalog_http_handler.js";
+import {
+  runCatalogSync,
+} from "./features/build_catalog/build_catalog_sync_orchestrator.js";
+import {
   SessionRoomDurableObject,
 } from "./features/session_room/session_room_durable_object.js";
 import { containsForbiddenSecret } from "./features/session_room/session_room_sqlite_repository.js";
@@ -8,11 +14,13 @@ export { SessionRoomDurableObject };
 export interface WorkerEnv {
   SESSION_ROOMS: DurableObjectNamespace;
   ASSETS: Fetcher;
+  BUILD_CATALOG_DB?: D1Database;
+  CATALOG_ADMIN_KEY?: string;
 }
 
 const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
   "Referrer-Policy": "no-referrer",
   "X-Content-Type-Options": "nosniff",
@@ -67,6 +75,10 @@ export default {
       return Response.redirect(`${url.origin}/oauth/callback${url.search}`, 302);
     }
 
+    if (url.pathname.startsWith("/api/builds/")) {
+      return withCors(await handleBuildCatalogRequest(request, env));
+    }
+
     const match = SESSION_ROUTE_REGEX.exec(url.pathname);
     if (match) {
       const roomId = match[1]!.toUpperCase();
@@ -87,5 +99,13 @@ export default {
     }
 
     return env.ASSETS.fetch(request);
+  },
+
+  async scheduled(
+    _controller: ScheduledController,
+    env: WorkerEnv,
+    ctx: ExecutionContext,
+  ): Promise<void> {
+    ctx.waitUntil(runCatalogSync(env, { force: false }));
   },
 };

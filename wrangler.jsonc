@@ -23,6 +23,16 @@
       "new_sqlite_classes": ["SessionRoomDurableObject"]
     }
   ],
+  "d1_databases": [
+    {
+      "binding": "BUILD_CATALOG_DB",
+      "database_name": "general-db",
+      "database_id": "e5a10825-7799-438a-926d-1b296afcccdd"
+    }
+  ],
+  "triggers": {
+    "crons": ["0 6 * * *"]
+  },
   "workers_dev": true,
   "routes": [
     { "pattern": "exile-relay.dunhas.com", "custom_domain": true },

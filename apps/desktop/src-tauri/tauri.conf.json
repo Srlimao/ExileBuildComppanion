@@ -39,6 +39,19 @@
         "focus": false,
         "visible": false,
         "additionalBrowserArgs": "--disable-background-timer-throttling --disable-renderer-backgrounding"
+      },
+      {
+        "label": "build-finder",
+        "title": "Exile Relay — Find Build",
+        "url": "index.html?window=build-finder",
+        "width": 980,
+        "height": 700,
+        "minWidth": 760,
+        "minHeight": 560,
+        "resizable": true,
+        "decorations": true,
+        "visible": false,
+        "additionalBrowserArgs": "--disable-background-timer-throttling --disable-renderer-backgrounding"
       }
     ],
     "security": {

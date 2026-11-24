@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { BuildLibraryEditorMetadataFields } from "./build_library_editor_metadata_fields.js";
 import { BuildLibraryEditorPobTab } from "./build_library_editor_pob_tab.js";
 import type { BuildEditorMode } from "./build_library_types.js";
+import { useBuildFinderHandoff } from "./use_build_finder_handoff.js";
 
 export interface BuildEditorSubmitPayload {
   mode: Exclude<BuildEditorMode, { kind: "closed" }>;
@@ -35,6 +36,7 @@ interface BuildLibraryEditorPanelProps {
   ) => Promise<{ decodedXml: string; preview: PobBuildPreview; selection: PobSetSelection }>;
   onSave: (payload: BuildEditorSubmitPayload) => Promise<void>;
   onCancel: () => void;
+  onOpenFindBuild?: () => void;
 }
 
 type EditorTab = "pob" | "meta";
@@ -50,6 +52,7 @@ export function BuildLibraryEditorPanel({
   onInspectBuild,
   onSave,
   onCancel,
+  onOpenFindBuild,
 }: BuildLibraryEditorPanelProps) {
   const { appMsg } = useHudI18n();
   const initialRecord = mode.kind === "edit" ? mode.record : null;
@@ -105,6 +108,16 @@ export function BuildLibraryEditorPanel({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useBuildFinderHandoff({
+    activeGameId,
+    notesTouched,
+    onApplySelection: (sel) => {
+      setNameTouched(true); setName(sel.name); setRawInput(sel.rawInput);
+      setLeagueStart(sel.leagueStart); if (sel.notes) setNotes(sel.notes);
+      void runInspect(sel.rawInput, null);
+    },
+  });
 
   useEffect(() => {
     const trimmed = rawInput.trim();
@@ -224,6 +237,7 @@ export function BuildLibraryEditorPanel({
             if (!nameTouched && fallbackName) setName(fallbackName);
             void runInspect(rawJson, null);
           }}
+          onOpenFindBuild={onOpenFindBuild}
         />
       ) : (
         <BuildLibraryEditorMetadataFields

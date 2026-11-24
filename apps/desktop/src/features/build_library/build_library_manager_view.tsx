@@ -45,6 +45,7 @@ interface BuildLibraryManagerViewProps {
   onRenameFolder: (folderPath: string, newName: string) => Promise<void>;
   onDeleteFolder: (folderPath: string, recursive: boolean) => Promise<void>;
   onOpenLibraryFolder: () => Promise<string | null>;
+  onOpenFindBuild?: () => void;
   onResetProgress: () => void;
 }
 
@@ -66,6 +67,7 @@ export function BuildLibraryManagerView(props: BuildLibraryManagerViewProps) {
         onInspectBuild={props.onInspectBuild}
         onSave={props.onSaveFromEditor}
         onCancel={props.onCloseEditor}
+        onOpenFindBuild={props.onOpenFindBuild}
       />
     );
   }

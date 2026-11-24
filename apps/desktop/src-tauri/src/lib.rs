@@ -77,6 +77,9 @@ pub(crate) mod overlay_window_controller;
 #[path = "features/overlay_window/overlay_ipc_commands.rs"]
 pub(crate) mod overlay_ipc_commands;
 
+#[path = "features/build_finder_window/build_finder_window_commands.rs"]
+pub(crate) mod build_finder_window_commands;
+
 mod background_telemetry_watchers;
 mod tauri_host_ipc_commands;
 
@@ -191,6 +194,10 @@ pub fn run() {
             auto_update_coordinator::get_app_update_state,
             auto_update_coordinator::check_for_app_update,
             auto_update_coordinator::install_app_update,
+            build_finder_window_commands::open_build_finder_window,
+            build_finder_window_commands::select_build_from_finder,
+            build_finder_window_commands::close_build_finder_window,
+            build_finder_window_commands::open_external_guide_url,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Exile Relay Control Center");

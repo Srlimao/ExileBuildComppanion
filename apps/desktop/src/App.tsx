@@ -1,6 +1,7 @@
 import { useHudI18n } from "@exile-hud/hud-ui";
 import { useEffect, useState } from "react";
 import { DesktopUpdateFooterBar } from "./features/auto_updater/desktop_update_footer_bar.js";
+import { openBuildFinderWindowIpc } from "./features/build_finder/build_finder_ipc_and_api.js";
 import { BuildLibraryManagerView } from "./features/build_library/build_library_manager_view.js";
 import { DesktopControlHeader, type DesktopTabKey } from "./features/control_shell/desktop_control_header.js";
 import { CampaignSimulatorDrawer } from "./features/environment_panel/campaign_simulator_drawer.js";
@@ -85,6 +86,9 @@ export function App() {
             onRenameFolder={ctl.buildLibrary.handleRenameFolder}
             onDeleteFolder={ctl.buildLibrary.handleDeleteFolder}
             onOpenLibraryFolder={ctl.buildLibrary.openBuildsFolder}
+            onOpenFindBuild={() =>
+              void openBuildFinderWindowIpc(ctl.activeGameId, ctl.relayUrl)
+            }
             onResetProgress={ctl.resetProgress}
           />
         )}

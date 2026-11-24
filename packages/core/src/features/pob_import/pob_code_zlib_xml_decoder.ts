@@ -1,6 +1,7 @@
 import type { SupportedGameId } from "@exile-hud/game-data";
 import { XMLParser } from "fast-xml-parser";
 import { inflate } from "pako";
+import { extractMaxrollPobId, fetchMaxrollPobCode } from "./maxroll_pob_url_resolver.js";
 import { isDirectBuildFileUrl, isPoe2BuildJsonString } from "./poe2_build_file_schema.js";
 
 const MAX_BUILD_JSON_BYTES = 2 * 1024 * 1024;
@@ -27,7 +28,7 @@ const xmlParser = new XMLParser({
 });
 
 export interface DecodedPobDocument {
-  sourceKind: "xml" | "pob_code" | "pobbin_url" | "poe2_build_json" | "poe2_build_url";
+  sourceKind: "xml" | "pob_code" | "pobbin_url" | "maxroll_pob_url" | "poe2_build_json" | "poe2_build_url";
   detectedGameId: SupportedGameId;
   xmlString: string;
   parsedXml: Record<string, any>;
@@ -145,6 +146,18 @@ export async function resolveAndDecodePobInput(
     }
     const { detectedGameId } = getPobXmlRoot(parsedXml);
     return { sourceKind: "pobbin_url", detectedGameId, xmlString, parsedXml };
+  }
+
+  const maxrollPobId = extractMaxrollPobId(trimmed);
+  if (maxrollPobId) {
+    const rawCode = await fetchMaxrollPobCode(maxrollPobId, fetcher);
+    const xmlString = decodePobCodeToXmlString(rawCode);
+    const parsedXml = xmlParser.parse(xmlString) as Record<string, any>;
+    if (!parsedXml.PathOfBuilding && !parsedXml.PathOfBuilding2) {
+      throw new Error("Decoded XML does not contain a <PathOfBuilding> or <PathOfBuilding2> root element.");
+    }
+    const { detectedGameId } = getPobXmlRoot(parsedXml);
+    return { sourceKind: "maxroll_pob_url", detectedGameId, xmlString, parsedXml };
   }
 
   const sourceKind = trimmed.startsWith("<") ? "xml" : "pob_code";

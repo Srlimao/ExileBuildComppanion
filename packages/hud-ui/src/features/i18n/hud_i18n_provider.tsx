@@ -1,5 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
+  DESKTOP_BUILD_FINDER_MESSAGES,
+  type DesktopBuildFinderMessages,
+} from "./desktop_build_finder_messages.js";
+import {
   DESKTOP_BUILD_LIBRARY_MESSAGES,
   type DesktopBuildLibraryMessages,
 } from "./desktop_build_library_messages.js";
@@ -38,6 +42,7 @@ export interface AppMessagesBundle {
   legalDisclaimer: string;
   pwa: PwaSurfaceMessages;
   desktop: DesktopSurfaceMessages;
+  buildFinder: DesktopBuildFinderMessages;
   poe2: Poe2SurfaceMessages;
   poe2Build: Poe2BuildImportMessages;
 }
@@ -57,6 +62,7 @@ function buildContextValue(locale: HudLocale, setLocale: (next: HudLocale) => vo
   const pwa = PWA_SURFACE_MESSAGES[locale];
   const poe2 = POE2_SURFACE_MESSAGES[locale];
   const poe2Build = POE2_BUILD_IMPORT_MESSAGES[locale];
+  const buildFinder = DESKTOP_BUILD_FINDER_MESSAGES[locale];
   const desktop = {
     ...DESKTOP_CONTROL_MESSAGES[locale],
     ...DESKTOP_OVERLAY_AND_UPDATER_MESSAGES[locale],
@@ -67,7 +73,7 @@ function buildContextValue(locale: HudLocale, setLocale: (next: HudLocale) => vo
     isPtBr: locale === "pt-BR",
     setLocale,
     msg: { ...shell, widgets, a11y },
-    appMsg: { legalDisclaimer: pwa.legalDisclaimer, pwa, desktop, poe2, poe2Build },
+    appMsg: { legalDisclaimer: pwa.legalDisclaimer, pwa, desktop, buildFinder, poe2, poe2Build },
   };
 }
 
