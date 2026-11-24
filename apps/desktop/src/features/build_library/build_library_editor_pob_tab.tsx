@@ -2,6 +2,7 @@ import type { PobBuildPreview, PobSetSelection, SupportedGameId } from "@exile-h
 import { useHudI18n } from "@exile-hud/hud-ui";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { PobSetSelectorSection } from "../pob_profile_panel/pob_set_selector_section.js";
+import { Poe2BuildPlannerImportPopover } from "./poe2_build_planner_import_popover.js";
 
 interface BuildLibraryEditorPobTabProps {
   activeGameId?: SupportedGameId;
@@ -19,9 +20,10 @@ interface BuildLibraryEditorPobTabProps {
   onChangeLeagueStart: (nextLeagueStart: boolean) => void;
   onInspect: () => void;
   onChangeSelection: (nextSelection: PobSetSelection) => void;
+  onImportRawBuild?: (rawJson: string, fallbackName?: string) => void;
 }
 
-/** First tab of the streamlined build editor: name, folder, PoB source, and set selection. */
+/** First tab of the streamlined build editor: name, folder, PoB/.build source, and set selection. */
 export function BuildLibraryEditorPobTab({
   activeGameId,
   name,
@@ -38,6 +40,7 @@ export function BuildLibraryEditorPobTab({
   onChangeLeagueStart,
   onInspect,
   onChangeSelection,
+  onImportRawBuild,
 }: BuildLibraryEditorPobTabProps) {
   const { appMsg } = useHudI18n();
 
@@ -101,11 +104,19 @@ export function BuildLibraryEditorPobTab({
           </div>
         </div>
 
+        {activeGameId === "poe2" && onImportRawBuild && (
+          <Poe2BuildPlannerImportPopover onLoadBuildJson={onImportRawBuild} />
+        )}
+
         <textarea
           rows={3}
           value={rawInput}
           onChange={(e) => onChangeRawInput(e.target.value)}
-          placeholder={appMsg.desktop.pobInputPlaceholder}
+          placeholder={
+            activeGameId === "poe2"
+              ? appMsg.poe2Build.pobOrBuildPlaceholder
+              : appMsg.desktop.pobInputPlaceholder
+          }
           className="w-full rounded-lg bg-hud-subtle border border-hud-hairline p-2.5 text-xs font-mono text-hud-text focus:outline-none focus:border-hud-accent resize-none"
         />
 
@@ -131,6 +142,15 @@ export function BuildLibraryEditorPobTab({
               appMsg.poe2.gameShortLabels[activeGameId],
             )}
           </span>
+        </div>
+      )}
+
+      {(preview?.importWarnings?.length ?? 0) > 0 && (
+        <div className="rounded-lg border-l-2 border-hud-warn bg-hud-warn/10 px-2.5 py-2 text-[11px] text-hud-warn space-y-0.5">
+          <div className="font-semibold">{appMsg.poe2Build.importWarningsTitle}</div>
+          {preview!.importWarnings!.map((warn) => (
+            <div key={warn}>{warn}</div>
+          ))}
         </div>
       )}
 

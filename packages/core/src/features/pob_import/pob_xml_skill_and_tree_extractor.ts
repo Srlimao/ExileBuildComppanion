@@ -24,6 +24,7 @@ export interface ExtractedSkillGroup {
   title: string;
   slotLabel: string;
   gems: ExtractedGemRef[];
+  note?: string;
 }
 
 export interface ExtractedSkillSet {
@@ -42,10 +43,12 @@ export interface ExtractedTreeSpec {
   masteries: Record<string, string>;
   weaponSet1NodeIds?: string[];
   weaponSet2NodeIds?: string[];
+  nodeNotes?: Record<string, string>;
 }
 
 export interface ExtractedPobBuild {
   detectedGameId?: SupportedGameId;
+  sourceFormat?: "pob_xml" | "poe2_build_json";
   buildName: string;
   characterClass: string;
   ascendancyName: string;
@@ -56,6 +59,8 @@ export interface ExtractedPobBuild {
   itemSets: ExtractedItemSet[];
   uniqueRequiredGems: Array<{ id: string; note: string; count: number }>;
   ascendancyNoteOrderIds?: string[];
+  suggestedNotes?: string;
+  importWarnings?: string[];
 }
 
 /** Collects deduplicated required gems across the provided skill sets. */

@@ -19,6 +19,7 @@ export interface PobSetOptionSummary {
 
 export interface PobBuildPreview {
   detectedGameId?: SupportedGameId;
+  sourceFormat?: "pob_xml" | "poe2_build_json";
   buildName: string;
   characterClass: string;
   ascendancyName: string;
@@ -26,16 +27,21 @@ export interface PobBuildPreview {
   passiveSpecs: PobSetOptionSummary[];
   skillSets: PobSetOptionSummary[];
   itemSets: PobSetOptionSummary[];
+  suggestedNotes?: string;
+  importWarnings?: string[];
 }
 
-/** Builds a lightweight preview listing selectable Passive, Skill, and Item sets from a parsed PoB. */
+/** Builds a lightweight preview listing selectable Passive, Skill, and Item sets from a parsed PoB or .build. */
 export function buildPobPreviewSummary(extracted: ExtractedPobBuild): PobBuildPreview {
   return {
     ...(extracted.detectedGameId ? { detectedGameId: extracted.detectedGameId } : {}),
+    ...(extracted.sourceFormat ? { sourceFormat: extracted.sourceFormat } : {}),
     buildName: extracted.buildName,
     characterClass: extracted.characterClass,
     ascendancyName: extracted.ascendancyName,
     buildLevel: extracted.buildLevel,
+    ...(extracted.suggestedNotes ? { suggestedNotes: extracted.suggestedNotes } : {}),
+    ...(extracted.importWarnings?.length ? { importWarnings: extracted.importWarnings } : {}),
     passiveSpecs: extracted.treeSpecs.map((spec) => ({
       id: spec.id,
       title: spec.title,

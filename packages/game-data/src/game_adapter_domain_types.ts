@@ -60,6 +60,7 @@ export interface PassiveTreeMasteryEffect {
 
 export interface PassiveTreeNodeMetadata {
   id: string;
+  stringId?: string;
   name: string;
   isNotable: boolean;
   isKeystone: boolean;

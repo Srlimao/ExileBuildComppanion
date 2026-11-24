@@ -60,6 +60,8 @@ export function Poe2SkillSocketsPanel({ snapshot }: { snapshot: HudSessionSnapsh
                 })}
               </div>
 
+              {group.note && <p className="text-[11px] text-hud-muted leading-snug">{group.note}</p>}
+
               {supportGems.length > 0 ? (
                 <div className="flex flex-wrap items-center gap-1.5">
                   {supportGems.map((sup, idx) => (

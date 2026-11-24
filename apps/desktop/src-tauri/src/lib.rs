@@ -35,6 +35,9 @@ pub(crate) mod local_pob_profile_disk_store;
 #[path = "features/build_library_store/mod.rs"]
 pub(crate) mod build_library_store;
 
+#[path = "features/build_planner_importer/poe2_build_planner_reader.rs"]
+pub(crate) mod poe2_build_planner_reader;
+
 #[path = "features/campaign_progress_store/local_campaign_progress_disk_store.rs"]
 pub(crate) mod local_campaign_progress_disk_store;
 
@@ -171,6 +174,9 @@ pub fn run() {
             build_library_store::build_library_ipc_commands::delete_build_folder,
             build_library_store::build_library_ipc_commands::set_active_build_path,
             build_library_store::build_library_ipc_commands::open_builds_library_folder,
+            poe2_build_planner_reader::scan_poe2_build_planner_dir,
+            poe2_build_planner_reader::read_poe2_build_planner_file,
+            poe2_build_planner_reader::open_poe2_build_planner_folder,
             local_loot_filter_installer::get_loot_filter_status,
             local_loot_filter_installer::install_league_starter_filter,
             local_loot_filter_installer::open_loot_filter_folder,

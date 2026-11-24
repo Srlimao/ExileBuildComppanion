@@ -27,8 +27,8 @@ export async function loadPassiveTreeDataset(
   if (loadedPoe2Bundle) return loadedPoe2Bundle;
   if (!inFlightPoe2Load) {
     inFlightPoe2Load = Promise.all([
-      import("../data/poe2/passive_tree_nodes.json", { with: { type: "json" } }),
-      import("../data/poe2/passive_tree_graph_meta.json", { with: { type: "json" } }),
+      import("./poe2_passive_tree_nodes_chunk.js"),
+      import("./poe2_passive_tree_meta_chunk.js"),
     ]).then(([nodesMod, metaMod]) => {
       const nodes = (nodesMod.default ?? nodesMod) as Record<string, PassiveTreeNodeMetadata>;
       const meta = (metaMod.default ?? metaMod) as PassiveTreeGraphMetadata;

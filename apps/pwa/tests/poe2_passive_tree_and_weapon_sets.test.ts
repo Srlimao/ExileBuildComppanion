@@ -37,6 +37,12 @@ describe("poe2_passive_tree_and_weapon_sets", () => {
     expect(geometry.nodes["44683"]?.name).toContain("Monk");
 
     const monkCenter = geometry.nodes["44683"]!;
+    const neighbor10364 = geometry.nodes["10364"]!;
+    expect(Math.hypot(monkCenter.x - neighbor10364.x, monkCenter.y - neighbor10364.y)).toBeLessThan(400);
+    for (const edge of geometry.edges) {
+      expect(Math.hypot(edge.x1 - edge.x2, edge.y1 - edge.y2)).toBeLessThan(2500);
+    }
+
     const index = buildSpatialTreeIndex(geometry.allNodesList, geometry.edges);
     const vis = queryVisibleTreePrimitives(index, {
       minX: monkCenter.x - 1600,

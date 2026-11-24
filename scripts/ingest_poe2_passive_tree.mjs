@@ -13,8 +13,15 @@ function cleanStatText(text) {
     .trim();
 }
 
+function resolveRawGroup(rawTree, groupId) {
+  if (Array.isArray(rawTree.groups)) {
+    return rawTree.groups[Number(groupId) - 1] ?? null;
+  }
+  return rawTree.groups?.[String(groupId)] ?? null;
+}
+
 function computePoe2NodeCoords(rawTree, node) {
-  const group = rawTree.groups?.[String(node.group)];
+  const group = resolveRawGroup(rawTree, node.group);
   if (!group) return { x: 0, y: 0 };
   const orbit = Number(node.orbit ?? 0);
   const orbitIndex = Number(node.orbitIndex ?? 0);
@@ -126,6 +133,7 @@ export async function ingestPoe2PassiveTree(rootDir = process.cwd()) {
       y,
     };
 
+    if (rawNode.stringId) entry.stringId = String(rawNode.stringId);
     if (rawNode.isJewelSocket) entry.isJewelSocket = true;
     if (rawNode.isAscendancyStart) entry.isAscendancyStart = true;
     if (rawNode.ascendancyName) entry.ascendancyName = String(rawNode.ascendancyName);
@@ -139,9 +147,20 @@ export async function ingestPoe2PassiveTree(rootDir = process.cwd()) {
     compactNodes[id] = entry;
   }
 
+  let actualMinX = Infinity;
+  let actualMinY = Infinity;
+  let actualMaxX = -Infinity;
+  let actualMaxY = -Infinity;
+  for (const node of Object.values(compactNodes)) {
+    if (node.x < actualMinX) actualMinX = node.x;
+    if (node.y < actualMinY) actualMinY = node.y;
+    if (node.x > actualMaxX) actualMaxX = node.x;
+    if (node.y > actualMaxY) actualMaxY = node.y;
+  }
+
   const groups = {};
   for (const gid of referencedGroupIds) {
-    const g = rawTree.groups?.[gid];
+    const g = resolveRawGroup(rawTree, gid);
     if (!g) continue;
     groups[gid] = {
       x: Math.round(Number(g.x)),
@@ -152,10 +171,10 @@ export async function ingestPoe2PassiveTree(rootDir = process.cwd()) {
 
   const graphMeta = {
     version: `poe2-${POE2_TREE_VERSION}`,
-    minX: Math.round(Number(rawTree.min_x ?? -25000)),
-    minY: Math.round(Number(rawTree.min_y ?? -25000)),
-    maxX: Math.round(Number(rawTree.max_x ?? 25000)),
-    maxY: Math.round(Number(rawTree.max_y ?? 25000)),
+    minX: Math.round(Number(rawTree.min_x ?? (actualMinX !== Infinity ? actualMinX : -25000))),
+    minY: Math.round(Number(rawTree.min_y ?? (actualMinY !== Infinity ? actualMinY : -25000))),
+    maxX: Math.round(Number(rawTree.max_x ?? (actualMaxX !== -Infinity ? actualMaxX : 25000))),
+    maxY: Math.round(Number(rawTree.max_y ?? (actualMaxY !== -Infinity ? actualMaxY : 25000))),
     orbitRadii: (rawTree.constants?.orbitRadii ?? [0, 82, 162, 335, 493, 662, 846, 251, 1080, 1322]).map(Number),
     skillsPerOrbit: (rawTree.constants?.skillsPerOrbit ?? [1, 12, 24, 24, 72, 72, 72, 24, 72, 144]).map(Number),
     classes: classesList.map((cls, idx) => ({

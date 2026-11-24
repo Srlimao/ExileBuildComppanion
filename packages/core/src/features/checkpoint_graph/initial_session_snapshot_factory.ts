@@ -28,6 +28,7 @@ export function buildInitialSessionSnapshot(params: {
     build.skillSets[0]?.groups.map((g) => ({
       title: g.title,
       minLevel: build.skillSets[0]?.minLevel ?? 1,
+      ...(g.note ? { note: g.note } : {}),
       gems: g.gems.map((gm) => ({
         gemId: gm.gemId,
         name: gm.name,

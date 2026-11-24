@@ -19,6 +19,10 @@ import {
   subscribeHudLocaleChanges,
   type HudLocale,
 } from "./locale_storage_and_types.js";
+import {
+  POE2_BUILD_IMPORT_MESSAGES,
+  type Poe2BuildImportMessages,
+} from "./poe2_build_import_messages.js";
 import { POE2_SURFACE_MESSAGES, type Poe2SurfaceMessages } from "./poe2_surface_messages.js";
 import { PWA_SURFACE_MESSAGES, type PwaSurfaceMessages } from "./pwa_surface_messages.js";
 
@@ -35,6 +39,7 @@ export interface AppMessagesBundle {
   pwa: PwaSurfaceMessages;
   desktop: DesktopSurfaceMessages;
   poe2: Poe2SurfaceMessages;
+  poe2Build: Poe2BuildImportMessages;
 }
 
 export interface HudI18nContextValue {
@@ -51,6 +56,7 @@ function buildContextValue(locale: HudLocale, setLocale: (next: HudLocale) => vo
   const a11y = HUD_A11Y_MESSAGES[locale];
   const pwa = PWA_SURFACE_MESSAGES[locale];
   const poe2 = POE2_SURFACE_MESSAGES[locale];
+  const poe2Build = POE2_BUILD_IMPORT_MESSAGES[locale];
   const desktop = {
     ...DESKTOP_CONTROL_MESSAGES[locale],
     ...DESKTOP_OVERLAY_AND_UPDATER_MESSAGES[locale],
@@ -61,7 +67,7 @@ function buildContextValue(locale: HudLocale, setLocale: (next: HudLocale) => vo
     isPtBr: locale === "pt-BR",
     setLocale,
     msg: { ...shell, widgets, a11y },
-    appMsg: { legalDisclaimer: pwa.legalDisclaimer, pwa, desktop, poe2 },
+    appMsg: { legalDisclaimer: pwa.legalDisclaimer, pwa, desktop, poe2, poe2Build },
   };
 }
 

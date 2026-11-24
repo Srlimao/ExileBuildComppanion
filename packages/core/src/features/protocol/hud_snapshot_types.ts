@@ -73,6 +73,7 @@ export interface CurrencyTally {
 export interface TargetLinkGroupSummary {
   title: string;
   minLevel: number;
+  note?: string;
   gems: Array<{
     gemId: string;
     name: string;
@@ -141,6 +142,7 @@ export interface PassiveTreeSpecSummary {
   masteries: Record<string, string>;
   weaponSet1NodeIds?: string[];
   weaponSet2NodeIds?: string[];
+  nodeNotes?: Record<string, string>;
 }
 
 export interface PassiveTreeTelemetry {

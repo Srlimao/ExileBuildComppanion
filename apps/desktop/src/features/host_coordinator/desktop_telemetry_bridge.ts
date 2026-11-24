@@ -7,8 +7,10 @@ import {
   buildPreprocessorDefinitions,
   combineRouteActFiles,
   extractCampaignProgress,
-  extractPobBuild,
+  extractDecodedBuild,
   filterExtractedPobBuildBySelection,
+  isDirectBuildFileUrl,
+  isPoe2BuildJsonString,
   parsePoelabDailyJson,
   parsePreprocessedRouteLines,
   preprocessRouteConditionals,
@@ -39,7 +41,7 @@ export interface CompiledProfileBundle {
   selection: PobSetSelection;
 }
 
-/** Decodes raw PoB/XML/URL (or cached XML) and summarizes selectable Passive, Skill, and Item sets. */
+/** Decodes raw PoB/XML/URL or PoE 2 `.build` JSON and summarizes selectable Passive, Skill, and Item sets. */
 export async function inspectPobBuildSets(params: {
   rawPobInput: string;
   cachedXml?: string | null;
@@ -48,8 +50,12 @@ export async function inspectPobBuildSets(params: {
 }): Promise<{ decodedXml: string; preview: PobBuildPreview; selection: PobSetSelection }> {
   const adapter = getGameAdapter(params.gameId);
   const source = params.cachedXml?.trim() ? params.cachedXml : params.rawPobInput;
+  if (adapter.gameId === "poe2" || isPoe2BuildJsonString(source) || isDirectBuildFileUrl(source)) {
+    await loadPassiveTreeDataset("poe2");
+  }
   const decoded = await resolveAndDecodePobInput(source);
-  const extracted = extractPobBuild(decoded.parsedXml, adapter);
+  const extractAdapter = decoded.rawBuildJson ? getGameAdapter("poe2") : adapter;
+  const extracted = extractDecodedBuild(decoded, extractAdapter);
   return {
     decodedXml: decoded.xmlString,
     preview: buildPobPreviewSummary(extracted),
@@ -76,7 +82,7 @@ export async function compilePobProfileToSnapshot(params: {
   }
   const source = params.cachedXml?.trim() ? params.cachedXml : params.rawPobInput;
   const decoded = await resolveAndDecodePobInput(source);
-  const extracted = extractPobBuild(decoded.parsedXml, adapter);
+  const extracted = extractDecodedBuild(decoded, adapter);
   const preview = buildPobPreviewSummary(extracted);
   const selection = reconcilePobSetSelection(extracted, params.selection);
   const filtered = filterExtractedPobBuildBySelection(extracted, selection);

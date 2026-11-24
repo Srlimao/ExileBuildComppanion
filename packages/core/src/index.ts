@@ -1,5 +1,7 @@
 export * from "./features/protocol/session_room_wire_protocol.js";
 export * from "./features/pob_import/pob_code_zlib_xml_decoder.js";
+export * from "./features/pob_import/poe2_build_file_schema.js";
+export * from "./features/pob_import/poe2_build_file_extractor.js";
 export * from "./features/pob_import/pob2_xml_extensions.js";
 export * from "./features/pob_import/pob_xml_skill_and_tree_extractor.js";
 export * from "./features/pob_import/pob_endgame_fallback_validator.js";

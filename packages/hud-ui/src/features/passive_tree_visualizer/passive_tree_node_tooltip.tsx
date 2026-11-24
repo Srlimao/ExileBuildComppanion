@@ -55,6 +55,7 @@ export const PassiveTreeCanvasOverlays = memo(function PassiveTreeCanvasOverlays
   const inspectedMasteryStats = inspectedNode?.isMastery
     ? resolveMasteryEffectStats(inspectedNode.id, specMasteries[inspectedNode.id], adapter)
     : null;
+  const inspectedNote = inspectedNode ? diff.selectedSpec?.nodeNotes?.[inspectedNode.id] ?? null : null;
   const inspectedPath = useMemo(
     () =>
       inspectedNode && !inspectedAllocated && diff.targetSet.has(inspectedNode.id)
@@ -186,6 +187,15 @@ export const PassiveTreeCanvasOverlays = memo(function PassiveTreeCanvasOverlays
               {inspectedMasteryStats.map((st, idx) => (
                 <div key={idx}>{st}</div>
               ))}
+            </div>
+          )}
+
+          {inspectedNote && (
+            <div className="border-l-2 border-hud-quest pl-2.5 py-0.5 text-xs text-hud-text space-y-0.5">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-hud-quest">
+                {appMsg.poe2Build.buildNoteHeading}
+              </div>
+              <div className="whitespace-pre-line leading-snug text-hud-text/95">{inspectedNote}</div>
             </div>
           )}
 

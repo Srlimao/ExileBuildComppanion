@@ -1,6 +1,9 @@
 import type { SupportedGameId } from "@exile-hud/game-data";
 import { XMLParser } from "fast-xml-parser";
 import { inflate } from "pako";
+import { isDirectBuildFileUrl, isPoe2BuildJsonString } from "./poe2_build_file_schema.js";
+
+const MAX_BUILD_JSON_BYTES = 2 * 1024 * 1024;
 
 const ARRAY_TAG_NAMES = new Set([
   "SkillSet",
@@ -24,10 +27,11 @@ const xmlParser = new XMLParser({
 });
 
 export interface DecodedPobDocument {
-  sourceKind: "xml" | "pob_code" | "pobbin_url";
+  sourceKind: "xml" | "pob_code" | "pobbin_url" | "poe2_build_json" | "poe2_build_url";
   detectedGameId: SupportedGameId;
   xmlString: string;
   parsedXml: Record<string, any>;
+  rawBuildJson?: Record<string, any>;
 }
 
 /** Extracts the `<PathOfBuilding>` or `<PathOfBuilding2>` root node and detected game ID. */
@@ -81,13 +85,50 @@ export function decodePobCodeToXmlString(rawInput: string): string {
   return new TextDecoder("utf-8").decode(inflated);
 }
 
+function parseBuildJsonObject(rawText: string): Record<string, any> {
+  if (rawText.length > MAX_BUILD_JSON_BYTES) {
+    throw new Error("The .build JSON payload exceeds the 2 MB size limit.");
+  }
+  if (!isPoe2BuildJsonString(rawText)) {
+    throw new Error("Input is not a valid Path of Exile 2 .build JSON document.");
+  }
+  return JSON.parse(rawText) as Record<string, any>;
+}
+
 export async function resolveAndDecodePobInput(
   rawOrUrl: string,
   fetcher: typeof fetch = fetch,
 ): Promise<DecodedPobDocument> {
   const trimmed = rawOrUrl.trim();
   if (!trimmed) {
-    throw new Error("PoB input is empty.");
+    throw new Error("PoB or .build input is empty.");
+  }
+
+  if (isPoe2BuildJsonString(trimmed)) {
+    const rawBuildJson = parseBuildJsonObject(trimmed);
+    return {
+      sourceKind: "poe2_build_json",
+      detectedGameId: "poe2",
+      xmlString: trimmed,
+      parsedXml: {},
+      rawBuildJson,
+    };
+  }
+
+  if (isDirectBuildFileUrl(trimmed)) {
+    const response = await fetcher(trimmed);
+    if (!response.ok) {
+      throw new Error(`.build URL returned HTTP ${response.status}.`);
+    }
+    const rawText = (await response.text()).trim();
+    const rawBuildJson = parseBuildJsonObject(rawText);
+    return {
+      sourceKind: "poe2_build_url",
+      detectedGameId: "poe2",
+      xmlString: rawText,
+      parsedXml: {},
+      rawBuildJson,
+    };
   }
 
   const pobbinId = extractPobbinId(trimmed);

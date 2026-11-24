@@ -65,6 +65,7 @@ export function BuildLibraryEditorPanel({
   const [characterName, setCharacterName] = useState(initialRecord?.characterName ?? "");
   const [selectedLeague, setSelectedLeague] = useState(initialRecord?.selectedLeague ?? "");
   const [notes, setNotes] = useState(initialRecord?.notes ?? "");
+  const [notesTouched, setNotesTouched] = useState(Boolean(initialRecord?.notes?.trim()));
   const [preview, setPreview] = useState<PobBuildPreview | null>(null);
   const [selection, setSelection] = useState<PobSetSelection | null>(initialRecord?.selection ?? null);
   const [cachedXml, setCachedXml] = useState<{ input: string; xml: string } | null>(
@@ -86,13 +87,16 @@ export function BuildLibraryEditorPanel({
         if (!nameTouched && res.preview.buildName.trim()) {
           setName(res.preview.buildName.trim());
         }
+        if (!notesTouched && res.preview.suggestedNotes?.trim()) {
+          setNotes(res.preview.suggestedNotes.trim());
+        }
       } catch (err) {
         setInspectError(err instanceof Error ? err.message : String(err));
       } finally {
         setInspecting(false);
       }
     },
-    [nameTouched, onInspectBuild, selection],
+    [nameTouched, notesTouched, onInspectBuild, selection],
   );
 
   useEffect(() => {
@@ -107,6 +111,8 @@ export function BuildLibraryEditorPanel({
     if (!trimmed || trimmed === cachedXml?.input.trim()) return;
     const looksComplete =
       /^https?:\/\/pobb\.in\/[A-Za-z0-9_-]+/i.test(trimmed) ||
+      /^https?:\/\/[^\s]+\.build(?:[?#][^\s]*)?$/i.test(trimmed) ||
+      (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
       trimmed.startsWith("<") ||
       trimmed.length > 24;
     if (!looksComplete) return;
@@ -213,6 +219,11 @@ export function BuildLibraryEditorPanel({
           onChangeLeagueStart={setLeagueStart}
           onInspect={() => void runInspect(rawInput, null)}
           onChangeSelection={setSelection}
+          onImportRawBuild={(rawJson, fallbackName) => {
+            setRawInput(rawJson);
+            if (!nameTouched && fallbackName) setName(fallbackName);
+            void runInspect(rawJson, null);
+          }}
         />
       ) : (
         <BuildLibraryEditorMetadataFields
@@ -224,7 +235,10 @@ export function BuildLibraryEditorPanel({
           onToggleCustomRoute={() => setShowCustomRoute((v) => !v)}
           onChangeCharacterName={setCharacterName}
           onChangeSelectedLeague={setSelectedLeague}
-          onChangeNotes={setNotes}
+          onChangeNotes={(nextNotes) => {
+            setNotesTouched(true);
+            setNotes(nextNotes);
+          }}
           onChangeCustomRoute={setCustomRouteText}
         />
       )}

@@ -6,6 +6,7 @@ export { useAccessibleDialog } from "./features/hud_shell/use_accessible_dialog.
 export { HudThemeProvider, useHudTheme } from "./features/theme/hud_theme_provider.js";
 export type { HudA11yMessages } from "./features/i18n/hud_a11y_messages.js";
 export { HudI18nProvider, useHudI18n, type AppMessagesBundle, type DesktopSurfaceMessages, type HudI18nContextValue, type HudMessagesBundle } from "./features/i18n/hud_i18n_provider.js";
+export { POE2_BUILD_IMPORT_MESSAGES, type Poe2BuildImportMessages } from "./features/i18n/poe2_build_import_messages.js";
 export { POE2_SURFACE_MESSAGES, type Poe2SurfaceMessages } from "./features/i18n/poe2_surface_messages.js";
 export {
   applyHudLocaleToDocument,
