@@ -28,6 +28,7 @@ concurrency:
 
 jobs:
   build-windows-release:
+    if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[skip desktop]') }}
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4

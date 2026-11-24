@@ -7,6 +7,30 @@ on:
     branches: [main]
 
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      desktop: ${{ steps.filter.outputs.desktop }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: filter
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            CHANGED=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD" || true)
+          elif [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ] && [ -n "${{ github.event.before }}" ]; then
+            CHANGED=$(git diff --name-only "${{ github.event.before }}..${{ github.sha }}" || true)
+          else
+            CHANGED=$(git diff --name-only HEAD~1..HEAD || true)
+          fi
+          if [ -z "$CHANGED" ] || echo "$CHANGED" | grep -qE '^(apps/desktop/|packages/core/|packages/game-data/|packages/hud-ui/|apps/pwa/public/|scripts/generate_tauri_icons\.mjs|\.github/workflows/ci\.yml)'; then
+            echo "desktop=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "desktop=false" >> "$GITHUB_OUTPUT"
+          fi
+
   verify-workspace:
     runs-on: ubuntu-latest
     steps:
@@ -22,6 +46,8 @@ jobs:
       - run: pnpm test
 
   verify-rust-desktop:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.desktop == 'true' && (github.event_name == 'pull_request' || !contains(github.event.head_commit.message, '[skip desktop]')) }}
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
