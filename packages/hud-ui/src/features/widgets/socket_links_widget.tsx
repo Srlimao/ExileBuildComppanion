@@ -1,5 +1,6 @@
 import type { HudSessionSnapshot } from "@exile-hud/core";
 import { useHudI18n } from "../i18n/hud_i18n_provider.js";
+import { Poe2SkillSocketsPanel } from "./poe2_skill_sockets_panel.js";
 
 const SOCKET_HEX: Record<"R" | "G" | "B" | "W", string> = {
   R: "#ef4444",
@@ -11,6 +12,9 @@ const SOCKET_HEX: Record<"R" | "G" | "B" | "W", string> = {
 /** Frameless Whisper socket link display with inline connected color pips. */
 export function SocketLinksWidget({ snapshot }: { snapshot: HudSessionSnapshot }) {
   const { msg } = useHudI18n();
+  if (snapshot.gameId === "poe2") {
+    return <Poe2SkillSocketsPanel snapshot={snapshot} />;
+  }
 
   return (
     <div className="flex flex-col h-full gap-2.5">

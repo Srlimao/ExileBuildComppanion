@@ -1,12 +1,13 @@
 import {
   parsePoelabDailyJson,
   reduceTelemetrySession,
+  resolveSnapshotGameId,
   type HudContextMode,
   type HudSessionSnapshot,
   type ViewerToRoomMessage,
   type WidgetGridItemLayout,
 } from "@exile-hud/core";
-import { poe1GameAdapter } from "@exile-hud/game-data";
+import { getGameAdapter } from "@exile-hud/game-data";
 import {
   CustomizableModeWidgetGrid,
   DeathRespawnResumeBanner,
@@ -86,7 +87,13 @@ export function OverlayHudApp() {
   const handleToggleCheckpoint = useCallback(
     (checkpointId: string) => {
       setSnapshot((prev) =>
-        prev ? reduceTelemetrySession(prev, { type: "toggle_checkpoint", checkpointId }, poe1GameAdapter) : prev,
+        prev
+          ? reduceTelemetrySession(
+              prev,
+              { type: "toggle_checkpoint", checkpointId },
+              getGameAdapter(prev.gameId),
+            )
+          : prev,
       );
       sendCommand({ type: "viewer:toggle_checkpoint", checkpointId });
     },
@@ -96,7 +103,13 @@ export function OverlayHudApp() {
   const handleToggleGem = useCallback(
     (gemStepId: string) => {
       setSnapshot((prev) =>
-        prev ? reduceTelemetrySession(prev, { type: "toggle_gem", gemStepId }, poe1GameAdapter) : prev,
+        prev
+          ? reduceTelemetrySession(
+              prev,
+              { type: "toggle_gem", gemStepId },
+              getGameAdapter(prev.gameId),
+            )
+          : prev,
       );
       sendCommand({ type: "viewer:toggle_gem", gemStepId });
     },
@@ -116,6 +129,7 @@ export function OverlayHudApp() {
     [sendCommand],
   );
 
+  const activeGameId = resolveSnapshotGameId(snapshot);
   const autoMode: HudContextMode = snapshot?.inGameTreeOpen ? "TREE" : (snapshot?.mode ?? "FIELD");
   const effectiveDisplayMode: HudContextMode = previewModeOverride ?? autoMode;
   const layoutModeKey: OverlayContextMode =
@@ -123,7 +137,7 @@ export function OverlayHudApp() {
 
   const activeItems =
     config.modeLayouts[layoutModeKey] ??
-    getDefaultOverlayLayoutForMode(layoutModeKey, { leagueStart: snapshot?.leagueStart });
+    getDefaultOverlayLayoutForMode(layoutModeKey, { leagueStart: snapshot?.leagueStart, gameId: activeGameId });
 
   const saveOverlayModeLayout = useCallback(
     (modeKey: OverlayContextMode, items: WidgetGridItemLayout[]) => {
@@ -189,6 +203,7 @@ export function OverlayHudApp() {
               />
             ) : (
               <CustomizableModeWidgetGrid
+                gameId={activeGameId}
                 mode={layoutModeKey}
                 formFactor="pc-overlay"
                 items={activeItems}
@@ -208,7 +223,10 @@ export function OverlayHudApp() {
                 onResetDefaults={() =>
                   saveOverlayModeLayout(
                     layoutModeKey,
-                    getDefaultOverlayLayoutForMode(layoutModeKey, { leagueStart: snapshot?.leagueStart }),
+                    getDefaultOverlayLayoutForMode(layoutModeKey, {
+                      leagueStart: snapshot?.leagueStart,
+                      gameId: activeGameId,
+                    }),
                   )
                 }
               />

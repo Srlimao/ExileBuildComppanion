@@ -1,3 +1,4 @@
+import type { SupportedGameId } from "@exile-hud/game-data";
 import {
   collectUniqueRequiredGems,
   type ExtractedPobBuild,
@@ -17,6 +18,7 @@ export interface PobSetOptionSummary {
 }
 
 export interface PobBuildPreview {
+  detectedGameId?: SupportedGameId;
   buildName: string;
   characterClass: string;
   ascendancyName: string;
@@ -29,6 +31,7 @@ export interface PobBuildPreview {
 /** Builds a lightweight preview listing selectable Passive, Skill, and Item sets from a parsed PoB. */
 export function buildPobPreviewSummary(extracted: ExtractedPobBuild): PobBuildPreview {
   return {
+    ...(extracted.detectedGameId ? { detectedGameId: extracted.detectedGameId } : {}),
     buildName: extracted.buildName,
     characterClass: extracted.characterClass,
     ascendancyName: extracted.ascendancyName,

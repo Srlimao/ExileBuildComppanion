@@ -10,21 +10,23 @@ import {
   type TargetItemSetSummary,
   type ValidatedPobBuild,
 } from "@exile-hud/core";
-import { poe1GameAdapter } from "@exile-hud/game-data";
+import { getGameAdapter } from "@exile-hud/game-data";
 import {
   checkPoeRunning,
   detectClientLogPath,
   isTauriRuntime,
   readBootstrapLogLines,
+  setActiveGameModeIpc,
   setClientLogPath,
 } from "./tauri_ipc_adapter.js";
 
 export function applyLogLinesToSnapshot(cur: HudSessionSnapshot, lines: string[]): HudSessionSnapshot {
   let next = cur;
+  const adapter = getGameAdapter(cur.gameId);
   for (const raw of lines) {
     const parsed = parseClientLogLine(raw);
     if (!parsed) continue;
-    next = reduceTelemetrySession(next, { type: "client_log", event: parsed, autoDetectCharacter: true }, poe1GameAdapter);
+    next = reduceTelemetrySession(next, { type: "client_log", event: parsed, autoDetectCharacter: true }, adapter);
   }
   return next;
 }
@@ -45,24 +47,32 @@ export async function hookAndBootstrapLogPath(
   return { hooked, nextSnapshot };
 }
 
-export async function bootstrapHostEnvironment(initialSnap: HudSessionSnapshot): Promise<{
+export async function bootstrapHostEnvironment(
+  initialSnap: HudSessionSnapshot,
+  options?: { savedLogPath?: string | null },
+): Promise<{
   detectedPath: string | null;
   hooked: boolean;
   snapshot: HudSessionSnapshot;
 }> {
   let snap = initialSnap;
-  const [logRes, poeLive] = await Promise.all([
-    detectClientLogPath(),
-    checkPoeRunning(),
-  ]);
+  const adapter = getGameAdapter(snap.gameId);
+  const savedLog = options?.savedLogPath?.trim() || null;
+
+  const [logRes, poeLive] = isTauriRuntime()
+    ? await Promise.all([
+        setActiveGameModeIpc(adapter.gameId, savedLog, Boolean(savedLog)),
+        checkPoeRunning(adapter.gameId),
+      ])
+    : await Promise.all([detectClientLogPath(adapter.gameId), checkPoeRunning(adapter.gameId)]);
 
   if (isTauriRuntime()) {
-    snap = reduceTelemetrySession(snap, { type: "process_state", running: poeLive }, poe1GameAdapter);
+    snap = reduceTelemetrySession(snap, { type: "process_state", running: poeLive }, adapter);
   }
 
   let hooked = false;
   if (logRes.detectedPath) {
-    const result = await hookAndBootstrapLogPath(logRes.detectedPath, false, snap);
+    const result = await hookAndBootstrapLogPath(logRes.detectedPath, Boolean(savedLog), snap);
     hooked = result.hooked;
     if (result.nextSnapshot) snap = result.nextSnapshot;
   }
@@ -80,6 +90,7 @@ export function syncBuildSetsForLevel(
   build: ValidatedPobBuild | null,
 ): HudSessionSnapshot {
   if (!build) return snapshot;
+  const adapter = getGameAdapter(snapshot.gameId);
   let next = snapshot;
 
   const activeSpec = selectActiveTreeSpec(build.treeSpecs, snapshot.characterLevel);
@@ -96,7 +107,7 @@ export function syncBuildSetsForLevel(
         ascendancyNoteOrderIds:
           build.ascendancyNoteOrderIds ?? snapshot.passiveTree.ascendancyNoteOrderIds,
         characterLevel: snapshot.characterLevel,
-        adapter: poe1GameAdapter,
+        adapter,
       }),
     };
   }

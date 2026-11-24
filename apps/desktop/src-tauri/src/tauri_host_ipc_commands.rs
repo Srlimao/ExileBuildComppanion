@@ -5,7 +5,7 @@ use crate::character_window_http_poller::{
     execute_character_window_fetch, now_epoch_ms, CharacterPollResponse,
 };
 use crate::client_txt_byte_offset_tailer::read_recent_bootstrap_lines;
-use crate::client_txt_path_detector::{detect_client_txt_path, ClientLogDetectionResult};
+use crate::client_txt_path_detector::{detect_client_txt_path_for_game, ClientLogDetectionResult};
 use crate::local_campaign_progress_disk_store::{
     load_campaign_progress_from_path, resolve_campaign_progress_file_path,
     save_campaign_progress_to_path, SavedCampaignProgressRecord,
@@ -14,14 +14,76 @@ use crate::local_pob_profile_disk_store::{
     load_saved_pob_profile_from_path, resolve_profile_file_path, save_pob_profile_to_path,
     SavedPobProfileRecord,
 };
-use crate::poe_process_heartbeat;
+use crate::poe_process_heartbeat::{self, PoeGameKind};
 use crate::tray_icon_and_menu_controller;
 use crate::windows_clipboard_writer;
 use crate::HostSharedState;
 
+fn resolve_game_kind(game_id: Option<&str>, state: &HostSharedState) -> PoeGameKind {
+    if let Some(raw) = game_id {
+        return PoeGameKind::parse(Some(raw));
+    }
+    state
+        .active_game
+        .lock()
+        .map(|g| *g)
+        .unwrap_or(PoeGameKind::Poe1)
+}
+
 #[tauri::command]
-pub fn detect_client_log_path() -> ClientLogDetectionResult {
-    detect_client_txt_path()
+pub fn detect_client_log_path(
+    game_id: Option<String>,
+    state: State<'_, HostSharedState>,
+) -> ClientLogDetectionResult {
+    let game = resolve_game_kind(game_id.as_deref(), &state);
+    detect_client_txt_path_for_game(game)
+}
+
+#[tauri::command]
+pub fn set_active_game_mode(
+    game_id: String,
+    log_path: Option<String>,
+    manual: Option<bool>,
+    app: AppHandle,
+    state: State<'_, HostSharedState>,
+) -> ClientLogDetectionResult {
+    let game = PoeGameKind::parse(Some(&game_id));
+    if let Ok(mut active) = state.active_game.lock() {
+        *active = game;
+    }
+    if let Ok(mut tracker) = state.tree_hotkey_tracker.lock() {
+        if tracker.set_tree_open(false) {
+            let _ = app.emit("poe-passive-tree-state", false);
+        }
+    }
+
+    let running = poe_process_heartbeat::is_poe_process_running_for_game(game);
+    let _ = app.emit("poe-process-state", running);
+
+    let trimmed = log_path.as_deref().map(str::trim).unwrap_or("");
+    if !trimmed.is_empty() {
+        if let Ok(mut manual_flag) = state.manual_log_override.lock() {
+            *manual_flag = manual.unwrap_or(true);
+        }
+        let candidate = PathBuf::from(trimmed);
+        let exists = candidate.is_file();
+        if let Ok(mut tailer) = state.tailer.lock() {
+            tailer.set_path(Some(candidate), true);
+        }
+        return ClientLogDetectionResult {
+            detected_path: if exists { Some(trimmed.to_string()) } else { None },
+            checked_candidates: vec![trimmed.to_string()],
+        };
+    }
+
+    if let Ok(mut manual_flag) = state.manual_log_override.lock() {
+        *manual_flag = false;
+    }
+    let detected = detect_client_txt_path_for_game(game);
+    if let Ok(mut tailer) = state.tailer.lock() {
+        tailer.set_path(detected.detected_path.as_deref().map(PathBuf::from), true);
+    }
+    detected
 }
 
 #[tauri::command]
@@ -61,13 +123,15 @@ pub fn read_bootstrap_log_lines(state: State<'_, HostSharedState>) -> Vec<String
     let Some(path) = current_path else {
         return Vec::new();
     };
-    let active_pid = poe_process_heartbeat::find_running_poe_process().map(|info| info.pid);
+    let game = resolve_game_kind(None, &state);
+    let active_pid = poe_process_heartbeat::find_running_poe_process_for_game(game).map(|info| info.pid);
     read_recent_bootstrap_lines(&path, active_pid, 256 * 1024)
 }
 
 #[tauri::command]
-pub fn check_poe_running() -> bool {
-    poe_process_heartbeat::is_poe_process_running()
+pub fn check_poe_running(game_id: Option<String>, state: State<'_, HostSharedState>) -> bool {
+    let game = resolve_game_kind(game_id.as_deref(), &state);
+    poe_process_heartbeat::is_poe_process_running_for_game(game)
 }
 
 #[tauri::command]

@@ -39,6 +39,8 @@ export interface PassiveTreeThemePalette {
   respec: string;
   future: string;
   masteryActive: string;
+  weaponSet1: string;
+  weaponSet2: string;
 }
 
 export const DEFAULT_HUD_THEME: SavedHudTheme = {
@@ -238,6 +240,8 @@ export function resolvePassiveTreePalette(theme: SavedHudTheme): PassiveTreeThem
       respec: "#e11d48",
       future: "#7c3aed",
       masteryActive: "#4f46e5",
+      weaponSet1: "#dc2626",
+      weaponSet2: "#16a34a",
     };
   }
   return {
@@ -256,5 +260,7 @@ export function resolvePassiveTreePalette(theme: SavedHudTheme): PassiveTreeThem
     respec: "#f43f5e",
     future: "#7c3aed",
     masteryActive: "#6366f1",
+    weaponSet1: "#ef4444",
+    weaponSet2: "#22c55e",
   };
 }

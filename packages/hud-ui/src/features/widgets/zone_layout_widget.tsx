@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAccessibleDialog } from "../hud_shell/use_accessible_dialog.js";
 import { useHudI18n } from "../i18n/hud_i18n_provider.js";
 import { localizeRouteSubNote } from "../i18n/route_subnote_localizer.js";
+import { Poe2ZoneLandmarksPanel } from "./poe2_zone_landmarks_panel.js";
 
 export function ZoneLayoutWidget({ snapshot }: { snapshot: HudSessionSnapshot }) {
   const { locale, msg } = useHudI18n();
@@ -14,6 +15,10 @@ export function ZoneLayoutWidget({ snapshot }: { snapshot: HudSessionSnapshot })
   useEffect(() => {
     setSelectedIdx(0);
   }, [snapshot.currentAreaId]);
+
+  if (snapshot.gameId === "poe2") {
+    return <Poe2ZoneLandmarksPanel snapshot={snapshot} />;
+  }
 
   const variants = snapshot.zoneLayoutPaths;
   const activeSrc = variants[selectedIdx] ?? variants[0] ?? null;

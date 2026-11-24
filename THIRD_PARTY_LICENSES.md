@@ -97,3 +97,62 @@ Community-maintained JSON extractions of Path of Exile game data (`crafting_benc
 Source: https://repoe-fork.github.io/uniques.min.json
 
 Community-maintained Path of Exile unique item visual identity mapping (`uniques.min.json`) pointing to official 2D item artwork hosted on `web.poecdn.com`, used for twink leveling gear thumbnails.
+
+## NeverSinkDev/NeverSink-Filter-for-PoE2
+Source: https://github.com/NeverSinkDev/NeverSink-Filter-for-PoE2 (Tag `0.10.4a`)
+
+```
+MIT License
+
+Copyright (c) 2026 NeverSink
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## PathOfBuildingCommunity/PathOfBuilding-PoE2
+Source: https://github.com/PathOfBuildingCommunity/PathOfBuilding-PoE2
+
+```
+MIT License
+
+Copyright (c) 2016 David Gowor & Path of Building Community Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## repoe-fork/repoe-fork.github.io (PoE 2)
+Source: https://repoe-fork.github.io/poe2/world_areas.min.json
+
+Community-maintained MIT-licensed JSON extractions of Path of Exile 2 campaign, interlude, and trial world areas.

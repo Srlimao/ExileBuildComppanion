@@ -40,12 +40,14 @@ function ResistanceColumn({
 }
 
 export function ResistanceCapWidget({ snapshot }: { snapshot: HudSessionSnapshot }) {
-  const { locale, msg } = useHudI18n();
+  const { locale, msg, appMsg } = useHudI18n();
+  const isPoe2 = snapshot.gameId === "poe2";
   const r = snapshot.resistances;
   const isFallback = r.source === "ACT_TARGET_FALLBACK";
   const resistanceSuggestions = (snapshot.benchCraftSuggestions ?? []).filter(
     (s) => s.id.startsWith("bench_res_") || /Resist/i.test(s.recipeId) || s.problemSummary.includes("Res"),
   );
+  const runeSuggestions = snapshot.runeSuggestions ?? [];
   const bossWarning = localizeBossWarning(r.upcomingBossWarning, locale);
 
   return (
@@ -55,7 +57,13 @@ export function ResistanceCapWidget({ snapshot }: { snapshot: HudSessionSnapshot
           {msg.widgets.resistances}
         </h2>
         <span className="text-xs font-mono text-hud-muted">
-          {r.kitavaPenalty !== 0 ? `Kitava ${r.kitavaPenalty}%` : isFallback ? msg.widgets.actTargets : msg.widgets.liveGear}
+          {r.kitavaPenalty !== 0
+            ? isPoe2
+              ? appMsg.poe2.resPenaltyBadge(r.kitavaPenalty)
+              : `Kitava ${r.kitavaPenalty}%`
+            : isFallback
+              ? msg.widgets.actTargets
+              : msg.widgets.liveGear}
         </span>
       </div>
 
@@ -66,26 +74,47 @@ export function ResistanceCapWidget({ snapshot }: { snapshot: HudSessionSnapshot
         <ResistanceColumn label={msg.widgets.chaos} actual={r.chaos.actual} target={r.chaos.target} colorClass="text-hud-chaos" isFallback={isFallback} />
       </div>
 
-      {!isFallback && resistanceSuggestions.length > 0 && (
-        <div className="space-y-1 pt-1">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-hud-muted">
-            {msg.widgets.benchCraft}
-          </div>
-          {resistanceSuggestions.map((s) => {
-            const prescription = localizeBenchPrescription(s.prescription, locale);
-            return (
-              <div key={s.id} className="flex items-baseline justify-between gap-2 text-xs" title={prescription}>
+      {isPoe2 ? (
+        runeSuggestions.length > 0 && (
+          <div className="space-y-1 pt-1">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-hud-muted">
+              {appMsg.poe2.runeSocketsHeading}
+            </div>
+            {runeSuggestions.map((rune) => (
+              <div key={rune.id} className="flex items-baseline justify-between gap-2 text-xs">
                 <span className="text-hud-text/90 leading-snug">
-                  <span className="text-hud-muted">{localizeBenchProblemSummary(s.problemSummary, locale)} → </span>
-                  <span className="font-medium text-hud-text">
-                    {prescription.replace(/\s*\([^)]+\)$/, "")}
-                  </span>
+                  <span className="text-hud-muted">{rune.problemSummary} → </span>
+                  <span className="font-medium text-hud-text">{rune.runeName}</span>
+                  <span className="text-hud-muted"> ({rune.slotHint})</span>
                 </span>
-                <span className="shrink-0 font-mono text-hud-quest">{s.costLabel}</span>
+                <span className="shrink-0 font-mono text-hud-quest">{rune.effectLabel}</span>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )
+      ) : (
+        !isFallback &&
+        resistanceSuggestions.length > 0 && (
+          <div className="space-y-1 pt-1">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-hud-muted">
+              {msg.widgets.benchCraft}
+            </div>
+            {resistanceSuggestions.map((s) => {
+              const prescription = localizeBenchPrescription(s.prescription, locale);
+              return (
+                <div key={s.id} className="flex items-baseline justify-between gap-2 text-xs" title={prescription}>
+                  <span className="text-hud-text/90 leading-snug">
+                    <span className="text-hud-muted">{localizeBenchProblemSummary(s.problemSummary, locale)} → </span>
+                    <span className="font-medium text-hud-text">
+                      {prescription.replace(/\s*\([^)]+\)$/, "")}
+                    </span>
+                  </span>
+                  <span className="shrink-0 font-mono text-hud-quest">{s.costLabel}</span>
+                </div>
+              );
+            })}
+          </div>
+        )
       )}
 
       {bossWarning && <p className="text-xs text-hud-warn leading-snug">{bossWarning}</p>}

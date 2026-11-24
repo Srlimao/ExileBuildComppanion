@@ -5,8 +5,9 @@ import {
   parsePoelabDailyJson,
   reduceTelemetrySession,
   resetSnapshotProgress,
+  resolveSnapshotGameId,
 } from "@exile-hud/core";
-import { poe1GameAdapter } from "@exile-hud/game-data";
+import { getGameAdapter } from "@exile-hud/game-data";
 import {
   CustomizableModeWidgetGrid,
   DeathRespawnResumeBanner,
@@ -22,7 +23,7 @@ import { useCallback, useEffect, useState } from "react";
 import { HudTopTelemetryBar } from "./features/hud_shell/hud_top_telemetry_bar.js";
 import { GggOauthCallbackView } from "./features/oauth_callback/ggg_oauth_callback_view.js";
 import { detectDeviceFormFactor } from "./features/pairing_and_connection/edge_websocket_room_client.js";
-import { LOCAL_LAYOUT_KEY, saveDemoProgress } from "./features/pairing_and_connection/pwa_local_persistence.js";
+import { saveDemoProgress } from "./features/pairing_and_connection/pwa_local_persistence.js";
 import { QrPinJoinModal } from "./features/pairing_and_connection/qr_pin_join_modal.js";
 import { useScreenWakeLock } from "./features/pairing_and_connection/screen_wake_lock_controller.js";
 import { usePwaRoomSession } from "./features/pairing_and_connection/use_pwa_room_session.js";
@@ -40,13 +41,14 @@ export function App() {
     snapshot,
     setSnapshot,
     layouts,
-    setLayouts,
+    updateGameLayout,
     previewModeOverride,
     setPreviewModeOverride,
     connectionPhase,
     errorMsg,
     joinRoom,
     startDemo,
+    switchDemoGame,
     openPairingModal,
     reconnectNow,
     sendCommand,
@@ -67,8 +69,13 @@ export function App() {
     (checkpointId: string) => {
       setSnapshot((prev) => {
         if (!prev) return prev;
-        const next = reduceTelemetrySession(prev, { type: "toggle_checkpoint", checkpointId }, poe1GameAdapter);
-        if (isDemo) saveDemoProgress(extractCampaignProgress(next, { wasExplicitlyReset: false }));
+        const gameId = resolveSnapshotGameId(prev);
+        const next = reduceTelemetrySession(
+          prev,
+          { type: "toggle_checkpoint", checkpointId },
+          getGameAdapter(gameId),
+        );
+        if (isDemo) saveDemoProgress(extractCampaignProgress(next, { wasExplicitlyReset: false }), gameId);
         return next;
       });
       sendCommand({ type: "viewer:toggle_checkpoint", checkpointId });
@@ -80,8 +87,13 @@ export function App() {
     (gemStepId: string) => {
       setSnapshot((prev) => {
         if (!prev) return prev;
-        const next = reduceTelemetrySession(prev, { type: "toggle_gem", gemStepId }, poe1GameAdapter);
-        if (isDemo) saveDemoProgress(extractCampaignProgress(next, { wasExplicitlyReset: false }));
+        const gameId = resolveSnapshotGameId(prev);
+        const next = reduceTelemetrySession(
+          prev,
+          { type: "toggle_gem", gemStepId },
+          getGameAdapter(gameId),
+        );
+        if (isDemo) saveDemoProgress(extractCampaignProgress(next, { wasExplicitlyReset: false }), gameId);
         return next;
       });
       sendCommand({ type: "viewer:toggle_gem", gemStepId });
@@ -92,8 +104,9 @@ export function App() {
   const handleResetProgress = useCallback(() => {
     setSnapshot((prev) => {
       if (!prev) return prev;
+      const gameId = resolveSnapshotGameId(prev);
       const next = resetSnapshotProgress(prev);
-      if (isDemo) saveDemoProgress(createEmptyCampaignProgress());
+      if (isDemo) saveDemoProgress(createEmptyCampaignProgress(), gameId);
       return next;
     });
     sendCommand({ type: "viewer:reset_progress" });
@@ -101,18 +114,17 @@ export function App() {
 
   const handleUpdateLayout = useCallback(
     (mode: HudContextMode, items: WidgetGridItemLayout[]) => {
-      setLayouts((prev) => {
-        const next = { ...prev, [formFactor]: { ...prev[formFactor], [mode]: items } };
-        try {
-          localStorage.setItem(LOCAL_LAYOUT_KEY, JSON.stringify(next));
-        } catch {
-          // Ignore storage quota errors
-        }
-        return next;
+      const gameId = resolveSnapshotGameId(snapshot);
+      updateGameLayout(gameId, formFactor, mode, items);
+      sendCommand({
+        type: "viewer:save_widget_layout",
+        gameId,
+        deviceFormFactor: formFactor,
+        mode,
+        items,
       });
-      sendCommand({ type: "viewer:save_widget_layout", deviceFormFactor: formFactor, mode, items });
     },
-    [formFactor, sendCommand, setLayouts],
+    [formFactor, sendCommand, snapshot, updateGameLayout],
   );
 
   const handleImportPoelab = useCallback(
@@ -162,12 +174,16 @@ export function App() {
     );
   }
 
+  const snapshotGameId = resolveSnapshotGameId(snapshot);
   const activeGridItems =
     layouts[formFactor]?.[effectiveMode] ??
-    getDefaultLayoutForMode(formFactor, effectiveMode, { leagueStart: snapshot.leagueStart });
+    getDefaultLayoutForMode(formFactor, effectiveMode, {
+      leagueStart: snapshot.leagueStart,
+      gameId: snapshotGameId,
+    });
 
   return (
-    <HudErrorBoundary variant="app" resetKey={`${roomId}:${effectiveMode}`}>
+    <HudErrorBoundary variant="app" resetKey={`${roomId}:${snapshotGameId}:${effectiveMode}`}>
       <div className="min-h-screen bg-hud-bg text-hud-text pb-[max(2.5rem,calc(1.5rem+env(safe-area-inset-bottom)))] transition-colors">
         <PullToRefreshIndicator {...pullRefresh} />
         <a
@@ -193,6 +209,7 @@ export function App() {
           onOpenPairingModal={openPairingModal}
           onReconnectNow={reconnectNow}
           onForceRefresh={() => void forcePwaRefresh()}
+          onSwitchDemoGame={isDemo ? switchDemoGame : undefined}
         />
 
         {snapshot.resumeZoneBanner && (
@@ -215,6 +232,7 @@ export function App() {
             />
           ) : (
             <CustomizableModeWidgetGrid
+              gameId={snapshotGameId}
               mode={effectiveMode}
               formFactor={formFactor}
               items={activeGridItems}
@@ -231,7 +249,13 @@ export function App() {
               }
               onUpdateLayout={(next) => handleUpdateLayout(effectiveMode, next)}
               onResetDefaults={() =>
-                handleUpdateLayout(effectiveMode, getDefaultLayoutForMode(formFactor, effectiveMode, { leagueStart: snapshot.leagueStart }))
+                handleUpdateLayout(
+                  effectiveMode,
+                  getDefaultLayoutForMode(formFactor, effectiveMode, {
+                    leagueStart: snapshot.leagueStart,
+                    gameId: snapshotGameId,
+                  }),
+                )
               }
             />
           )}

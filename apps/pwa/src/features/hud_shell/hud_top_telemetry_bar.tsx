@@ -1,4 +1,11 @@
-import type { DeviceFormFactor, HudContextMode, HudSessionSnapshot } from "@exile-hud/core";
+import {
+  resolveSnapshotGameId,
+  type DeviceFormFactor,
+  type HudContextMode,
+  type HudSessionSnapshot,
+  type SupportedGameId,
+} from "@exile-hud/core";
+import { getGameAdapter } from "@exile-hud/game-data";
 import { ExileRelayBrandIcon, useHudI18n } from "@exile-hud/hud-ui";
 import { Pin, Settings, ShieldAlert, Unlock, Wifi, WifiOff } from "lucide-react";
 import { useState } from "react";
@@ -21,6 +28,7 @@ interface HudTopTelemetryBarProps {
   onOpenPairingModal?: () => void;
   onReconnectNow?: () => void;
   onForceRefresh?: () => void;
+  onSwitchDemoGame?: (gameId: SupportedGameId) => void;
 }
 
 function getXpRangeLabel(playerLvl: number, zoneLvl: number): { label: string; ok: boolean } {
@@ -48,10 +56,14 @@ export function HudTopTelemetryBar({
   onOpenPairingModal,
   onReconnectNow,
   onForceRefresh,
+  onSwitchDemoGame,
 }: HudTopTelemetryBarProps) {
-  const { msg, appMsg } = useHudI18n();
+  const { locale, msg, appMsg } = useHudI18n();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
+  const gameId = resolveSnapshotGameId(snapshot);
+  const isPoe2 = gameId === "poe2";
+  const adapter = getGameAdapter(gameId);
   const xp = getXpRangeLabel(snapshot.characterLevel, snapshot.currentAreaLevel);
   const modePills: HudContextMode[] = ["FIELD", "TOWN", "LAB", "TREE"];
   const showFinishLayoutPill = editLayoutMode && activeDisplayMode !== "TREE" && activeDisplayMode !== "STANDBY";
@@ -80,6 +92,11 @@ export function HudTopTelemetryBar({
                 <h1 className="text-lg sm:text-2xl font-semibold tracking-tight text-hud-text truncate">
                   {snapshot.currentAreaName}
                 </h1>
+                {isPoe2 && (
+                  <span className="rounded-md bg-hud-subtle border border-hud-hairline px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-hud-accent shrink-0">
+                    {appMsg.poe2.gameShortLabels.poe2}
+                  </span>
+                )}
                 <span className={`text-xs font-mono tabular-nums ${xp.ok ? "text-hud-ok" : "text-hud-warn"}`}>
                   {xp.label}
                 </span>
@@ -87,7 +104,13 @@ export function HudTopTelemetryBar({
 
               <div className="flex items-center gap-2 text-xs text-hud-muted mt-0.5 flex-wrap">
                 <span>
-                  {appMsg.pwa.actSummary(snapshot.currentAct, snapshot.characterLevel, snapshot.characterClass)}
+                  {isPoe2
+                    ? appMsg.poe2.stageSummary(
+                        adapter.getActDisplayLabel(snapshot.currentAct, locale),
+                        snapshot.characterLevel,
+                        snapshot.characterClass,
+                      )
+                    : appMsg.pwa.actSummary(snapshot.currentAct, snapshot.characterLevel, snapshot.characterClass)}
                 </span>
                 {snapshot.characterName && <span className="text-hud-muted">({snapshot.characterName})</span>}
                 {snapshot.isEndgameOnlyFallback && (
@@ -144,6 +167,29 @@ export function HudTopTelemetryBar({
             <span className="hidden sm:inline-block h-3.5 w-px bg-hud-hairline" aria-hidden="true" />
 
             <div className="flex items-center gap-2 text-xs">
+              {isDemo && onSwitchDemoGame && (
+                <div
+                  role="group"
+                  data-testid="demo-game-switcher"
+                  aria-label={appMsg.poe2.demoGameToggleTitle}
+                  className="inline-flex items-center gap-0.5 rounded-lg bg-hud-subtle border border-hud-hairline p-0.5"
+                >
+                  {(["poe1", "poe2"] as const).map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      aria-pressed={gameId === g}
+                      onClick={() => onSwitchDemoGame(g)}
+                      className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer ${
+                        gameId === g ? "bg-hud-accent text-hud-accent-fg" : "text-hud-muted hover:text-hud-text"
+                      }`}
+                    >
+                      {appMsg.poe2.gameShortLabels[g]}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {showFinishLayoutPill && (
                 <button
                   type="button"

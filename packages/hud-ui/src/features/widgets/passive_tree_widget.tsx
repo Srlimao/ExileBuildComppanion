@@ -1,7 +1,7 @@
 import type { HudSessionSnapshot } from "@exile-hud/core";
-import { poe1GameAdapter } from "@exile-hud/game-data";
+import { getGameAdapter, loadPassiveTreeDataset } from "@exile-hud/game-data";
 import { Maximize2 } from "lucide-react";
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { useHudI18n } from "../i18n/hud_i18n_provider.js";
 import { localizePobFallbackText } from "../i18n/telemetry_advisor_localizer.js";
 import { useHudTheme } from "../theme/hud_theme_provider.js";
@@ -19,9 +19,23 @@ export const PassiveTreeWidget = memo(function PassiveTreeWidget({
   const { locale, msg } = useHudI18n();
   const tree = snapshot.passiveTree;
   const pts = tree.targetNodesPreview;
+  const adapter = getGameAdapter(snapshot.gameId);
+  const [treeHydrateTick, setTreeHydrateTick] = useState(0);
+
+  useEffect(() => {
+    if (adapter.gameId !== "poe2") return;
+    let active = true;
+    void loadPassiveTreeDataset("poe2").then(() => {
+      if (active) setTreeHydrateTick((n) => n + 1);
+    });
+    return () => {
+      active = false;
+    };
+  }, [adapter.gameId]);
 
   const { edges, viewBox } = useMemo(() => {
-    const graphNodes = poe1GameAdapter.getPassiveTreeNodes();
+    void treeHydrateTick;
+    const graphNodes = adapter.getPassiveTreeNodes();
     const ptById = new Map(pts.map((pt) => [pt.id, pt]));
     const builtEdges: { key: string; x1: number; y1: number; x2: number; y2: number; allocated: boolean }[] = [];
 
@@ -66,7 +80,7 @@ export const PassiveTreeWidget = memo(function PassiveTreeWidget({
       edges: builtEdges,
       viewBox: `${minX} ${minY} ${Math.max(100, maxX - minX)} ${Math.max(100, maxY - minY)}`,
     };
-  }, [pts]);
+  }, [adapter, pts, treeHydrateTick]);
 
   return (
     <div className="flex flex-col h-full gap-2.5">

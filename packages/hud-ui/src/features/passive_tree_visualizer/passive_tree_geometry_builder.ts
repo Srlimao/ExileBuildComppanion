@@ -1,5 +1,9 @@
-import type { PassiveTreeGraphMetadata, PassiveTreeNodeMetadata } from "@exile-hud/game-data";
-import { poe1GameAdapter } from "@exile-hud/game-data";
+import type {
+  PassiveTreeGraphMetadata,
+  PassiveTreeNodeMetadata,
+  SupportedGameId,
+} from "@exile-hud/game-data";
+import { loadPassiveTreeDataset, poe1GameAdapter } from "@exile-hud/game-data";
 import {
   computeBracketOverviewBounds,
   computeNextPassivesBounds,
@@ -36,7 +40,7 @@ export interface BuiltTreeEdge {
   ascendancyName?: string;
 }
 
-export interface BuiltPoe1TreeGeometry {
+export interface BuiltTreeGeometry {
   nodes: Record<string, PassiveTreeNodeMetadata>;
   allNodesList: PassiveTreeNodeMetadata[];
   edges: BuiltTreeEdge[];
@@ -45,7 +49,9 @@ export interface BuiltPoe1TreeGeometry {
   meta: PassiveTreeGraphMetadata;
 }
 
-let cachedGeometry: BuiltPoe1TreeGeometry | null = null;
+export type BuiltPoe1TreeGeometry = BuiltTreeGeometry;
+
+const geometryCacheByGame = new Map<SupportedGameId, BuiltTreeGeometry>();
 
 function buildEdgeGeometry(
   u: PassiveTreeNodeMetadata,
@@ -103,12 +109,11 @@ function buildEdgeGeometry(
   };
 }
 
-/** Builds and caches undirected edge geometry, AABBs, and pre-lowercased search text for the 3.30.0 passive tree. */
-export function getBuiltPoe1TreeGeometry(): BuiltPoe1TreeGeometry {
-  if (cachedGeometry) return cachedGeometry;
-
-  const nodes = poe1GameAdapter.getPassiveTreeNodes();
-  const meta = poe1GameAdapter.getPassiveTreeGraphMeta();
+/** Builds undirected edge geometry, AABBs, and search text from raw passive tree datasets. */
+export function buildTreeGeometryFromData(
+  nodes: Record<string, PassiveTreeNodeMetadata>,
+  meta: PassiveTreeGraphMetadata,
+): BuiltTreeGeometry {
   const allNodesList = Object.values(nodes);
   const edges: BuiltTreeEdge[] = [];
   const seenKeys = new Set<string>();
@@ -153,8 +158,39 @@ export function getBuiltPoe1TreeGeometry(): BuiltPoe1TreeGeometry {
     }
   }
 
-  cachedGeometry = { nodes, allNodesList, edges, edgesByNodeId, searchTextByNodeId, meta };
-  return cachedGeometry;
+  return { nodes, allNodesList, edges, edgesByNodeId, searchTextByNodeId, meta };
+}
+
+/** Builds and caches undirected edge geometry for the PoE 1 3.30.0 passive tree synchronously. */
+export function getBuiltPoe1TreeGeometry(): BuiltTreeGeometry {
+  const existing = geometryCacheByGame.get("poe1");
+  if (existing) return existing;
+  const built = buildTreeGeometryFromData(
+    poe1GameAdapter.getPassiveTreeNodes(),
+    poe1GameAdapter.getPassiveTreeGraphMeta(),
+  );
+  geometryCacheByGame.set("poe1", built);
+  return built;
+}
+
+/** Returns already-hydrated tree geometry synchronously (`poe1` always built synchronously). */
+export function getCachedPassiveTreeGeometry(gameId: SupportedGameId = "poe1"): BuiltTreeGeometry | null {
+  if (gameId !== "poe2") return getBuiltPoe1TreeGeometry();
+  return geometryCacheByGame.get("poe2") ?? null;
+}
+
+/** Lazily loads (for PoE 2) and caches built passive tree geometry per game ID. */
+export async function loadBuiltPassiveTreeGeometry(
+  gameId: SupportedGameId = "poe1",
+): Promise<BuiltTreeGeometry> {
+  const existing = getCachedPassiveTreeGeometry(gameId);
+  if (existing) return existing;
+  const dataset = await loadPassiveTreeDataset(gameId);
+  const rechecked = geometryCacheByGame.get(gameId);
+  if (rechecked) return rechecked;
+  const built = buildTreeGeometryFromData(dataset.nodes, dataset.meta);
+  geometryCacheByGame.set(gameId, built);
+  return built;
 }
 
 /** Determines which Ascendancy clusters should be rendered for the current build/spec. */
@@ -162,7 +198,7 @@ export function resolveVisibleAscendancies(params: {
   characterClass: string;
   ascendancyName: string;
   activeSpecNodeIds: Iterable<string>;
-  geometry: BuiltPoe1TreeGeometry;
+  geometry: BuiltTreeGeometry;
 }): Set<string> {
   const { characterClass, ascendancyName, activeSpecNodeIds, geometry } = params;
   const visible = new Set<string>();

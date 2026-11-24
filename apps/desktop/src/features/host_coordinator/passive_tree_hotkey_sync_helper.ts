@@ -26,6 +26,12 @@ export async function executeGggCharacterSync(params: {
 
   const cur = getLatestSnapshot();
   if (!cur || !activeBuild) return;
+  if (cur.gameId === "poe2") {
+    if (force) {
+      setSyncMessage("PoE 2 live GGG character sync awaits OAuth 2.1 — using Client.txt & heuristic tracking");
+    }
+    return;
+  }
   if (simulatedOutage) {
     if (force) {
       setSyncMessage("Simulated GGG 429 outage active — using offline fallback targets");

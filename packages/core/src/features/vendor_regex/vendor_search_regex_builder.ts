@@ -1,4 +1,5 @@
-import type { GemAcquisitionStep, TargetLinkGroupSummary } from "../protocol/session_room_wire_protocol.js";
+import type { GemAcquisitionStep, SupportedGameId, TargetLinkGroupSummary } from "../protocol/session_room_wire_protocol.js";
+import { buildPoe2VendorSearchRegex } from "./poe2_vendor_regex_builder.js";
 
 function formatSocketChainPattern(colors: Array<"R" | "G" | "B" | "W">): string | null {
   if (colors.length < 2 || colors.length > 4) return null;
@@ -28,8 +29,12 @@ export function buildVendorSearchRegex(params: {
   linkGroups: TargetLinkGroupSummary[];
   currentAct: number;
   maxLength?: number;
+  gameId?: SupportedGameId;
 }): string {
-  const { gemSteps, linkGroups, currentAct, maxLength = 50 } = params;
+  const { gemSteps, linkGroups, currentAct, maxLength = 50, gameId = "poe1" } = params;
+  if (gameId === "poe2") {
+    return buildPoe2VendorSearchRegex({ gemSteps, currentAct, maxLength });
+  }
   const tokens: string[] = [];
 
   for (const group of linkGroups) {

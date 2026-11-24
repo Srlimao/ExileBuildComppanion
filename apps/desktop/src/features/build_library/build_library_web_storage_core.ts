@@ -1,9 +1,14 @@
-import { createEmptyCampaignProgress, type SavedCampaignProgress } from "@exile-hud/core";
+import { createEmptyCampaignProgress, type SavedCampaignProgress, type SupportedGameId } from "@exile-hud/core";
 import type { BuildLibraryEntrySummary, SavedBuildFileRecord } from "./build_library_types.js";
 
 export const WEB_BUILD_LIBRARY_KEY = "exile_build_library_v1";
+export const WEB_BUILD_LIBRARY_POE2_KEY = "exile_build_library_poe2_v1";
 const LEGACY_POB_KEY = "exile_saved_pob_profile_v1";
 const LEGACY_PROGRESS_KEY = "exile_saved_campaign_progress_v1";
+
+export function getWebBuildLibraryKey(gameId: SupportedGameId = "poe1"): string {
+  return gameId === "poe2" ? WEB_BUILD_LIBRARY_POE2_KEY : WEB_BUILD_LIBRARY_KEY;
+}
 
 export interface WebBuildLibraryStore {
   migrated: boolean;
@@ -58,10 +63,12 @@ export function folderOfRelPathWeb(relPath: string): string {
 export function toBuildEntrySummaryWeb(
   rel: string,
   rec: SavedBuildFileRecord,
+  fallbackGameId: SupportedGameId = "poe1",
 ): BuildLibraryEntrySummary {
   return {
     relativePath: rel,
     folderPath: folderOfRelPathWeb(rel),
+    gameId: rec.gameId ?? fallbackGameId,
     id: rec.id,
     name: rec.name,
     notes: rec.notes,
@@ -153,9 +160,10 @@ function migrateLegacyWebStorage(store: WebBuildLibraryStore): void {
   }
 }
 
-export function readWebLibraryStore(): WebBuildLibraryStore {
+export function readWebLibraryStore(gameId: SupportedGameId = "poe1"): WebBuildLibraryStore {
+  const storageKey = getWebBuildLibraryKey(gameId);
   try {
-    const raw = localStorage.getItem(WEB_BUILD_LIBRARY_KEY);
+    const raw = localStorage.getItem(storageKey);
     if (raw) {
       const parsed = JSON.parse(raw) as WebBuildLibraryStore;
       return {
@@ -169,16 +177,21 @@ export function readWebLibraryStore(): WebBuildLibraryStore {
     // ignore corrupt fallback
   }
   const store: WebBuildLibraryStore = {
-    migrated: false,
+    migrated: gameId !== "poe1",
     activeBuildPath: null,
     folders: [],
     files: {},
   };
-  migrateLegacyWebStorage(store);
-  writeWebLibraryStore(store);
+  if (gameId === "poe1") {
+    migrateLegacyWebStorage(store);
+  }
+  writeWebLibraryStore(store, gameId);
   return store;
 }
 
-export function writeWebLibraryStore(store: WebBuildLibraryStore): void {
-  localStorage.setItem(WEB_BUILD_LIBRARY_KEY, JSON.stringify(store));
+export function writeWebLibraryStore(
+  store: WebBuildLibraryStore,
+  gameId: SupportedGameId = "poe1",
+): void {
+  localStorage.setItem(getWebBuildLibraryKey(gameId), JSON.stringify(store));
 }

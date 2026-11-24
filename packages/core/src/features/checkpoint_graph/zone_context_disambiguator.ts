@@ -12,10 +12,10 @@ export type ParsedClientLogEvent =
   | { type: "player_slain"; characterName: string };
 
 const GEN_LEVEL_REGEX = /Generating level (\d+) area "([^"]+)" with seed (\d+)/;
-const ENTERED_REGEX = /\[INFO Client \d+\].*?:\s+You have entered ([^.]+)\./;
-const LEVEL_UP_REGEX = /\[INFO Client \d+\].*?:\s+(.+?)\s+\(([^)]+)\)\s+is now level (\d+)/;
-const SKILL_POINTS_REGEX = /\[INFO Client \d+\].*?:\s+You have received (\d+|a) passive skill points?\./i;
-const SLAIN_REGEX = /\[INFO Client \d+\].*?:\s+(.+?)\s+has been slain\./;
+const ENTERED_REGEX = /\[(?:INFO|DEBUG) Client \d+\].*?:\s+You have entered ([^.]+)\./;
+const LEVEL_UP_REGEX = /\[(?:INFO|DEBUG) Client \d+\].*?:\s+(.+?)\s+\(([^)]+)\)\s+is now level (\d+)/;
+const SKILL_POINTS_REGEX = /\[(?:INFO|DEBUG) Client \d+\].*?:\s+You have received (\d+|a) passive skill points?\./i;
+const SLAIN_REGEX = /\[(?:INFO|DEBUG) Client \d+\].*?:\s+(.+?)\s+has been slain\./;
 const PASSIVE_ASCENDANCY_SUMMARY_REGEX =
   /\[INFO Client \d+\]\s*:\s+(\d+)\s+total\s+Ascendancy\s+Skill\s+Points?\b/i;
 const PASSIVE_LEVEL_SUMMARY_REGEX =
@@ -108,7 +108,7 @@ export function isTownOrHideoutArea(areaId: string, adapter: GameAdapter): boole
 }
 
 export function isLabyrinthArea(areaId: string): boolean {
-  return /labyrinth/i.test(areaId);
+  return /labyrinth/i.test(areaId) || /^Sanctum_\d/i.test(areaId) || /^G3_10$/i.test(areaId);
 }
 
 export interface ZoneDisambiguationContext {
@@ -142,14 +142,17 @@ export function disambiguateZoneByName(
   if (candidates.length === 1) return candidates[0]!;
 
   const lastCombatArea = context.lastCombatZoneId ? adapter.resolveAreaById(context.lastCombatZoneId) : null;
-  const prefersPart2 = context.highestUnlockedAct >= 6 || context.characterLevel >= 44;
+  const isPoe1 = adapter.gameId === "poe1";
+  const prefersPart2 = isPoe1 && (context.highestUnlockedAct >= 6 || context.characterLevel >= 44);
 
   const scored = candidates.map((cand) => {
     let score = 0;
     if (lastCombatArea && cand.act === lastCombatArea.act) score += 50;
     if (cand.act === context.highestUnlockedAct) score += 35;
-    if (prefersPart2 && cand.act >= 6) score += 25;
-    if (!prefersPart2 && cand.act <= 5) score += 25;
+    if (isPoe1) {
+      if (prefersPart2 && cand.act >= 6) score += 25;
+      if (!prefersPart2 && cand.act <= 5) score += 25;
+    }
     score -= Math.abs(cand.act - context.highestUnlockedAct) * 5;
     return { cand, score };
   });

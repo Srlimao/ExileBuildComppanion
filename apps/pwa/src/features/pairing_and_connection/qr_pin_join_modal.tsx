@@ -1,6 +1,7 @@
-import type { HudContextMode } from "@exile-hud/core";
+import type { HudContextMode, SupportedGameId } from "@exile-hud/core";
 import { ExileRelayBrandIcon, useHudI18n } from "@exile-hud/hud-ui";
 import { Compass, Play, SlidersHorizontal, Sparkles } from "lucide-react";
+import { useState } from "react";
 import { DesktopCompanionDownloadCard } from "../desktop_download/desktop_companion_download_card.js";
 import type { ConnectionPhase } from "./edge_websocket_room_client.js";
 import { LandingThemePlaygroundBar } from "./landing_theme_playground_bar.js";
@@ -12,7 +13,7 @@ interface QrPinJoinModalProps {
   connectionPhase?: ConnectionPhase;
   errorMessage: string | null;
   onJoinRoom: (roomId: string, pin: string) => void;
-  onStartDemo: (initialMode?: HudContextMode) => void;
+  onStartDemo: (initialMode?: HudContextMode, gameId?: SupportedGameId) => void;
 }
 
 const DEMO_QUICK_MODES: ReadonlyArray<HudContextMode> = ["FIELD", "TOWN", "TREE", "LAB"];
@@ -27,6 +28,7 @@ export function QrPinJoinModal({
   onStartDemo,
 }: QrPinJoinModalProps) {
   const { msg, appMsg } = useHudI18n();
+  const [demoGame, setDemoGame] = useState<SupportedGameId>("poe1");
 
   return (
     <div className="min-h-screen bg-hud-bg text-hud-text flex flex-col justify-center pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(1.25rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:pl-[max(1.5rem,env(safe-area-inset-left))] sm:pr-[max(1.5rem,env(safe-area-inset-right))] transition-colors">
@@ -70,13 +72,35 @@ export function QrPinJoinModal({
             <DesktopCompanionDownloadCard />
 
             <div className="flex flex-wrap items-center gap-2">
+              <div
+                role="group"
+                aria-label={appMsg.poe2.demoGameToggleTitle}
+                className="inline-flex items-center gap-0.5 rounded-lg bg-hud-subtle border border-hud-hairline p-1"
+              >
+                {(["poe1", "poe2"] as const).map((g) => (
+                  <button
+                    key={g}
+                    type="button"
+                    aria-pressed={demoGame === g}
+                    onClick={() => setDemoGame(g)}
+                    className={`px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                      demoGame === g
+                        ? "bg-hud-accent text-hud-accent-fg"
+                        : "text-hud-muted hover:text-hud-text"
+                    }`}
+                  >
+                    {appMsg.poe2.gameShortLabels[g]}
+                  </button>
+                ))}
+              </div>
+
               <button
                 type="button"
-                onClick={() => onStartDemo()}
-                className="flex-1 min-w-[200px] rounded-lg bg-hud-accent text-hud-accent-fg hover:opacity-90 font-semibold py-2 px-3.5 text-sm transition-opacity flex items-center justify-center gap-2 cursor-pointer"
+                onClick={() => onStartDemo(undefined, demoGame)}
+                className="flex-1 min-w-[180px] rounded-lg bg-hud-accent text-hud-accent-fg hover:opacity-90 font-semibold py-2 px-3.5 text-sm transition-opacity flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Play className="h-4 w-4 shrink-0" />
-                <span>{appMsg.pwa.launchDemo}</span>
+                <span>{demoGame === "poe2" ? appMsg.poe2.launchPoe2Demo : appMsg.pwa.launchDemo}</span>
               </button>
 
               <div className="inline-flex items-center gap-1 rounded-lg bg-hud-subtle border border-hud-hairline p-1">
@@ -84,7 +108,7 @@ export function QrPinJoinModal({
                   <button
                     key={mode}
                     type="button"
-                    onClick={() => onStartDemo(mode)}
+                    onClick={() => onStartDemo(mode, demoGame)}
                     className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold tracking-wide text-hud-muted hover:text-hud-text hover:bg-hud-surface transition-colors cursor-pointer"
                   >
                     {msg.modes[mode]}
@@ -95,7 +119,7 @@ export function QrPinJoinModal({
 
             <button
               type="button"
-              onClick={() => onStartDemo()}
+              onClick={() => onStartDemo(undefined, demoGame)}
               className="group relative rounded-xl border border-hud-hairline hover:border-hud-accent/50 overflow-hidden bg-hud-bg transition-colors text-left cursor-pointer"
               title={appMsg.pwa.openDemoTitle}
             >

@@ -15,6 +15,7 @@ import {
 } from "./lab_and_passives_reconciler.js";
 import type { ParsedClientLogEvent } from "./zone_context_disambiguator.js";
 import { disambiguateZoneByName, isLabyrinthArea, isTownOrHideoutArea } from "./zone_context_disambiguator.js";
+import { reconcilePoe2SnapshotTelemetry } from "./poe2_progression_reconciler.js";
 
 export type TelemetryAction =
   | { type: "client_log"; event: ParsedClientLogEvent; autoDetectCharacter: boolean; nowMs?: number }
@@ -95,7 +96,7 @@ function transitionToZone(
     adapter,
   });
 
-  return {
+  return reconcilePoe2SnapshotTelemetry({
     ...state,
     version: state.version + 1,
     mode,
@@ -120,10 +121,11 @@ function transitionToZone(
       gemSteps,
       linkGroups: state.linkGroups,
       currentAct: nextHighestAct,
+      gameId: adapter.gameId,
     }),
     actSplitsMs,
     zoneLayoutPaths,
-  };
+  }, adapter);
 }
 
 export function reduceTelemetrySession(
@@ -156,7 +158,7 @@ export function reduceTelemetrySession(
   }
 
   if (action.type === "reset_progress") {
-    return resetSnapshotProgress(state);
+    return reconcilePoe2SnapshotTelemetry(resetSnapshotProgress(state), adapter);
   }
 
   if (action.type === "toggle_checkpoint") {
@@ -172,7 +174,7 @@ export function reduceTelemetrySession(
       enteredAreaId: state.currentAreaId,
       adapter,
     });
-    return { ...state, version: state.version + 1, checkpoints, lab };
+    return reconcilePoe2SnapshotTelemetry({ ...state, version: state.version + 1, checkpoints, lab }, adapter);
   }
 
   if (action.type === "toggle_gem") {
@@ -181,7 +183,7 @@ export function reduceTelemetrySession(
       const nextDone = action.completed ?? !(gs.manualCompleted || gs.softAcquired);
       return { ...gs, manualCompleted: nextDone, softAcquired: false };
     });
-    return {
+    return reconcilePoe2SnapshotTelemetry({
       ...state,
       version: state.version + 1,
       gemSteps,
@@ -190,8 +192,9 @@ export function reduceTelemetrySession(
         gemSteps,
         linkGroups: state.linkGroups,
         currentAct: state.highestUnlockedAct,
+        gameId: adapter.gameId,
       }),
-    };
+    }, adapter);
   }
 
   const ev = action.event;

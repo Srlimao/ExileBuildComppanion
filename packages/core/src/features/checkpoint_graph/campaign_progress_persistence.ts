@@ -1,4 +1,8 @@
-import type { CheckpointStepItem, HudSessionSnapshot } from "../protocol/session_room_wire_protocol.js";
+import {
+  resolveSnapshotGameId,
+  type CheckpointStepItem,
+  type HudSessionSnapshot,
+} from "../protocol/session_room_wire_protocol.js";
 import { computeNextTownCurrencyBudget } from "../route_compiler/gem_quest_and_vendor_assigner.js";
 import { buildVendorSearchRegex } from "../vendor_regex/vendor_search_regex_builder.js";
 
@@ -107,9 +111,20 @@ export function resetSnapshotProgress(snapshot: HudSessionSnapshot): HudSessionS
     clearedAreaIds: [],
     checkpoints,
     gemSteps,
+    ...(snapshot.permanentBonuses
+      ? { permanentBonuses: snapshot.permanentBonuses.map((b) => ({ ...b, completed: false })) }
+      : {}),
+    ...(snapshot.poe2SpiritSummary
+      ? { poe2SpiritSummary: { ...snapshot.poe2SpiritSummary, unlockedSpirit: 0 } }
+      : {}),
     lab: { ...snapshot.lab, completedTrialAreaIds: [] },
     nextTownCurrencyBudget: computeNextTownCurrencyBudget(gemSteps, currentAct),
-    activeVendorRegex: buildVendorSearchRegex({ gemSteps, linkGroups: snapshot.linkGroups, currentAct }),
+    activeVendorRegex: buildVendorSearchRegex({
+      gemSteps,
+      linkGroups: snapshot.linkGroups,
+      currentAct,
+      gameId: resolveSnapshotGameId(snapshot),
+    }),
   };
 }
 

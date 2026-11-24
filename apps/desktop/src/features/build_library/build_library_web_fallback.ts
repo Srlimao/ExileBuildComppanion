@@ -1,4 +1,4 @@
-import { createEmptyCampaignProgress } from "@exile-hud/core";
+import { createEmptyCampaignProgress, type SupportedGameId } from "@exile-hud/core";
 import type {
   BuildLibraryEntrySummary,
   BuildLibraryListing,
@@ -9,6 +9,7 @@ import {
   WEB_BUILD_LIBRARY_KEY,
   findBuildKeyCI,
   folderOfRelPathWeb,
+  getWebBuildLibraryKey,
   normalizeBuildPathWeb,
   normalizeFolderWeb,
   pickNextActiveBuildKey,
@@ -20,27 +21,30 @@ import {
 
 export { WEB_BUILD_LIBRARY_KEY };
 
-export function listBuildLibraryWeb(): BuildLibraryListing {
-  const store = readWebLibraryStore();
+export function listBuildLibraryWeb(gameId: SupportedGameId = "poe1"): BuildLibraryListing {
+  const store = readWebLibraryStore(gameId);
   const builds = Object.entries(store.files)
-    .map(([rel, rec]) => toBuildEntrySummaryWeb(rel, rec))
+    .map(([rel, rec]) => toBuildEntrySummaryWeb(rel, rec, gameId))
     .sort((a, b) => b.updatedAtMs - a.updatedAtMs);
   const activeKey = store.activeBuildPath ? findBuildKeyCI(store.files, store.activeBuildPath) : null;
   const resolvedActive = activeKey ?? pickNextActiveBuildKey(store.files);
   if (resolvedActive !== store.activeBuildPath) {
     store.activeBuildPath = resolvedActive;
-    writeWebLibraryStore(store);
+    writeWebLibraryStore(store, gameId);
   }
   return {
-    rootDir: `Browser localStorage (${WEB_BUILD_LIBRARY_KEY})`,
+    rootDir: `Browser localStorage (${getWebBuildLibraryKey(gameId)})`,
     activeBuildPath: resolvedActive,
     folders: [...store.folders].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" })),
     builds,
   };
 }
 
-export function loadBuildFileWeb(relativePath: string): SavedBuildFileRecord {
-  const store = readWebLibraryStore();
+export function loadBuildFileWeb(
+  relativePath: string,
+  gameId: SupportedGameId = "poe1",
+): SavedBuildFileRecord {
+  const store = readWebLibraryStore(gameId);
   const norm = normalizeBuildPathWeb(relativePath);
   const key = findBuildKeyCI(store.files, norm);
   if (!key) throw new Error(`Build file not found: ${norm}`);
@@ -52,8 +56,9 @@ export function saveBuildFileWeb(
   record: SavedBuildFileRecord,
   overwritePath?: string | null,
   setActive = false,
+  gameId: SupportedGameId = record.gameId ?? "poe1",
 ): BuildLibraryEntrySummary {
-  const store = readWebLibraryStore();
+  const store = readWebLibraryStore(gameId);
   const folder = normalizeFolderWeb(folderPath);
   if (folder && !store.folders.some((f) => f.toLowerCase() === folder.toLowerCase())) {
     const parts = folder.split("/");
@@ -83,16 +88,20 @@ export function saveBuildFileWeb(
       store.activeBuildPath = targetRel;
     }
   }
-  const nextRecord: SavedBuildFileRecord = { ...record, schemaVersion: 1, name };
+  const nextRecord: SavedBuildFileRecord = { ...record, schemaVersion: 1, gameId, name };
   store.files[targetRel] = nextRecord;
   if (setActive) store.activeBuildPath = targetRel;
   store.migrated = true;
-  writeWebLibraryStore(store);
-  return toBuildEntrySummaryWeb(targetRel, nextRecord);
+  writeWebLibraryStore(store, gameId);
+  return toBuildEntrySummaryWeb(targetRel, nextRecord, gameId);
 }
 
-export function updateBuildProgressWeb(relativePath: string, patch: BuildProgressPatch): void {
-  const store = readWebLibraryStore();
+export function updateBuildProgressWeb(
+  relativePath: string,
+  patch: BuildProgressPatch,
+  gameId: SupportedGameId = "poe1",
+): void {
+  const store = readWebLibraryStore(gameId);
   const key = findBuildKeyCI(store.files, normalizeBuildPathWeb(relativePath));
   if (!key) throw new Error(`Build file not found: ${relativePath}`);
   const cur = store.files[key]!;
@@ -106,7 +115,7 @@ export function updateBuildProgressWeb(relativePath: string, patch: BuildProgres
     ...(patch.selectedLeague !== undefined ? { selectedLeague: patch.selectedLeague } : {}),
     updatedAtMs: patch.updatedAtMs,
   };
-  writeWebLibraryStore(store);
+  writeWebLibraryStore(store, gameId);
 }
 
 export function renameOrMoveBuildWeb(
@@ -114,9 +123,10 @@ export function renameOrMoveBuildWeb(
   targetFolder: string,
   newName: string,
   nowMs: number,
+  gameId: SupportedGameId = "poe1",
 ): BuildLibraryEntrySummary {
-  const cur = loadBuildFileWeb(fromPath);
-  return saveBuildFileWeb(targetFolder, { ...cur, name: newName, updatedAtMs: nowMs }, fromPath, false);
+  const cur = loadBuildFileWeb(fromPath, gameId);
+  return saveBuildFileWeb(targetFolder, { ...cur, name: newName, updatedAtMs: nowMs }, fromPath, false, gameId);
 }
 
 export function duplicateBuildWeb(
@@ -126,8 +136,9 @@ export function duplicateBuildWeb(
   copyProgress: boolean,
   newId: string,
   nowMs: number,
+  gameId: SupportedGameId = "poe1",
 ): BuildLibraryEntrySummary {
-  const cur = loadBuildFileWeb(sourcePath);
+  const cur = loadBuildFileWeb(sourcePath, gameId);
   const next: SavedBuildFileRecord = {
     ...cur,
     id: newId,
@@ -150,11 +161,14 @@ export function duplicateBuildWeb(
           },
         }),
   };
-  return saveBuildFileWeb(targetFolder, next, null, false);
+  return saveBuildFileWeb(targetFolder, next, null, false, gameId);
 }
 
-export function deleteBuildWeb(relativePath: string): string | null {
-  const store = readWebLibraryStore();
+export function deleteBuildWeb(
+  relativePath: string,
+  gameId: SupportedGameId = "poe1",
+): string | null {
+  const store = readWebLibraryStore(gameId);
   const norm = normalizeBuildPathWeb(relativePath);
   const key = findBuildKeyCI(store.files, norm);
   if (!key) throw new Error(`Build file not found: ${norm}`);
@@ -162,12 +176,16 @@ export function deleteBuildWeb(relativePath: string): string | null {
   if (store.activeBuildPath?.toLowerCase() === norm.toLowerCase()) {
     store.activeBuildPath = pickNextActiveBuildKey(store.files);
   }
-  writeWebLibraryStore(store);
+  writeWebLibraryStore(store, gameId);
   return store.activeBuildPath;
 }
 
-export function createBuildFolderWeb(parentFolder: string, folderName: string): string {
-  const store = readWebLibraryStore();
+export function createBuildFolderWeb(
+  parentFolder: string,
+  folderName: string,
+  gameId: SupportedGameId = "poe1",
+): string {
+  const store = readWebLibraryStore(gameId);
   const parent = normalizeFolderWeb(parentFolder);
   const clean = sanitizeSegmentWeb(folderName);
   const rel = parent ? `${parent}/${clean}` : clean;
@@ -175,12 +193,16 @@ export function createBuildFolderWeb(parentFolder: string, folderName: string): 
     throw new Error("Folder already exists");
   }
   store.folders.push(rel);
-  writeWebLibraryStore(store);
+  writeWebLibraryStore(store, gameId);
   return rel;
 }
 
-export function renameBuildFolderWeb(oldFolder: string, newName: string): string {
-  const store = readWebLibraryStore();
+export function renameBuildFolderWeb(
+  oldFolder: string,
+  newName: string,
+  gameId: SupportedGameId = "poe1",
+): string {
+  const store = readWebLibraryStore(gameId);
   const oldNorm = normalizeFolderWeb(oldFolder);
   if (!oldNorm) throw new Error("Cannot rename root folder");
   const clean = sanitizeSegmentWeb(newName);
@@ -210,12 +232,16 @@ export function renameBuildFolderWeb(oldFolder: string, newName: string): string
   if (store.activeBuildPath?.toLowerCase().startsWith(oldPrefix)) {
     store.activeBuildPath = `${newNorm}/${store.activeBuildPath.slice(oldPrefix.length)}`;
   }
-  writeWebLibraryStore(store);
+  writeWebLibraryStore(store, gameId);
   return newNorm;
 }
 
-export function deleteBuildFolderWeb(folderPath: string, recursive: boolean): string | null {
-  const store = readWebLibraryStore();
+export function deleteBuildFolderWeb(
+  folderPath: string,
+  recursive: boolean,
+  gameId: SupportedGameId = "poe1",
+): string | null {
+  const store = readWebLibraryStore(gameId);
   const norm = normalizeFolderWeb(folderPath);
   if (!norm) throw new Error("Cannot delete root folder");
   const prefix = `${norm.toLowerCase()}/`;
@@ -232,12 +258,15 @@ export function deleteBuildFolderWeb(folderPath: string, recursive: boolean): st
   if (store.activeBuildPath?.toLowerCase().startsWith(prefix)) {
     store.activeBuildPath = pickNextActiveBuildKey(store.files);
   }
-  writeWebLibraryStore(store);
+  writeWebLibraryStore(store, gameId);
   return store.activeBuildPath;
 }
 
-export function setActiveBuildPathWeb(relativePath: string | null): void {
-  const store = readWebLibraryStore();
+export function setActiveBuildPathWeb(
+  relativePath: string | null,
+  gameId: SupportedGameId = "poe1",
+): void {
+  const store = readWebLibraryStore(gameId);
   if (!relativePath) {
     store.activeBuildPath = null;
   } else {
@@ -245,5 +274,5 @@ export function setActiveBuildPathWeb(relativePath: string | null): void {
     if (!key) throw new Error(`Build file not found: ${relativePath}`);
     store.activeBuildPath = key;
   }
-  writeWebLibraryStore(store);
+  writeWebLibraryStore(store, gameId);
 }

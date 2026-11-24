@@ -1,5 +1,5 @@
 import { buildAscendancyProgressionPlan, type HudSessionSnapshot } from "@exile-hud/core";
-import { poe1GameAdapter } from "@exile-hud/game-data";
+import { getGameAdapter } from "@exile-hud/game-data";
 import { Check } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useHudI18n } from "../i18n/hud_i18n_provider.js";
@@ -13,7 +13,8 @@ interface AscendancyOrderWidgetProps {
 export const AscendancyOrderWidget = memo(function AscendancyOrderWidget({
   snapshot,
 }: AscendancyOrderWidgetProps) {
-  const { msg } = useHudI18n();
+  const { msg, appMsg } = useHudI18n();
+  const isPoe2 = snapshot.gameId === "poe2";
   const t = msg.widgets.ascendancyOrder;
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
@@ -24,6 +25,7 @@ export const AscendancyOrderWidget = memo(function AscendancyOrderWidget({
     setSelectedNodeId(null);
   }, [snapshot.profileId]);
 
+  const adapter = getGameAdapter(snapshot.gameId);
   const plan = useMemo(
     () =>
       buildAscendancyProgressionPlan({
@@ -35,7 +37,7 @@ export const AscendancyOrderWidget = memo(function AscendancyOrderWidget({
         characterLevel: snapshot.characterLevel,
         activeSpecId: snapshot.passiveTree.activeSpecId,
         manualPhaseId,
-        adapter: poe1GameAdapter,
+        adapter,
       }),
     [
       snapshot.characterClass,
@@ -46,6 +48,7 @@ export const AscendancyOrderWidget = memo(function AscendancyOrderWidget({
       snapshot.characterLevel,
       snapshot.passiveTree.activeSpecId,
       manualPhaseId,
+      adapter,
     ],
   );
 
@@ -177,7 +180,9 @@ export const AscendancyOrderWidget = memo(function AscendancyOrderWidget({
               <ol className="space-y-1">
                 {plan.steps.map((step) => {
                   const expanded = selectedNodeId === step.nodeId;
-                  const subLabel = step.labTier ? t.labTiers[step.labTier] : step.sourceSpecTitle;
+                  const subLabel = step.labTier
+                    ? (isPoe2 ? appMsg.poe2.trialTiers[step.labTier] : t.labTiers[step.labTier])
+                    : step.sourceSpecTitle;
 
                   return (
                     <li key={step.nodeId}>

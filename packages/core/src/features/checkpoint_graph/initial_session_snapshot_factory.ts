@@ -4,6 +4,7 @@ import type { HudSessionSnapshot } from "../protocol/session_room_wire_protocol.
 import { computePassiveTreeDiff } from "../character_telemetry_diff/passive_tree_diff_calculator.js";
 import { computeNextTownCurrencyBudget } from "../route_compiler/gem_quest_and_vendor_assigner.js";
 import { buildVendorSearchRegex } from "../vendor_regex/vendor_search_regex_builder.js";
+import { reconcilePoe2SnapshotTelemetry } from "./poe2_progression_reconciler.js";
 
 export function buildInitialSessionSnapshot(params: {
   roomId: string;
@@ -44,8 +45,14 @@ export function buildInitialSessionSnapshot(params: {
       missingAuraWarning: false,
     })) ?? [];
 
-  return {
+  const startAreaId = adapter.getDefaultStartAreaId();
+  const startArea = adapter.resolveAreaById(startAreaId);
+  const startAreaName =
+    startArea?.name ?? (adapter.gameId === "poe2" ? "The Riverbank" : "The Twilight Strand");
+
+  return reconcilePoe2SnapshotTelemetry({
     version: 1,
+    gameId: adapter.gameId,
     roomId,
     profileId,
     buildName: build.buildName,
@@ -62,17 +69,17 @@ export function buildInitialSessionSnapshot(params: {
     lastCharacterSyncAt: null,
     mode: "FIELD",
     inGameTreeOpen: false,
-    currentAreaId: "1_1_1",
-    currentAreaName: "The Twilight Strand",
+    currentAreaId: startAreaId,
+    currentAreaName: startAreaName,
     currentAreaLevel: 1,
     currentAreaSeed: null,
     currentAct: 1,
     highestUnlockedAct: 1,
-    lastCombatZoneId: "1_1_1",
-    lastCombatZoneName: "The Twilight Strand",
+    lastCombatZoneId: startAreaId,
+    lastCombatZoneName: startAreaName,
     recentDeath: false,
     resumeZoneBanner: null,
-    activeVendorRegex: buildVendorSearchRegex({ gemSteps, linkGroups, currentAct: 1 }),
+    activeVendorRegex: buildVendorSearchRegex({ gemSteps, linkGroups, currentAct: 1, gameId: adapter.gameId }),
     autoClipboardEnabled: true,
     runElapsedMs: 0,
     runTimerRunning: false,
@@ -96,7 +103,7 @@ export function buildInitialSessionSnapshot(params: {
     passiveTree,
     lab: {
       hasDailyLayout: false,
-      difficultyLabel: "Normal Labyrinth",
+      difficultyLabel: adapter.gameId === "poe2" ? "Trial of the Sekhemas" : "Normal Labyrinth",
       currentRoomId: null,
       currentRoomName: null,
       rooms: [],
@@ -104,6 +111,6 @@ export function buildInitialSessionSnapshot(params: {
     },
     visitedAreaIds: [],
     clearedAreaIds: [],
-    zoneLayoutPaths: adapter.getZoneLayoutVariants("1_1_1"),
-  };
+    zoneLayoutPaths: adapter.getZoneLayoutVariants(startAreaId),
+  }, adapter);
 }

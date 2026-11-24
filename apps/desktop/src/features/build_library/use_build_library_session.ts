@@ -1,17 +1,20 @@
-import type { HudSessionSnapshot, PobSetSelection, ValidatedPobBuild } from "@exile-hud/core";
-import { useCallback, useState, type MutableRefObject } from "react";
+import type {
+  HudSessionSnapshot,
+  PobSetSelection,
+  SupportedGameId,
+  ValidatedPobBuild,
+} from "@exile-hud/core";
+import { useCallback, useRef, useState, type MutableRefObject } from "react";
 import { persistActiveBuildCharacterLink } from "../host_coordinator/campaign_progress_persistence_client.js";
 import { inspectPobBuildSets } from "../host_coordinator/desktop_telemetry_bridge.js";
 import type { HostRunTimerClock } from "../host_coordinator/host_run_timer_clock.js";
-import {
-  createFolderEntry,
-  deleteBuildEntry,
-  deleteFolderEntry,
-  duplicateBuildEntry,
-  moveBuildEntry,
-  renameFolderEntry,
-} from "./build_library_crud_actions.js";
 import type { BuildEditorSubmitPayload } from "./build_library_editor_panel.js";
+import {
+  applyCharacterLinkToListing,
+  applySnapshotSummaryToListing,
+  createBuildLibraryCrudHandlers,
+  createStarterBuildRecordForGame,
+} from "./build_library_game_scope.js";
 import {
   listBuildLibraryIpc,
   loadBuildFileIpc,
@@ -22,19 +25,14 @@ import {
 import {
   bootstrapLibrarySession,
   compileAndHydrateBuildRecord,
-  createStarterBuildRecord,
   flushOutgoingBuildToDisk,
   saveBuildEditorRecord,
 } from "./build_library_session_lifecycle.js";
-import {
-  buildSummaryFromSnapshot,
-  type BuildEditorMode,
-  type BuildLibraryEntrySummary,
-  type BuildLibraryListing,
-} from "./build_library_types.js";
+import type { BuildEditorMode, BuildLibraryListing } from "./build_library_types.js";
 
 interface UseBuildLibrarySessionParams {
   roomId: string;
+  activeGameId: SupportedGameId;
   activeBuildPathRef: MutableRefObject<string | null>;
   snapshotRef: MutableRefObject<HudSessionSnapshot | null>;
   activeBuildRef: MutableRefObject<ValidatedPobBuild | null>;
@@ -51,9 +49,12 @@ interface UseBuildLibrarySessionParams {
 
 export function useBuildLibrarySession(params: UseBuildLibrarySessionParams) {
   const {
-    roomId, activeBuildPathRef, snapshotRef, activeBuildRef, timerClockRef, syncPrefsRef,
+    roomId, activeGameId, activeBuildPathRef, snapshotRef, activeBuildRef, timerClockRef, syncPrefsRef,
     getLiveSnapshot, setSnapshot, setActiveBuild, setCharacterName, setSelectedLeague, pushPatch, runGggSync,
   } = params;
+
+  const gameIdRef = useRef<SupportedGameId>(activeGameId);
+  gameIdRef.current = activeGameId;
 
   const [listing, setListing] = useState<BuildLibraryListing | null>(null);
   const [currentFolder, setCurrentFolder] = useState("");
@@ -61,12 +62,15 @@ export function useBuildLibrarySession(params: UseBuildLibrarySessionParams) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const refreshListing = useCallback(async () => {
-    const next = await listBuildLibraryIpc();
-    setListing(next);
-    activeBuildPathRef.current = next.activeBuildPath;
-    return next;
-  }, [activeBuildPathRef]);
+  const refreshListing = useCallback(
+    async (targetGameId: SupportedGameId = gameIdRef.current) => {
+      const next = await listBuildLibraryIpc(targetGameId);
+      setListing(next);
+      activeBuildPathRef.current = next.activeBuildPath;
+      return next;
+    },
+    [activeBuildPathRef],
+  );
 
   const runAction = useCallback(async (fn: () => Promise<void>) => {
     setBusy(true);
@@ -80,33 +84,43 @@ export function useBuildLibrarySession(params: UseBuildLibrarySessionParams) {
     }
   }, []);
 
-  const bootstrapInitialLibraryBuild = useCallback(async () => {
-    const booted = await bootstrapLibrarySession(roomId);
-    activeBuildPathRef.current = booted.activePath;
-    setActiveBuild(booted.build);
-    activeBuildRef.current = booted.build;
-    setCharacterName(booted.snapshot.characterName);
-    if (booted.record.selectedLeague) setSelectedLeague(booted.record.selectedLeague);
-    syncPrefsRef.current = { ...syncPrefsRef.current, characterName: booted.snapshot.characterName };
-    setListing(booted.listing);
-    timerClockRef.current.syncBaseSnapshot(booted.snapshot);
-    setSnapshot(booted.snapshot);
-    snapshotRef.current = booted.snapshot;
-    return booted;
-  }, [activeBuildPathRef, activeBuildRef, roomId, setActiveBuild, setCharacterName, setSelectedLeague, setSnapshot, snapshotRef, syncPrefsRef, timerClockRef]);
+  const bootstrapInitialLibraryBuild = useCallback(
+    async (savedLogPath?: string | null) => {
+      const targetGame = gameIdRef.current;
+      const booted = await bootstrapLibrarySession(roomId, targetGame, savedLogPath);
+      activeBuildPathRef.current = booted.activePath;
+      setActiveBuild(booted.build);
+      activeBuildRef.current = booted.build;
+      setCharacterName(booted.snapshot.characterName);
+      if (booted.record.selectedLeague) setSelectedLeague(booted.record.selectedLeague);
+      syncPrefsRef.current = { ...syncPrefsRef.current, characterName: booted.snapshot.characterName };
+      setListing(booted.listing);
+      timerClockRef.current.syncBaseSnapshot(booted.snapshot);
+      setSnapshot(booted.snapshot);
+      snapshotRef.current = booted.snapshot;
+      return booted;
+    },
+    [activeBuildPathRef, activeBuildRef, roomId, setActiveBuild, setCharacterName, setSelectedLeague, setSnapshot, snapshotRef, syncPrefsRef, timerClockRef],
+  );
 
   const applyActivatedRecord = useCallback(
-    async (relativePath: string, skipFlushOutgoing = false) => {
+    async (
+      relativePath: string,
+      skipFlushOutgoing = false,
+      targetGameId: SupportedGameId = gameIdRef.current,
+      outgoingGameId: SupportedGameId = gameIdRef.current,
+    ) => {
       if (!skipFlushOutgoing) {
-        await flushOutgoingBuildToDisk(activeBuildPathRef.current, getLiveSnapshot());
+        await flushOutgoingBuildToDisk(activeBuildPathRef.current, getLiveSnapshot(), outgoingGameId);
       }
-      const record = await loadBuildFileIpc(relativePath);
+      const record = await loadBuildFileIpc(relativePath, targetGameId);
       const { build, snapshot } = await compileAndHydrateBuildRecord({
         roomId,
+        gameId: targetGameId,
         record,
         previousSnapshot: snapshotRef.current,
       });
-      await setActiveBuildPathIpc(relativePath);
+      await setActiveBuildPathIpc(relativePath, targetGameId);
       activeBuildPathRef.current = relativePath;
       setActiveBuild(build);
       activeBuildRef.current = build;
@@ -115,9 +129,9 @@ export function useBuildLibrarySession(params: UseBuildLibrarySessionParams) {
       syncPrefsRef.current = { ...syncPrefsRef.current, characterName: snapshot.characterName };
       timerClockRef.current.syncBaseSnapshot(snapshot);
       pushPatch(snapshot, "switch_build");
-      setListing(await listBuildLibraryIpc());
+      setListing(await listBuildLibraryIpc(targetGameId));
       setEditorMode({ kind: "closed" });
-      if (syncPrefsRef.current.accountName.trim() && snapshot.characterName.trim()) {
+      if (targetGameId === "poe1" && syncPrefsRef.current.accountName.trim() && snapshot.characterName.trim()) {
         runGggSync(false);
       }
     },
@@ -125,26 +139,46 @@ export function useBuildLibrarySession(params: UseBuildLibrarySessionParams) {
   );
 
   const ensureValidActive = useCallback(
-    async (nextActive: string | null) => {
+    async (nextActive: string | null, targetGameId: SupportedGameId = gameIdRef.current) => {
       if (nextActive) {
-        await applyActivatedRecord(nextActive, true);
+        await applyActivatedRecord(nextActive, true, targetGameId, targetGameId);
         return;
       }
       const saved = await saveBuildFileIpc({
         folderPath: "",
-        record: createStarterBuildRecord(Date.now()),
+        record: createStarterBuildRecordForGame(targetGameId, Date.now()),
         setActive: true,
+        gameId: targetGameId,
       });
-      await applyActivatedRecord(saved.relativePath, true);
+      await applyActivatedRecord(saved.relativePath, true, targetGameId, targetGameId);
     },
     [applyActivatedRecord],
   );
 
+  const switchLibraryToGame = useCallback(
+    async (nextGameId: SupportedGameId, prevGameId: SupportedGameId) => {
+      await runAction(async () => {
+        await flushOutgoingBuildToDisk(activeBuildPathRef.current, getLiveSnapshot(), prevGameId);
+        gameIdRef.current = nextGameId;
+        setCurrentFolder("");
+        const nextListing = await listBuildLibraryIpc(nextGameId);
+        if (nextListing.builds.length === 0) {
+          await ensureValidActive(null, nextGameId);
+          return;
+        }
+        const nextPath = nextListing.activeBuildPath ?? nextListing.builds[0]!.relativePath;
+        await applyActivatedRecord(nextPath, true, nextGameId, prevGameId);
+      });
+    },
+    [activeBuildPathRef, applyActivatedRecord, ensureValidActive, getLiveSnapshot, runAction],
+  );
+
   const saveFromEditor = useCallback(
     async (payload: BuildEditorSubmitPayload) => {
+      const targetGame = gameIdRef.current;
       await runAction(async () => {
         const saved = await saveBuildEditorRecord({
-          roomId, payload, activeBuildPath: activeBuildPathRef.current,
+          roomId, gameId: targetGame, payload, activeBuildPath: activeBuildPathRef.current,
           currentSnapshot: snapshotRef.current, liveSnapshot: getLiveSnapshot(),
         });
         if (saved.isEditingActive) {
@@ -155,12 +189,12 @@ export function useBuildLibrarySession(params: UseBuildLibrarySessionParams) {
           setSelectedLeague(payload.selectedLeague);
           syncPrefsRef.current = { ...syncPrefsRef.current, characterName: saved.activeSnapshot.characterName };
           pushPatch(saved.activeSnapshot, "build_updated");
-          await refreshListing();
+          await refreshListing(targetGame);
           setEditorMode({ kind: "closed" });
         } else if (payload.activateAfterSave) {
-          await applyActivatedRecord(saved.relativePath, false);
+          await applyActivatedRecord(saved.relativePath, false, targetGame, targetGame);
         } else {
-          await refreshListing();
+          await refreshListing(targetGame);
           setEditorMode({ kind: "closed" });
         }
       });
@@ -171,38 +205,20 @@ export function useBuildLibrarySession(params: UseBuildLibrarySessionParams) {
   const updateActiveListingSummary = useCallback((snapshot: HudSessionSnapshot) => {
     const activePath = activeBuildPathRef.current;
     if (!activePath) return;
-    const summary = buildSummaryFromSnapshot(snapshot);
-    setListing((prev) =>
-      prev
-        ? {
-            ...prev,
-            builds: prev.builds.map((b) =>
-              b.relativePath === activePath
-                ? { ...b, summary, characterName: snapshot.characterName || b.characterName, runElapsedMs: snapshot.runElapsedMs, updatedAtMs: Date.now() }
-                : b,
-            ),
-          }
-        : prev,
-    );
+    setListing((prev) => applySnapshotSummaryToListing(prev, activePath, snapshot));
   }, [activeBuildPathRef]);
 
   const persistCharacterLink = useCallback((characterName: string, selectedLeague?: string) => {
     const activePath = activeBuildPathRef.current;
     if (!activePath) return;
-    persistActiveBuildCharacterLink(activePath, characterName, selectedLeague);
-    setListing((prev) =>
-      prev
-        ? {
-            ...prev,
-            builds: prev.builds.map((b) =>
-              b.relativePath === activePath
-                ? { ...b, characterName, ...(selectedLeague !== undefined ? { selectedLeague } : {}) }
-                : b,
-            ),
-          }
-        : prev,
-    );
+    persistActiveBuildCharacterLink(activePath, characterName, selectedLeague, gameIdRef.current);
+    setListing((prev) => applyCharacterLinkToListing(prev, activePath, characterName, selectedLeague));
   }, [activeBuildPathRef]);
+
+  const crudHandlers = createBuildLibraryCrudHandlers({
+    gameIdRef, activeBuildPathRef, currentFolder, setCurrentFolder,
+    runAction, ensureValidActive, refreshListing,
+  });
 
   return {
     listing, currentFolder, setCurrentFolder, editorMode, busy, error, activeBuildPathRef,
@@ -210,55 +226,19 @@ export function useBuildLibrarySession(params: UseBuildLibrarySessionParams) {
     closeEditor: () => setEditorMode({ kind: "closed" }),
     openEditEditor: (relativePath: string) =>
       runAction(async () => {
-        const record = await loadBuildFileIpc(relativePath);
+        const record = await loadBuildFileIpc(relativePath, gameIdRef.current);
         const idx = relativePath.lastIndexOf("/");
         setEditorMode({ kind: "edit", targetPath: relativePath, targetFolder: idx === -1 ? "" : relativePath.slice(0, idx), record });
       }),
     bootstrapInitialLibraryBuild,
+    switchLibraryToGame,
     activateBuild: (relativePath: string) => runAction(() => applyActivatedRecord(relativePath, false)),
     saveFromEditor,
-    handleDuplicateBuild: (entry: BuildLibraryEntrySummary, copyLabel: string) =>
-      runAction(async () => { await duplicateBuildEntry(entry, copyLabel); await refreshListing(); }),
-    handleMoveBuild: (relativePath: string, targetFolder: string) =>
-      runAction(async () => {
-        const movedPath = await moveBuildEntry(relativePath, targetFolder);
-        if (relativePath === activeBuildPathRef.current) activeBuildPathRef.current = movedPath;
-        await refreshListing();
-      }),
-    handleDeleteBuild: (relativePath: string) =>
-      runAction(() =>
-        deleteBuildEntry({
-          relativePath,
-          activeBuildPath: activeBuildPathRef.current,
-          clearActiveBuildRef: () => { activeBuildPathRef.current = null; },
-          ensureValidActive,
-          refreshListing,
-        }),
-      ),
-    handleCreateFolder: (parentFolder: string, folderName: string) =>
-      runAction(async () => { await createFolderEntry(parentFolder, folderName); await refreshListing(); }),
-    handleRenameFolder: (oldFolder: string, newName: string) =>
-      runAction(async () => {
-        await renameFolderEntry({ oldFolder, newName, currentFolder, setCurrentFolder });
-        await refreshListing();
-      }),
-    handleDeleteFolder: (folderPath: string, recursive: boolean) =>
-      runAction(() =>
-        deleteFolderEntry({
-          folderPath,
-          recursive,
-          activeBuildPath: activeBuildPathRef.current,
-          currentFolder,
-          clearActiveBuildRef: () => { activeBuildPathRef.current = null; },
-          setCurrentFolder,
-          ensureValidActive,
-          refreshListing,
-        }),
-      ),
-    openBuildsFolder: openBuildsLibraryFolderIpc,
+    ...crudHandlers,
+    openBuildsFolder: () => openBuildsLibraryFolderIpc(gameIdRef.current),
     updateActiveListingSummary,
     persistCharacterLink,
     inspectBuild: (rawPobInput: string, cachedXml?: string | null, previousSelection?: PobSetSelection | null) =>
-      inspectPobBuildSets({ rawPobInput, cachedXml, previousSelection }),
+      inspectPobBuildSets({ rawPobInput, cachedXml, previousSelection, gameId: gameIdRef.current }),
   };
 }

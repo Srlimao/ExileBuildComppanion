@@ -2,11 +2,12 @@ use std::fs;
 use std::path::Path;
 
 use crate::build_library_store::build_library_disk_ops::{
-    ensure_builds_root, load_library_state, save_build_file, save_library_state,
+    ensure_builds_root, ensure_builds_root_for_game, load_library_state_for_game,
+    save_build_file, save_library_state_for_game,
 };
 use crate::build_library_store::build_library_types::{
-    entry_summary_from_record, sanitize_segment, BuildLibraryEntrySummary, BuildLibraryListing,
-    BuildProgressSummary, SavedBuildFileRecord, LIBRARY_STATE_FILE_NAME,
+    entry_summary_from_record, normalize_game_id, sanitize_segment, BuildLibraryEntrySummary,
+    BuildLibraryListing, BuildProgressSummary, SavedBuildFileRecord, LIBRARY_STATE_FILE_NAME,
 };
 use crate::local_campaign_progress_disk_store::{
     load_campaign_progress_from_path, CAMPAIGN_PROGRESS_FILE_NAME,
@@ -79,6 +80,7 @@ pub fn migrate_legacy_profile_if_needed(app_data_dir: &Path) -> Result<Option<St
     };
     let record = SavedBuildFileRecord {
         schema_version: 1,
+        game_id: "poe1".to_string(),
         id: "migrated-legacy-build".to_string(),
         name,
         notes: String::new(),
@@ -141,9 +143,15 @@ pub(crate) fn pick_next_active_build_path(builds: &[BuildLibraryEntrySummary]) -
         .map(|b| b.relative_path.clone())
 }
 
-pub fn list_build_library(app_data_dir: &Path) -> Result<BuildLibraryListing, String> {
-    let root = ensure_builds_root(app_data_dir)?;
-    let _ = migrate_legacy_profile_if_needed(app_data_dir)?;
+pub fn list_build_library_for_game(
+    app_data_dir: &Path,
+    game_id: Option<&str>,
+) -> Result<BuildLibraryListing, String> {
+    let norm_game = normalize_game_id(game_id);
+    let root = ensure_builds_root_for_game(app_data_dir, Some(norm_game))?;
+    if norm_game == "poe1" {
+        let _ = migrate_legacy_profile_if_needed(app_data_dir)?;
+    }
 
     let mut folders = Vec::new();
     let mut builds = Vec::new();
@@ -151,10 +159,13 @@ pub fn list_build_library(app_data_dir: &Path) -> Result<BuildLibraryListing, St
     folders.sort_by_key(|a| a.to_ascii_lowercase());
     builds.sort_by(|a, b| b.updated_at_ms.cmp(&a.updated_at_ms));
 
-    let mut state = load_library_state(app_data_dir);
-    let resolved_active = state
-        .active_build_path
-        .as_deref()
+    let mut state = load_library_state_for_game(app_data_dir, Some(norm_game));
+    let preferred = state
+        .active_build_path_by_game
+        .get(norm_game)
+        .map(String::as_str)
+        .or(state.active_build_path.as_deref());
+    let resolved_active = preferred
         .and_then(|active| {
             builds
                 .iter()
@@ -165,7 +176,12 @@ pub fn list_build_library(app_data_dir: &Path) -> Result<BuildLibraryListing, St
 
     if state.active_build_path != resolved_active {
         state.active_build_path = resolved_active.clone();
-        let _ = save_library_state(app_data_dir, &state);
+        if let Some(ref p) = resolved_active {
+            state.active_build_path_by_game.insert(norm_game.to_string(), p.clone());
+        } else {
+            state.active_build_path_by_game.remove(norm_game);
+        }
+        let _ = save_library_state_for_game(app_data_dir, Some(norm_game), &state);
     }
 
     Ok(BuildLibraryListing {
@@ -174,6 +190,10 @@ pub fn list_build_library(app_data_dir: &Path) -> Result<BuildLibraryListing, St
         folders,
         builds,
     })
+}
+
+pub fn list_build_library(app_data_dir: &Path) -> Result<BuildLibraryListing, String> {
+    list_build_library_for_game(app_data_dir, Some("poe1"))
 }
 
 #[cfg(test)]

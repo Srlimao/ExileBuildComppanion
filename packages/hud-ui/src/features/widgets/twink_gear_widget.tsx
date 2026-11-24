@@ -1,5 +1,5 @@
 import { buildTwinkGearTimeline, type HudSessionSnapshot, type TwinkBracketId } from "@exile-hud/core";
-import { poe1GameAdapter, type TwinkArchetypeId } from "@exile-hud/game-data";
+import { getGameAdapter, type TwinkArchetypeId } from "@exile-hud/game-data";
 import { Check, ClipboardCopy } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useHudI18n } from "../i18n/hud_i18n_provider.js";
@@ -22,14 +22,15 @@ export function TwinkGearWidget({ snapshot, onPushToPcClipboard }: TwinkGearWidg
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const bracketRefs = useRef<Partial<Record<TwinkBracketId, HTMLElement | null>>>({});
 
+  const adapter = getGameAdapter(snapshot.gameId);
   const timeline = useMemo(
     () =>
       buildTwinkGearTimeline({
         snapshot,
-        adapter: poe1GameAdapter,
+        adapter,
         archetypeOverride,
       }),
-    [snapshot, archetypeOverride],
+    [snapshot, adapter, archetypeOverride],
   );
 
   useEffect(() => {

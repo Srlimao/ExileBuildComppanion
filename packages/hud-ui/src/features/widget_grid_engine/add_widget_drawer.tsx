@@ -1,4 +1,4 @@
-import type { WidgetGridItemLayout, WidgetId } from "@exile-hud/core";
+import type { SupportedGameId, WidgetGridItemLayout, WidgetId } from "@exile-hud/core";
 import { Plus, X } from "lucide-react";
 import { useAccessibleDialog } from "../hud_shell/use_accessible_dialog.js";
 import { useHudI18n } from "../i18n/hud_i18n_provider.js";
@@ -7,6 +7,7 @@ import { getLocalizedWidgetCatalog } from "./default_mode_grid_presets.js";
 
 interface AddWidgetDrawerProps {
   open: boolean;
+  gameId?: SupportedGameId;
   mode: WidgetGridMode;
   formFactor: WidgetGridFormFactor;
   activeItems: WidgetGridItemLayout[];
@@ -17,6 +18,7 @@ interface AddWidgetDrawerProps {
 
 export function AddWidgetDrawer({
   open,
+  gameId = "poe1",
   mode,
   formFactor,
   activeItems,
@@ -28,7 +30,7 @@ export function AddWidgetDrawer({
   const dialogRef = useAccessibleDialog({ open, onClose });
   if (!open) return null;
   const activeSet = new Set(activeItems.map((i) => i.widgetId));
-  const catalog = getLocalizedWidgetCatalog(locale);
+  const catalog = getLocalizedWidgetCatalog(locale, gameId);
   const modeLabel = mode === "TREE_COMPACT" ? msg.modes.TREE : msg.modes[mode];
 
   return (

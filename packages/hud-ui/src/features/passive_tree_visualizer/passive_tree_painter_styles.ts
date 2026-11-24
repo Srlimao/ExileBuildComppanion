@@ -6,6 +6,8 @@ import {
   EDGE_STYLE_FUTURE,
   EDGE_STYLE_NEW_BRACKET,
   EDGE_STYLE_RESPEC,
+  EDGE_STYLE_WEAPON_SET_1,
+  EDGE_STYLE_WEAPON_SET_2,
   NODE_ROLE_ALLOCATED,
   NODE_ROLE_EARLIER,
   NODE_ROLE_FUTURE,
@@ -120,6 +122,10 @@ export function resolveEdgeBucketColor(bucket: number, palette: PassiveTreeTheme
       return palette.earlier;
     case EDGE_STYLE_RESPEC:
       return palette.respec;
+    case EDGE_STYLE_WEAPON_SET_1:
+      return palette.weaponSet1;
+    case EDGE_STYLE_WEAPON_SET_2:
+      return palette.weaponSet2;
     case EDGE_STYLE_FUTURE:
     default:
       return palette.future;
@@ -130,6 +136,9 @@ export function resolveEdgeBucketWidth(bucket: number): number {
   switch (bucket) {
     case EDGE_STYLE_ALLOCATED:
       return 28;
+    case EDGE_STYLE_WEAPON_SET_1:
+    case EDGE_STYLE_WEAPON_SET_2:
+      return 26;
     case EDGE_STYLE_NEW_BRACKET:
       return 24;
     case EDGE_STYLE_EARLIER:

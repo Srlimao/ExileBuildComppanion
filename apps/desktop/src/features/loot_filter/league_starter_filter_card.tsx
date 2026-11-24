@@ -1,4 +1,4 @@
-import { poe1LeagueStarterFilterMeta } from "@exile-hud/game-data";
+import { getLeagueStarterFilterMetaForGame, type SupportedGameId } from "@exile-hud/game-data";
 import { useHudI18n } from "@exile-hud/hud-ui";
 import { CheckCircle2, Filter, FolderOpen } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -10,22 +10,24 @@ import {
   type LootFilterSelection,
 } from "./loot_filter_types_and_ipc.js";
 
-/** Renders the 1-click baked per-league NeverSink starter loot filter installer card. */
-export function LeagueStarterFilterCard() {
+/** Renders the 1-click baked NeverSink starter loot filter installer card for PoE 1 or PoE 2. */
+export function LeagueStarterFilterCard({ gameId = "poe1" }: { gameId?: SupportedGameId }) {
   const { appMsg } = useHudI18n();
-  const [selection, setSelection] = useState<LootFilterSelection>(
-    poe1LeagueStarterFilterMeta.defaultPresetId,
-  );
+  const filterMeta = getLeagueStarterFilterMetaForGame(gameId);
+  const [selection, setSelection] = useState<LootFilterSelection>(filterMeta.defaultPresetId);
   const [status, setStatus] = useState<LootFilterDirectoryStatus | null>(null);
   const [installing, setInstalling] = useState(false);
   const [installedFiles, setInstalledFiles] = useState<string[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    void getLootFilterStatusIpc()
+    setSelection(filterMeta.defaultPresetId);
+    setInstalledFiles(null);
+    setError(null);
+    void getLootFilterStatusIpc(gameId)
       .then(setStatus)
       .catch((err) => setError(err instanceof Error ? err.message : String(err)));
-  }, []);
+  }, [filterMeta.defaultPresetId, gameId]);
 
   const installedIds = status?.installedPresetIds ?? [];
   const hasAnyInstalled = installedIds.length > 0;
@@ -38,7 +40,7 @@ export function LeagueStarterFilterCard() {
     setInstalling(true);
     setError(null);
     try {
-      const result = await installLeagueStarterFilterIpc(selection);
+      const result = await installLeagueStarterFilterIpc(selection, gameId);
       setStatus(result.status);
       setInstalledFiles(result.installedFileNames);
     } catch (err) {
@@ -51,8 +53,8 @@ export function LeagueStarterFilterCard() {
   const handleOpenFolder = async () => {
     setError(null);
     try {
-      await openLootFilterFolderIpc();
-      const refreshed = await getLootFilterStatusIpc();
+      await openLootFilterFolderIpc(gameId);
+      const refreshed = await getLootFilterStatusIpc(gameId);
       setStatus(refreshed);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -77,6 +79,11 @@ export function LeagueStarterFilterCard() {
     },
   ];
 
+  const subtitle =
+    gameId === "poe2"
+      ? appMsg.poe2.lootFilterLeagueBadge(filterMeta.version)
+      : appMsg.desktop.lootFilterLeagueBadge(filterMeta.leagueName, filterMeta.version);
+
   return (
     <section className="rounded-xl bg-hud-surface border border-hud-hairline p-3.5 space-y-3">
       <div className="flex items-start justify-between gap-2">
@@ -84,12 +91,7 @@ export function LeagueStarterFilterCard() {
           <h2 className="text-xs font-semibold text-hud-text truncate">
             {appMsg.desktop.lootFilterCardTitle}
           </h2>
-          <p className="text-[11px] font-mono text-hud-muted mt-0.5 truncate">
-            {appMsg.desktop.lootFilterLeagueBadge(
-              poe1LeagueStarterFilterMeta.leagueName,
-              poe1LeagueStarterFilterMeta.version,
-            )}
-          </p>
+          <p className="text-[11px] font-mono text-hud-muted mt-0.5 truncate">{subtitle}</p>
         </div>
         <span
           className={`text-[10px] font-mono shrink-0 ${

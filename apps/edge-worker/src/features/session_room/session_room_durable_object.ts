@@ -1,4 +1,5 @@
 import {
+  resolveSnapshotGameId,
   ViewerCommandSchema,
   type HostToRoomMessage,
   type HudSessionSnapshot,
@@ -130,10 +131,12 @@ export class SessionRoomDurableObject extends DurableObject<unknown> {
     server.serializeAttachment(attachment);
 
     const snapshot = this.repo.getSnapshot();
-    const layouts = this.repo.getLayouts();
+    const activeGame = resolveSnapshotGameId(snapshot);
+    const layouts = this.repo.getLayouts(activeGame);
+    const layoutsByGame = this.repo.getAllLayoutsByGame();
     const viewers = this.collectViewerPresence();
     if (snapshot) {
-      this.sendJson(server, { type: "room:hydrated_state", snapshot, layouts, viewers });
+      this.sendJson(server, { type: "room:hydrated_state", snapshot, layouts, layoutsByGame, viewers });
     }
     if (role === "viewer") {
       this.broadcastAll({ type: "room:viewer_presence", viewers });
@@ -163,10 +166,12 @@ export class SessionRoomDurableObject extends DurableObject<unknown> {
     if (frameType === "viewer:ping" && attachment.role === "viewer") {
       const snapshot = this.repo.getSnapshot();
       if (snapshot) {
+        const activeGame = resolveSnapshotGameId(snapshot);
         this.sendJson(ws, {
           type: "room:hydrated_state",
           snapshot,
-          layouts: this.repo.getLayouts(),
+          layouts: this.repo.getLayouts(activeGame),
+          layoutsByGame: this.repo.getAllLayoutsByGame(),
           viewers: this.collectViewerPresence(),
         });
       } else {
@@ -198,9 +203,11 @@ export class SessionRoomDurableObject extends DurableObject<unknown> {
     const cmd = parsed.data;
 
     if (cmd.type === "viewer:save_widget_layout") {
-      this.repo.saveLayout(cmd.deviceFormFactor, cmd.mode, cmd.items);
+      const targetGame = cmd.gameId ?? resolveSnapshotGameId(this.repo.getSnapshot());
+      this.repo.saveLayout(cmd.deviceFormFactor, cmd.mode, cmd.items, targetGame);
       this.broadcastAll({
         type: "room:layout_updated",
+        gameId: targetGame,
         deviceFormFactor: cmd.deviceFormFactor,
         mode: cmd.mode,
         items: cmd.items,

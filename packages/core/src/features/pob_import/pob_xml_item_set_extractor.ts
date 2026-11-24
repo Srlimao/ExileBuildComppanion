@@ -145,7 +145,7 @@ function mapRawSlotsToEntries(rawSlots: any[], itemLookup: Map<string, string>):
 
 /** Extracts all named <ItemSet> blocks (or fallback top-level <Slot> entries) from parsed PoB XML. */
 export function extractPobItemSets(parsedXml: any, buildLevelFallback = 1): ExtractedItemSet[] {
-  const itemsNode = parsedXml?.PathOfBuilding?.Items;
+  const itemsNode = (parsedXml?.PathOfBuilding2 ?? parsedXml?.PathOfBuilding)?.Items;
   if (!itemsNode) return [];
 
   const itemLookup = buildItemLookupMap(itemsNode);

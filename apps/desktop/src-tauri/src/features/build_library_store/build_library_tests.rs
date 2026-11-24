@@ -4,10 +4,11 @@ use tempfile::tempdir;
 
 use super::*;
 use crate::build_library_store::build_library_disk_ops::{
-    load_build_file, save_build_file, update_build_progress,
+    load_build_file, save_build_file, save_build_file_for_game, update_build_progress,
 };
 use crate::build_library_store::build_library_folder_ops::{
-    create_folder, delete_build, delete_folder, duplicate_build, rename_folder, rename_or_move_build,
+    create_folder, create_folder_for_game, delete_build, delete_folder, duplicate_build,
+    rename_folder, rename_or_move_build,
 };
 use crate::build_library_store::build_library_types::{
     normalize_relative_build_path, normalize_relative_folder, sanitize_segment, BuildProgressPatch,
@@ -23,6 +24,7 @@ use crate::local_pob_profile_disk_store::{
 fn sample_record(id: &str, name: &str, updated_at_ms: u64) -> SavedBuildFileRecord {
     SavedBuildFileRecord {
         schema_version: 1,
+        game_id: "poe1".to_string(),
         id: id.to_string(),
         name: name.to_string(),
         notes: "Test note".to_string(),
@@ -208,4 +210,50 @@ fn migrates_legacy_pob_and_progress_once_preserving_legacy_files() {
     let second = list_build_library(app_data).unwrap();
     assert!(second.builds.is_empty());
     assert_eq!(fs::read_dir(app_data.join(BUILDS_DIR_NAME)).unwrap().count(), 0);
+}
+
+#[test]
+fn isolates_poe1_and_poe2_build_libraries_folders_and_active_paths() {
+    let dir = tempdir().expect("tempdir");
+    let app_data = dir.path();
+
+    create_folder_for_game(app_data, "", "PoE1 Starters", Some("poe1")).unwrap();
+    create_folder_for_game(app_data, "", "PoE2 Starters", Some("poe2")).unwrap();
+
+    let b1 = save_build_file_for_game(
+        app_data,
+        "PoE1 Starters",
+        sample_record("id-p1", "RF Witch", 1000),
+        None,
+        true,
+        Some("poe1"),
+    )
+    .unwrap();
+    let mut r2 = sample_record("id-p2", "Monk Invoker", 2000);
+    r2.game_id = "poe2".to_string();
+    let b2 = save_build_file_for_game(
+        app_data,
+        "PoE2 Starters",
+        r2,
+        None,
+        true,
+        Some("poe2"),
+    )
+    .unwrap();
+
+    assert_eq!(b1.game_id, "poe1");
+    assert_eq!(b2.game_id, "poe2");
+
+    let list_p1 = list_build_library_for_game(app_data, Some("poe1")).unwrap();
+    let list_p2 = list_build_library_for_game(app_data, Some("poe2")).unwrap();
+
+    assert_eq!(list_p1.builds.len(), 1);
+    assert_eq!(list_p1.builds[0].name, "RF Witch");
+    assert_eq!(list_p1.folders, vec!["PoE1 Starters"]);
+    assert_eq!(list_p1.active_build_path.as_deref(), Some("PoE1 Starters/RF Witch.json"));
+
+    assert_eq!(list_p2.builds.len(), 1);
+    assert_eq!(list_p2.builds[0].name, "Monk Invoker");
+    assert_eq!(list_p2.folders, vec!["PoE2 Starters"]);
+    assert_eq!(list_p2.active_build_path.as_deref(), Some("PoE2 Starters/Monk Invoker.json"));
 }

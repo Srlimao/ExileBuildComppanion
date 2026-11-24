@@ -6,14 +6,22 @@ use tauri::{AppHandle, Emitter, Manager};
 use crate::client_txt_byte_offset_tailer::read_recent_bootstrap_lines;
 use crate::foreground_poe_hotkey_poller::poll_foreground_poe_hotkey;
 use crate::overlay_window_controller::{poll_overlay_focus_and_hotkeys, OverlaySharedState};
-use crate::poe_process_heartbeat::find_running_poe_process;
+use crate::poe_process_heartbeat::{find_running_poe_process_for_game, PoeGameKind};
 use crate::HostSharedState;
 
 /// Spawns async Client.txt tailing, PoE process monitoring, and foreground hotkey observation.
 pub fn spawn_background_watchers(app: &AppHandle, shared: &HostSharedState) {
+    let initial_game = shared
+        .active_game
+        .lock()
+        .map(|g| *g)
+        .unwrap_or(PoeGameKind::Poe1);
     let active_pid = Arc::new(AtomicU32::new(
-        find_running_poe_process().map(|p| p.pid).unwrap_or(0),
+        find_running_poe_process_for_game(initial_game)
+            .map(|p| p.pid)
+            .unwrap_or(0),
     ));
+
     let log_app = app.clone();
     let tailer_ref = Arc::clone(&shared.tailer);
     tauri::async_runtime::spawn(async move {
@@ -32,15 +40,25 @@ pub fn spawn_background_watchers(app: &AppHandle, shared: &HostSharedState) {
 
     let proc_app = app.clone();
     let proc_pid = Arc::clone(&active_pid);
+    let active_game_ref = Arc::clone(&shared.active_game);
     let hotkey_tracker_reset = Arc::clone(&shared.tree_hotkey_tracker);
     let tailer_switch_ref = Arc::clone(&shared.tailer);
     let manual_override_ref = Arc::clone(&shared.manual_log_override);
     tauri::async_runtime::spawn(async move {
         let mut last_state: Option<bool> = None;
+        let mut last_game: Option<PoeGameKind> = None;
         let mut interval = tokio::time::interval(Duration::from_secs(3));
         loop {
             interval.tick().await;
-            let proc_info = find_running_poe_process();
+            let current_game = active_game_ref
+                .lock()
+                .map(|g| *g)
+                .unwrap_or(PoeGameKind::Poe1);
+            if last_game != Some(current_game) {
+                last_game = Some(current_game);
+                last_state = None;
+            }
+            let proc_info = find_running_poe_process_for_game(current_game);
             proc_pid.store(proc_info.as_ref().map(|p| p.pid).unwrap_or(0), Ordering::Relaxed);
             let running = proc_info.is_some();
             if last_state != Some(running) {

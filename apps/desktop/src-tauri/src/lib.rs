@@ -38,6 +38,9 @@ pub(crate) mod build_library_store;
 #[path = "features/campaign_progress_store/local_campaign_progress_disk_store.rs"]
 pub(crate) mod local_campaign_progress_disk_store;
 
+#[path = "features/loot_filter_store/baked_loot_filter_presets.rs"]
+pub(crate) mod baked_loot_filter_presets;
+
 #[path = "features/loot_filter_store/local_loot_filter_installer.rs"]
 pub(crate) mod local_loot_filter_installer;
 
@@ -77,9 +80,11 @@ mod tauri_host_ipc_commands;
 use character_window_http_poller::CircuitBreakerState;
 use client_txt_byte_offset_tailer::ByteOffsetTailer;
 use client_txt_path_detector::detect_client_txt_path;
+use poe_process_heartbeat::PoeGameKind;
 
 #[derive(Default)]
 pub struct HostSharedState {
+    pub active_game: Arc<Mutex<PoeGameKind>>,
     pub tailer: Arc<Mutex<ByteOffsetTailer>>,
     pub circuit_breaker: Arc<Mutex<CircuitBreakerState>>,
     pub manual_log_override: Arc<Mutex<bool>>,
@@ -139,6 +144,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             tauri_host_ipc_commands::detect_client_log_path,
+            tauri_host_ipc_commands::set_active_game_mode,
             tauri_host_ipc_commands::set_client_log_path,
             tauri_host_ipc_commands::read_bootstrap_log_lines,
             tauri_host_ipc_commands::check_poe_running,

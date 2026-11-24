@@ -1,23 +1,11 @@
-import type { GameAdapter, GemDefinition } from "@exile-hud/game-data";
+import type { GameAdapter, GemDefinition, Poe2GemKind, SupportedGameId } from "@exile-hud/game-data";
 import { extractAscendancyNoteOrderIds } from "../lab_compass/ascendancy_notes_order_parser.js";
-import { decodeBase64UrlToBytes } from "./pob_code_zlib_xml_decoder.js";
+import { extractWeaponSetNodesFromSpec, resolveGemWithAliases } from "./pob2_xml_extensions.js";
+import { decodeBase64UrlToBytes, getPobXmlRoot } from "./pob_code_zlib_xml_decoder.js";
 import { extractPobItemSets, type ExtractedItemSet } from "./pob_xml_item_set_extractor.js";
 import { cleanPobColorCodes, inferLevelFromTitle, parseXmlMasteryEffectsAttr } from "./pob_xml_text_helpers.js";
 
 export { cleanPobColorCodes, inferLevelFromTitle };
-
-const POB_GEM_ID_REMAP: Record<string, string> = {
-  "Metadata/Items/Gems/Smite": "Metadata/Items/Gems/SkillGemSmite",
-  "Metadata/Items/Gems/ConsecratedPath": "Metadata/Items/Gems/SkillGemConsecratedPath",
-  "Metadata/Items/Gems/VaalAncestralWarchief": "Metadata/Items/Gems/SkillGemVaalAncestralWarchief",
-  "Metadata/Items/Gems/HeraldOfAgony": "Metadata/Items/Gems/SkillGemHeraldOfAgony",
-  "Metadata/Items/Gems/HeraldOfPurity": "Metadata/Items/Gems/SkillGemHeraldOfPurity",
-  "Metadata/Items/Gems/ScourgeArrow": "Metadata/Items/Gems/SkillGemScourgeArrow",
-  "Metadata/Items/Gems/RainOfSpores": "Metadata/Items/Gems/SkillGemToxicRain",
-  "Metadata/Items/Gems/SummonRelic": "Metadata/Items/Gems/SkillGemSummonRelic",
-  "Metadata/Items/Gems/SkillGemNewPhaseRun": "Metadata/Items/Gems/SkillGemPhaseRun",
-  "Metadata/Items/Gems/SkillGemNewArcticArmour": "Metadata/Items/Gems/SkillGemArcticArmour",
-};
 
 export interface ExtractedGemRef {
   gemId: string;
@@ -25,6 +13,11 @@ export interface ExtractedGemRef {
   isSupport: boolean;
   requiredLevel: number;
   attribute: string;
+  gemKind?: Poe2GemKind;
+  uncutTier?: number;
+  spiritCost?: number;
+  enableWeaponSet1?: boolean;
+  enableWeaponSet2?: boolean;
 }
 
 export interface ExtractedSkillGroup {
@@ -47,9 +40,12 @@ export interface ExtractedTreeSpec {
   minLevel: number;
   nodeIds: string[];
   masteries: Record<string, string>;
+  weaponSet1NodeIds?: string[];
+  weaponSet2NodeIds?: string[];
 }
 
 export interface ExtractedPobBuild {
+  detectedGameId?: SupportedGameId;
   buildName: string;
   characterClass: string;
   ascendancyName: string;
@@ -101,19 +97,7 @@ export function normalizeGemId(
   adapter: GameAdapter,
   byLowerName: Map<string, GemDefinition>,
 ): GemDefinition | null {
-  const gems = adapter.getGems();
-  if (rawGemId) {
-    let id = POB_GEM_ID_REMAP[rawGemId] ?? rawGemId;
-    id = adapter.getVaalGemLookup()[id] ?? id;
-    id = adapter.getAwakenedGemLookup()[id] ?? id;
-    const found = gems[id];
-    if (found) return found;
-  }
-  if (nameSpec) {
-    const cleaned = cleanPobColorCodes(nameSpec).replace(/^Vaal\s+/i, "").toLowerCase();
-    return byLowerName.get(cleaned) ?? byLowerName.get(cleanPobColorCodes(nameSpec).toLowerCase()) ?? null;
-  }
-  return null;
+  return resolveGemWithAliases(rawGemId, undefined, nameSpec, adapter, byLowerName);
 }
 
 function decodeTreeUrlNodes(url: string): { nodeIds: string[]; masteries: Record<string, string> } {
@@ -154,9 +138,9 @@ function decodeTreeUrlNodes(url: string): { nodeIds: string[]; masteries: Record
 }
 
 export function extractPobBuild(parsedXml: Record<string, any>, adapter: GameAdapter, buildNameFallback = "Imported PoB"): ExtractedPobBuild {
-  const root = parsedXml.PathOfBuilding ?? {};
+  const { root, detectedGameId } = getPobXmlRoot(parsedXml);
   const buildNode = root.Build ?? {};
-  const characterClass = String(buildNode["@_className"] ?? "Witch");
+  const characterClass = String(buildNode["@_className"] ?? (adapter.gameId === "poe2" ? "Monk" : "Witch"));
   const ascendancyName = String(buildNode["@_ascendClassName"] ?? "None");
   const rawBandit = String(buildNode["@_bandit"] ?? "None");
   const bandit = (["None", "Oak", "Kraityn", "Alira"].includes(rawBandit) ? rawBandit : "None") as ExtractedPobBuild["bandit"];
@@ -189,15 +173,22 @@ export function extractPobBuild(parsedXml: Record<string, any>, adapter: GameAda
       const gems: ExtractedGemRef[] = [];
       for (const gm of rawGems) {
         if (gm["@_enabled"] === "false") continue;
-        const resolved = normalizeGemId(gm["@_gemId"], gm["@_nameSpec"], adapter, byLowerName);
+        const resolved = resolveGemWithAliases(gm["@_gemId"], gm["@_skillId"], gm["@_nameSpec"], adapter, byLowerName);
         if (!resolved) continue;
         maxGemLevel = Math.max(maxGemLevel, resolved.required_level);
+        const ws1 = gm["@_enableGlobal1"] !== undefined ? gm["@_enableGlobal1"] !== "false" : undefined;
+        const ws2 = gm["@_enableGlobal2"] !== undefined ? gm["@_enableGlobal2"] === "true" : undefined;
         gems.push({
           gemId: resolved.id,
           name: resolved.name,
           isSupport: resolved.is_support,
           requiredLevel: resolved.required_level,
           attribute: resolved.primary_attribute,
+          ...(resolved.gem_kind ? { gemKind: resolved.gem_kind } : {}),
+          ...(resolved.uncut_tier ? { uncutTier: resolved.uncut_tier } : {}),
+          ...(resolved.spirit_cost ? { spiritCost: resolved.spirit_cost } : {}),
+          ...(ws1 !== undefined ? { enableWeaponSet1: ws1 } : {}),
+          ...(ws2 !== undefined ? { enableWeaponSet2: ws2 } : {}),
         });
       }
       if (gems.length > 0) {
@@ -222,14 +213,16 @@ export function extractPobBuild(parsedXml: Record<string, any>, adapter: GameAda
     const urlText = Array.isArray(specEl.URL) ? String(specEl.URL[0] ?? "") : String(specEl.URL ?? "");
     const decodedUrl = urlText ? decodeTreeUrlNodes(urlText) : { nodeIds: [], masteries: {} };
     const xmlMasteries = parseXmlMasteryEffectsAttr(specEl["@_masteryEffects"]);
+    const weaponSets = extractWeaponSetNodesFromSpec(specEl);
     const nodeIds = csvNodes.length > 0 ? csvNodes : decodedUrl.nodeIds;
     return {
       id,
       title,
-      treeVersion: String(specEl["@_treeVersion"] ?? "3_30"),
+      treeVersion: String(specEl["@_treeVersion"] ?? (adapter.gameId === "poe2" ? "poe2_0_4" : "3_30")),
       minLevel: inferLevelFromTitle(title, idx === 0 ? 1 : 50),
       nodeIds,
       masteries: { ...decodedUrl.masteries, ...xmlMasteries },
+      ...weaponSets,
     };
   });
 
@@ -241,6 +234,7 @@ export function extractPobBuild(parsedXml: Record<string, any>, adapter: GameAda
     : [];
 
   return {
+    detectedGameId,
     buildName: cleanPobColorCodes(buildNode["@_buildName"]) || buildNameFallback,
     characterClass,
     ascendancyName,

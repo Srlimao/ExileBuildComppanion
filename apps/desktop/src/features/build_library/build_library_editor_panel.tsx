@@ -1,4 +1,4 @@
-import type { PobBuildPreview, PobSetSelection } from "@exile-hud/core";
+import type { PobBuildPreview, PobSetSelection, SupportedGameId } from "@exile-hud/core";
 import { useHudI18n } from "@exile-hud/hud-ui";
 import { ArrowLeft, Save, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -22,6 +22,7 @@ export interface BuildEditorSubmitPayload {
 }
 
 interface BuildLibraryEditorPanelProps {
+  activeGameId?: SupportedGameId;
   mode: Exclude<BuildEditorMode, { kind: "closed" }>;
   allFolders: readonly string[];
   activeBuildPath: string | null;
@@ -40,6 +41,7 @@ type EditorTab = "pob" | "meta";
 
 /** Streamlined 2-tab PoB build editor tailored for the compact tray companion layout. */
 export function BuildLibraryEditorPanel({
+  activeGameId,
   mode,
   allFolders,
   activeBuildPath,
@@ -193,6 +195,7 @@ export function BuildLibraryEditorPanel({
 
       {editorTab === "pob" ? (
         <BuildLibraryEditorPobTab
+          activeGameId={activeGameId}
           name={name}
           folderPath={folderPath}
           allFolders={allFolders}

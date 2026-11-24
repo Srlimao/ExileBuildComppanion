@@ -1,4 +1,4 @@
-import type { HudSessionSnapshot, PobBuildPreview, PobSetSelection } from "@exile-hud/core";
+import type { HudSessionSnapshot, PobBuildPreview, PobSetSelection, SupportedGameId } from "@exile-hud/core";
 import { useHudI18n } from "@exile-hud/hud-ui";
 import { useState } from "react";
 import { ActiveBuildRunCard } from "./active_build_run_card.js";
@@ -20,6 +20,7 @@ import {
 } from "./build_library_types.js";
 
 interface BuildLibraryManagerViewProps {
+  activeGameId?: SupportedGameId;
   listing: BuildLibraryListing | null;
   snapshot: HudSessionSnapshot | null;
   currentFolder: string;
@@ -56,6 +57,7 @@ export function BuildLibraryManagerView(props: BuildLibraryManagerViewProps) {
   if (props.editorMode.kind !== "closed") {
     return (
       <BuildLibraryEditorPanel
+        activeGameId={props.activeGameId}
         mode={props.editorMode}
         allFolders={props.listing?.folders ?? []}
         activeBuildPath={props.listing?.activeBuildPath ?? null}

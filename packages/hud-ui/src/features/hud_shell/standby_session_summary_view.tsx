@@ -1,4 +1,5 @@
 import type { HudSessionSnapshot } from "@exile-hud/core";
+import { getGameAdapter } from "@exile-hud/game-data";
 import { useHudI18n } from "../i18n/hud_i18n_provider.js";
 import { formatRunTimerClock, useLiveRunElapsedMs } from "../widgets/run_timer_clock_tracker.js";
 
@@ -9,7 +10,9 @@ export function StandbySessionSummaryView({
   snapshot: HudSessionSnapshot;
   onOverridePreview: () => void;
 }) {
-  const { msg } = useHudI18n();
+  const { locale, msg, appMsg } = useHudI18n();
+  const adapter = getGameAdapter(snapshot.gameId);
+  const stageCount = adapter.getCampaignStageCount();
   const liveElapsedMs = useLiveRunElapsedMs(snapshot);
   const completedCount = snapshot.checkpoints.filter((c) => c.completed).length;
   const pct = snapshot.checkpoints.length > 0 ? Math.round((completedCount / snapshot.checkpoints.length) * 100) : 0;
@@ -19,7 +22,7 @@ export function StandbySessionSummaryView({
       <div className="flex flex-wrap items-baseline justify-between gap-4 pb-5 border-b border-hud-hairline">
         <div>
           <p className="text-xs uppercase tracking-[0.14em] text-hud-muted font-semibold">
-            {msg.standby.eyebrow}
+            {snapshot.gameId === "poe2" ? appMsg.poe2.standbyEyebrow : msg.standby.eyebrow}
           </p>
           <h2 className="text-2xl font-bold text-hud-text mt-1">{snapshot.buildName}</h2>
         </div>
@@ -61,12 +64,12 @@ export function StandbySessionSummaryView({
           {msg.standby.actSplitTimes}
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-x-6 gap-y-4">
-          {Array.from({ length: 10 }, (_, idx) => {
+          {Array.from({ length: stageCount }, (_, idx) => {
             const act = idx + 1;
             const splitMs = snapshot.actSplitsMs[`act_${act}`];
             return (
               <div key={act}>
-                <div className="text-xs text-hud-muted">{msg.standby.actLabel(act)}</div>
+                <div className="text-xs text-hud-muted">{adapter.getActDisplayLabel(act, locale)}</div>
                 <div className="text-base font-mono tabular-nums text-hud-text mt-0.5">
                   {splitMs ? formatRunTimerClock(splitMs) : "--:--:--"}
                 </div>

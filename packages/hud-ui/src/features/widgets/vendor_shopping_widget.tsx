@@ -1,6 +1,7 @@
 import type { GemAcquisitionStep, HudSessionSnapshot } from "@exile-hud/core";
 import { useState } from "react";
 import { useHudI18n } from "../i18n/hud_i18n_provider.js";
+import { Poe2UncutGemsPanel } from "./poe2_uncut_gems_panel.js";
 
 interface VendorShoppingWidgetProps {
   snapshot: HudSessionSnapshot;
@@ -20,6 +21,9 @@ function isGemDone(g: GemAcquisitionStep): boolean {
 export function VendorShoppingWidget({ snapshot, onToggleGem }: VendorShoppingWidgetProps) {
   const { msg } = useHudI18n();
   const [showCompleted, setShowCompleted] = useState(false);
+  if (snapshot.gameId === "poe2") {
+    return <Poe2UncutGemsPanel snapshot={snapshot} onToggleGem={onToggleGem} />;
+  }
   const actGems = snapshot.gemSteps.filter((g) => g.act <= Math.max(snapshot.currentAct + 1, 2));
   const pendingGems = actGems.filter((g) => !isGemDone(g));
   const doneCount = actGems.length - pendingGems.length;

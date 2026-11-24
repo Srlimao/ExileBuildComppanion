@@ -9,11 +9,14 @@ interface RegexSyncWidgetProps {
 }
 
 export function RegexSyncWidget({ snapshot, onPushToPcClipboard }: RegexSyncWidgetProps) {
-  const { msg } = useHudI18n();
+  const { msg, appMsg } = useHudI18n();
   const [copiedLocal, setCopiedLocal] = useState(false);
   const [pushedToPc, setPushedToPc] = useState(false);
   const [clipboardError, setClipboardError] = useState<string | null>(null);
-  const regex = snapshot.activeVendorRegex || "g-g-r|b-b-g|nne";
+  const isPoe2 = snapshot.gameId === "poe2";
+  const regex =
+    snapshot.activeVendorRegex ||
+    (isPoe2 ? "movement speed|to level of|spirit|socket" : "g-g-r|b-b-g|nne");
 
   useEffect(() => {
     if (!pushedToPc) return;
@@ -53,8 +56,11 @@ export function RegexSyncWidget({ snapshot, onPushToPcClipboard }: RegexSyncWidg
         </span>
       </div>
 
-      <div className="rounded-lg bg-hud-subtle px-3 py-2.5 font-mono text-sm text-hud-accent break-all select-all">
-        {regex}
+      <div className="space-y-1">
+        <div className="rounded-lg bg-hud-subtle px-3 py-2.5 font-mono text-sm text-hud-accent break-all select-all">
+          {regex}
+        </div>
+        {isPoe2 && <p className="text-[11px] text-hud-muted">{appMsg.poe2.vendorRegexHint}</p>}
       </div>
 
       <div className="space-y-1.5">

@@ -13,7 +13,7 @@ use crate::overlay_monitor_docking::{
     clamp_bounds_to_monitors, collect_monitor_work_rects, compute_dock_bounds,
     resolve_target_monitor_rect,
 };
-use crate::poe_process_heartbeat::find_running_poe_process;
+use crate::poe_process_heartbeat::{find_running_poe_process_for_game, PoeGameKind};
 
 pub const OVERLAY_WINDOW_LABEL: &str = "overlay";
 pub const OVERLAY_CONFIG_UPDATED_EVENT: &str = "overlay-config-updated";
@@ -154,10 +154,20 @@ fn set_overlay_visible_no_activate(win: &WebviewWindow, visible: bool) {
     }
 }
 
-pub fn resolve_overlay_poe_pid(state: &OverlaySharedState, refresh_if_zero: bool) -> u32 {
+pub fn resolve_overlay_poe_pid(
+    app: &AppHandle,
+    state: &OverlaySharedState,
+    refresh_if_zero: bool,
+) -> u32 {
     let cached = state.cached_poe_pid.load(Ordering::Relaxed);
     if cached == 0 && refresh_if_zero {
-        let pid = find_running_poe_process().map(|p| p.pid).unwrap_or(0);
+        let active_game = app
+            .try_state::<crate::HostSharedState>()
+            .and_then(|s| s.active_game.lock().ok().map(|g| *g))
+            .unwrap_or(PoeGameKind::Poe1);
+        let pid = find_running_poe_process_for_game(active_game)
+            .map(|p| p.pid)
+            .unwrap_or(0);
         if pid != 0 {
             state.cached_poe_pid.store(pid, Ordering::Relaxed);
         }
@@ -172,7 +182,7 @@ pub fn sync_overlay_window_chrome(
     config: &SavedOverlayConfigRecord,
     reapply_bounds: bool,
 ) -> Result<(), String> {
-    let poe_pid = resolve_overlay_poe_pid(state, reapply_bounds);
+    let poe_pid = resolve_overlay_poe_pid(app, state, reapply_bounds);
     let (fg_poe, fg_self) = foreground_focus_flags(poe_pid);
     let desired_visible =
         config.enabled && (config.pin_on_desktop || poe_pid == 0 || fg_poe || fg_self || reapply_bounds);

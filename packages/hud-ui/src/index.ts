@@ -6,6 +6,7 @@ export { useAccessibleDialog } from "./features/hud_shell/use_accessible_dialog.
 export { HudThemeProvider, useHudTheme } from "./features/theme/hud_theme_provider.js";
 export type { HudA11yMessages } from "./features/i18n/hud_a11y_messages.js";
 export { HudI18nProvider, useHudI18n, type AppMessagesBundle, type DesktopSurfaceMessages, type HudI18nContextValue, type HudMessagesBundle } from "./features/i18n/hud_i18n_provider.js";
+export { POE2_SURFACE_MESSAGES, type Poe2SurfaceMessages } from "./features/i18n/poe2_surface_messages.js";
 export {
   applyHudLocaleToDocument,
   DEFAULT_HUD_LOCALE,
@@ -62,13 +63,17 @@ export {
   type AdaptiveDprEnv,
 } from "./features/passive_tree_visualizer/passive_tree_canvas_painter.js";
 export {
+  buildTreeGeometryFromData,
   computeBracketOverviewBounds,
   computeNextPassivesBounds,
   computeNodeSetBounds,
   getBuiltPoe1TreeGeometry,
+  getCachedPassiveTreeGeometry,
+  loadBuiltPassiveTreeGeometry,
   resolveVisibleAscendancies,
   type BuiltPoe1TreeGeometry,
   type BuiltTreeEdge,
+  type BuiltTreeGeometry,
   type TreeWorldBounds,
 } from "./features/passive_tree_visualizer/passive_tree_geometry_builder.js";
 export {
@@ -80,11 +85,15 @@ export {
   EDGE_STYLE_NEW_BRACKET,
   EDGE_STYLE_NONE,
   EDGE_STYLE_RESPEC,
+  EDGE_STYLE_WEAPON_SET_1,
+  EDGE_STYLE_WEAPON_SET_2,
   hitTestPassiveTreeNode,
   NODE_FLAG_POB_MASTERY,
   NODE_FLAG_RESPEC_DASH,
   NODE_FLAG_SEARCH,
   NODE_FLAG_SELECTED,
+  NODE_FLAG_WEAPON_SET_1,
+  NODE_FLAG_WEAPON_SET_2,
   NODE_ROLE_ALLOCATED,
   NODE_ROLE_EARLIER,
   NODE_ROLE_FUTURE,
@@ -96,6 +105,7 @@ export {
   type SpatialTreeIndex,
   type SpatialTreeQueryResult,
   type TreeHighlightLookup,
+  type WeaponSetOverlayFilter,
 } from "./features/passive_tree_visualizer/passive_tree_spatial_index.js";
 export {
   clearSavedTreeViewportCache,

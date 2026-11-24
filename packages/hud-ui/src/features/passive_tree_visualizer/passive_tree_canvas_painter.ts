@@ -8,12 +8,13 @@ import {
 } from "./passive_tree_painter_styles.js";
 import {
   EDGE_STYLE_ALLOCATED,
-  EDGE_STYLE_FUTURE,
-  EDGE_STYLE_RESPEC,
+  EDGE_STYLE_WEAPON_SET_2,
   NODE_FLAG_POB_MASTERY,
   NODE_FLAG_RESPEC_DASH,
   NODE_FLAG_SEARCH,
   NODE_FLAG_SELECTED,
+  NODE_FLAG_WEAPON_SET_1,
+  NODE_FLAG_WEAPON_SET_2,
   queryVisibleTreePrimitives,
   type SpatialTreeIndex,
   type TreeHighlightLookup,
@@ -36,7 +37,7 @@ const TAU = Math.PI * 2;
 const RESPEC_EDGE_DASH = [32, 20];
 const RESPEC_NODE_DASH = [16, 10];
 const EMPTY_DASH: number[] = [];
-const bucketHasEdge = new Uint8Array(6);
+const bucketHasEdge = new Uint8Array(8);
 
 /** Paints a frustum-culled, batched, zoom-LOD frame of the PoE1 passive tree onto a 2D canvas. */
 export function paintPassiveTreeFrame(
@@ -138,7 +139,7 @@ export function paintPassiveTreeFrame(
 
   ctx.globalAlpha = 0.92;
   ctx.lineCap = lineCap;
-  for (let bucket = EDGE_STYLE_FUTURE; bucket >= EDGE_STYLE_ALLOCATED; bucket--) {
+  for (let bucket = EDGE_STYLE_WEAPON_SET_2; bucket >= EDGE_STYLE_ALLOCATED; bucket--) {
     if (bucketHasEdge[bucket] === 0) continue;
     ctx.beginPath();
     for (let i = 0; i < edgeCount; i++) {
@@ -147,13 +148,13 @@ export function paintPassiveTreeFrame(
     }
     ctx.strokeStyle = resolveEdgeBucketColor(bucket, palette);
     ctx.lineWidth = resolveEdgeBucketWidth(bucket);
-    ctx.setLineDash(bucket === EDGE_STYLE_RESPEC && allowDashes ? RESPEC_EDGE_DASH : EMPTY_DASH);
+    ctx.setLineDash(bucket === 4 && allowDashes ? RESPEC_EDGE_DASH : EMPTY_DASH);
     ctx.stroke();
   }
   ctx.setLineDash(EMPTY_DASH);
   ctx.globalAlpha = 1;
 
-  // Pass 4: Highlighted, searched, and selected nodes.
+  // Pass 4: Highlighted, searched, weapon-set, and selected nodes.
   for (let i = 0; i < nodeCount; i++) {
     const nIdx = nodeIndices[i]!;
     const role = lookup.nodeRoles[nIdx]!;
@@ -164,6 +165,15 @@ export function paintPassiveTreeFrame(
     const hasPobMastery = (flags & NODE_FLAG_POB_MASTERY) !== 0;
     const r = n.isKeystone ? 48 : n.isNotable || hasPobMastery ? 36 : n.isJewelSocket ? 32 : 23;
     const fill = resolveRoleColor(role, n.isMastery, palette);
+
+    if ((flags & NODE_FLAG_WEAPON_SET_1) !== 0 || (flags & NODE_FLAG_WEAPON_SET_2) !== 0) {
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, r + 12, 0, TAU);
+      ctx.strokeStyle =
+        (flags & NODE_FLAG_WEAPON_SET_1) !== 0 ? palette.weaponSet1 : palette.weaponSet2;
+      ctx.lineWidth = 8;
+      ctx.stroke();
+    }
 
     if ((flags & NODE_FLAG_SEARCH) !== 0) {
       ctx.globalAlpha = 0.9;

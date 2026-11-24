@@ -1,8 +1,10 @@
 import {
   createEmptyCampaignProgress,
   extractCampaignProgress,
+  resolveSnapshotGameId,
   type HudSessionSnapshot,
   type SavedCampaignProgress,
+  type SupportedGameId,
 } from "@exile-hud/core";
 import { updateBuildProgressIpc } from "../build_library/build_library_ipc_client.js";
 import {
@@ -19,6 +21,7 @@ const WEB_PROGRESS_FALLBACK_KEY = "exile_saved_campaign_progress_v1";
 const SAVE_DEBOUNCE_MS = 150;
 
 interface PendingBuildProgressSave {
+  gameId: SupportedGameId;
   activeBuildPath: string | null;
   progress: SavedCampaignProgress;
   patch: BuildProgressPatch | null;
@@ -29,7 +32,9 @@ let pendingSave: PendingBuildProgressSave | null = null;
 
 async function writePendingSave(target: PendingBuildProgressSave): Promise<void> {
   if (target.activeBuildPath && target.patch) {
-    await updateBuildProgressIpc(target.activeBuildPath, target.patch).catch(() => undefined);
+    await updateBuildProgressIpc(target.activeBuildPath, target.patch, target.gameId).catch(
+      () => undefined,
+    );
     return;
   }
   await persistCampaignProgress(target.progress);
@@ -121,6 +126,7 @@ export function persistSnapshotProgressIfNeeded(
 ): void {
   if (eventTag === "switch_build") return;
 
+  const gameId = resolveSnapshotGameId(next);
   const activeBuildPath = activeBuildCtx?.activeBuildPath ?? null;
 
   if (eventTag === "reset_progress" || eventTag === "viewer_reset_progress") {
@@ -131,13 +137,17 @@ export function persistSnapshotProgressIfNeeded(
     pendingSave = null;
     const emptyProgress = createEmptyCampaignProgress();
     if (activeBuildPath) {
-      void updateBuildProgressIpc(activeBuildPath, {
-        progress: emptyProgress,
-        summary: buildSummaryFromSnapshot(next),
-        runElapsedMs: 0,
-        actSplitsMs: {},
-        updatedAtMs: Date.now(),
-      }).catch(() => undefined);
+      void updateBuildProgressIpc(
+        activeBuildPath,
+        {
+          progress: emptyProgress,
+          summary: buildSummaryFromSnapshot(next),
+          runElapsedMs: 0,
+          actSplitsMs: {},
+          updatedAtMs: Date.now(),
+        },
+        gameId,
+      ).catch(() => undefined);
       activeBuildCtx?.onSummaryUpdated?.(next);
     } else {
       void persistCampaignProgress(emptyProgress);
@@ -162,7 +172,7 @@ export function persistSnapshotProgressIfNeeded(
 
   activeBuildCtx?.onSummaryUpdated?.(next);
 
-  const payload: PendingBuildProgressSave = { activeBuildPath, progress, patch };
+  const payload: PendingBuildProgressSave = { gameId, activeBuildPath, progress, patch };
   if (eventTag === "viewer_checkpoint" || eventTag === "viewer_gem") {
     if (debounceTimer !== null) {
       window.clearTimeout(debounceTimer);
@@ -192,11 +202,16 @@ export function persistActiveBuildCharacterLink(
   activeBuildPath: string | null,
   characterName: string,
   selectedLeague?: string,
+  gameId: SupportedGameId = "poe1",
 ): void {
   if (!activeBuildPath) return;
-  void updateBuildProgressIpc(activeBuildPath, {
-    characterName,
-    ...(selectedLeague !== undefined ? { selectedLeague } : {}),
-    updatedAtMs: Date.now(),
-  }).catch(() => undefined);
+  void updateBuildProgressIpc(
+    activeBuildPath,
+    {
+      characterName,
+      ...(selectedLeague !== undefined ? { selectedLeague } : {}),
+      updatedAtMs: Date.now(),
+    },
+    gameId,
+  ).catch(() => undefined);
 }

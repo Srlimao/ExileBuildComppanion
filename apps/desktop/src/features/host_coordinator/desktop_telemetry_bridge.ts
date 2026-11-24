@@ -20,10 +20,11 @@ import {
   type HudSessionSnapshot,
   type PobBuildPreview,
   type PobSetSelection,
+  type SupportedGameId,
   type ValidatedPobBuild,
   type ViewerToRoomMessage,
 } from "@exile-hud/core";
-import { poe1GameAdapter } from "@exile-hud/game-data";
+import { getGameAdapter, loadPassiveTreeDataset } from "@exile-hud/game-data";
 import type { HudLocale } from "@exile-hud/hud-ui";
 import { DEFAULT_STARTER_POB_XML } from "./pob_profile_persistence_client.js";
 
@@ -43,10 +44,12 @@ export async function inspectPobBuildSets(params: {
   rawPobInput: string;
   cachedXml?: string | null;
   previousSelection?: PobSetSelection | null;
+  gameId?: SupportedGameId;
 }): Promise<{ decodedXml: string; preview: PobBuildPreview; selection: PobSetSelection }> {
+  const adapter = getGameAdapter(params.gameId);
   const source = params.cachedXml?.trim() ? params.cachedXml : params.rawPobInput;
   const decoded = await resolveAndDecodePobInput(source);
-  const extracted = extractPobBuild(decoded.parsedXml, poe1GameAdapter);
+  const extracted = extractPobBuild(decoded.parsedXml, adapter);
   return {
     decodedXml: decoded.xmlString,
     preview: buildPobPreviewSummary(extracted),
@@ -57,6 +60,7 @@ export async function inspectPobBuildSets(params: {
 export async function compilePobProfileToSnapshot(params: {
   roomId: string;
   profileId: string;
+  gameId?: SupportedGameId;
   rawPobInput: string;
   cachedXml?: string | null;
   selection?: PobSetSelection | null;
@@ -66,23 +70,27 @@ export async function compilePobProfileToSnapshot(params: {
   previousSnapshot?: HudSessionSnapshot | null;
   carryProgressFromPrevious?: boolean;
 }): Promise<CompiledProfileBundle> {
+  const adapter = getGameAdapter(params.gameId);
+  if (adapter.gameId === "poe2") {
+    await loadPassiveTreeDataset("poe2");
+  }
   const source = params.cachedXml?.trim() ? params.cachedXml : params.rawPobInput;
   const decoded = await resolveAndDecodePobInput(source);
-  const extracted = extractPobBuild(decoded.parsedXml, poe1GameAdapter);
+  const extracted = extractPobBuild(decoded.parsedXml, adapter);
   const preview = buildPobPreviewSummary(extracted);
   const selection = reconcilePobSetSelection(extracted, params.selection);
   const filtered = filterExtractedPobBuildBySelection(extracted, selection);
-  const build = validateAndEnrichPobBuild(filtered, poe1GameAdapter);
+  const build = validateAndEnrichPobBuild(filtered, adapter);
 
   const defs = buildPreprocessorDefinitions({
     leagueStart: params.leagueStart,
     bandit: build.bandit,
     includeLibrary: build.requiresAct3Library,
   });
-  const combinedRoute = combineRouteActFiles(poe1GameAdapter.getDefaultRouteFiles(), params.customRouteText);
-  const routeSteps = parsePreprocessedRouteLines(preprocessRouteConditionals(combinedRoute, defs), poe1GameAdapter);
-  const checkpoints = buildCheckpointGraph(routeSteps, poe1GameAdapter);
-  const gemSteps = assignGemsToCampaignRoute(build, routeSteps, poe1GameAdapter);
+  const combinedRoute = combineRouteActFiles(adapter.getDefaultRouteFiles(), params.customRouteText);
+  const routeSteps = parsePreprocessedRouteLines(preprocessRouteConditionals(combinedRoute, defs), adapter);
+  const checkpoints = buildCheckpointGraph(routeSteps, adapter);
+  const gemSteps = assignGemsToCampaignRoute(build, routeSteps, adapter);
   const carryProgress = Boolean(params.previousSnapshot && params.carryProgressFromPrevious !== false);
 
   const fresh = buildInitialSessionSnapshot({
@@ -91,7 +99,7 @@ export async function compilePobProfileToSnapshot(params: {
     build,
     checkpoints,
     gemSteps,
-    adapter: poe1GameAdapter,
+    adapter,
     characterName: params.characterName || (carryProgress ? params.previousSnapshot?.characterName : undefined),
   });
 
@@ -204,12 +212,13 @@ export function applyViewerCommandToSnapshot(
   cur: HudSessionSnapshot,
   cmd: ViewerToRoomMessage,
 ): { nextSnapshot?: HudSessionSnapshot; eventTag?: string; copyRegex?: string; requestSync?: boolean } {
+  const adapter = getGameAdapter(cur.gameId);
   if (cmd.type === "viewer:toggle_checkpoint") {
     return {
       nextSnapshot: reduceTelemetrySession(
         cur,
         { type: "toggle_checkpoint", checkpointId: cmd.checkpointId, completed: cmd.completed },
-        poe1GameAdapter,
+        adapter,
       ),
       eventTag: "viewer_checkpoint",
     };
@@ -219,7 +228,7 @@ export function applyViewerCommandToSnapshot(
       nextSnapshot: reduceTelemetrySession(
         cur,
         { type: "toggle_gem", gemStepId: cmd.gemStepId, completed: cmd.completed },
-        poe1GameAdapter,
+        adapter,
       ),
       eventTag: "viewer_gem",
     };

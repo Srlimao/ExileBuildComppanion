@@ -4,6 +4,7 @@ import type {
   HudSessionSnapshot,
   ModeWidgetGrids,
   RoomToClientMessage,
+  SupportedGameId,
   ViewerToRoomMessage,
   WidgetGridItemLayout,
 } from "@exile-hud/core";
@@ -12,9 +13,9 @@ export type ConnectionPhase = "idle" | "connecting" | "connected" | "reconnectin
 
 export interface RoomConnectionCallbacks {
   onStatusChange: (status: ConnectionPhase, detail?: string, closeCode?: number) => void;
-  onHydrated: (snapshot: HudSessionSnapshot, layouts: ModeWidgetGrids) => void;
+  onHydrated: (snapshot: HudSessionSnapshot, layouts: ModeWidgetGrids, layoutsByGame?: Partial<Record<SupportedGameId, ModeWidgetGrids>>) => void;
   onSnapshotPatch: (snapshot: HudSessionSnapshot) => void;
-  onLayoutUpdated: (formFactor: DeviceFormFactor, mode: HudContextMode, items: WidgetGridItemLayout[]) => void;
+  onLayoutUpdated: (formFactor: DeviceFormFactor, mode: HudContextMode, items: WidgetGridItemLayout[], gameId?: SupportedGameId) => void;
 }
 
 const CONNECT_TIMEOUT_MS = 10_000;
@@ -252,11 +253,11 @@ export class EdgeWebSocketRoomClient {
       try {
         const msg = JSON.parse(String(event.data)) as RoomToClientMessage;
         if (msg.type === "room:hydrated_state") {
-          this.callbacks.onHydrated(msg.snapshot, msg.layouts);
+          this.callbacks.onHydrated(msg.snapshot, msg.layouts, msg.layoutsByGame);
         } else if (msg.type === "room:state_patch") {
           this.callbacks.onSnapshotPatch(msg.snapshot);
         } else if (msg.type === "room:layout_updated") {
-          this.callbacks.onLayoutUpdated(msg.deviceFormFactor, msg.mode, msg.items);
+          this.callbacks.onLayoutUpdated(msg.deviceFormFactor, msg.mode, msg.items, msg.gameId);
         }
       } catch {
         // Ignore malformed server payload

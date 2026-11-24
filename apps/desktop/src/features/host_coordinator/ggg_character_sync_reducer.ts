@@ -11,7 +11,7 @@ import {
   type HudSessionSnapshot,
   type ValidatedPobBuild,
 } from "@exile-hud/core";
-import { poe1GameAdapter } from "@exile-hud/game-data";
+import { getGameAdapter } from "@exile-hud/game-data";
 import {
   extractAllocatedMasteriesFromPassives,
   extractEquippedItemNames,
@@ -25,6 +25,7 @@ export function applyGggCharacterResponseToSnapshot(
   build: ValidatedPobBuild,
   response: CharacterPollResponse,
 ): HudSessionSnapshot {
+  const adapter = getGameAdapter(snapshot.gameId);
   if (!response.ok || !response.itemsJson) {
     return {
       ...snapshot,
@@ -69,7 +70,7 @@ export function applyGggCharacterResponseToSnapshot(
     bandit,
     highestUnlockedAct: snapshot.highestUnlockedAct,
     completedBossFlags,
-    adapter: poe1GameAdapter,
+    adapter,
   });
 
   const gemVerification = verifySocketsAndGems({
@@ -86,7 +87,7 @@ export function applyGggCharacterResponseToSnapshot(
     ascendancyNoteOrderIds:
       build.ascendancyNoteOrderIds ?? snapshot.passiveTree.ascendancyNoteOrderIds,
     characterLevel,
-    adapter: poe1GameAdapter,
+    adapter,
   });
 
   const benchCraftSuggestions = computeBenchCraftSuggestions({
@@ -96,7 +97,7 @@ export function applyGggCharacterResponseToSnapshot(
     highestUnlockedAct: snapshot.highestUnlockedAct,
     clearedAreaIds: snapshot.clearedAreaIds,
     checkpoints: snapshot.checkpoints,
-    adapter: poe1GameAdapter,
+    adapter,
   });
 
   const gearHygiene = auditGearAndFlaskHygiene({
@@ -135,5 +136,5 @@ export function applyGggCharacterResponseToSnapshot(
     activeVendorRegex,
   };
 
-  return reconcileAscendancyProgressFromPassives(nextSnapshot, allocatedHashes, poe1GameAdapter);
+  return reconcileAscendancyProgressFromPassives(nextSnapshot, allocatedHashes, adapter);
 }

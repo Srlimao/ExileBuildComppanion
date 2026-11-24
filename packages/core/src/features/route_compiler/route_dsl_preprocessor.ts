@@ -37,6 +37,10 @@ export function combineRouteActFiles(defaultRoutes: Record<string, string>, cust
     const content = defaultRoutes[`act-${i}`];
     if (content) acts.push(content);
   }
+  for (let i = 1; i <= 3; i++) {
+    const content = defaultRoutes[`interlude-${i}`];
+    if (content) acts.push(content);
+  }
   return acts.join("\n");
 }
 

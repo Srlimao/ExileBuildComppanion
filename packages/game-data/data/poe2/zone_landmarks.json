@@ -1,0 +1,145 @@
+{
+  "G1_2": {
+    "areaId": "G1_2",
+    "exitDirections": ["N", "NE"],
+    "landmarksEn": [
+      "Follow paths outward to locate Beira's frost shrine in the north clearing.",
+      "Waypoint sits near the Grelwood exit on the northern border."
+    ],
+    "landmarksPtBr": [
+      "Siga os caminhos ao norte até o santuário congelado da Beira.",
+      "O Waypoint fica próximo à saída para Grelwood ao norte."
+    ],
+    "bossTipEn": "Beira: Sidestep freezing slam & stack Cold Res from her drop (+10% Cold Res).",
+    "bossTipPtBr": "Beira: Desvie do golpe congelante; ela dropa o bônus de +10% Res Gelo."
+  },
+  "G1_4": {
+    "areaId": "G1_4",
+    "exitDirections": ["NW", "E"],
+    "landmarksEn": [
+      "Waypoint always spawns next to the Tree of Souls.",
+      "Red Vale and Grim Tangle entrances lie along opposite outer edges."
+    ],
+    "landmarksPtBr": [
+      "O Waypoint sempre nasce ao lado da Árvore das Almas.",
+      "As entradas de Red Vale e Grim Tangle ficam nas bordas opostas."
+    ]
+  },
+  "G1_12": {
+    "areaId": "G1_12",
+    "landmarksEn": [
+      "Clear all Ritual Altars scattered across Freythorn to summon the King in the Mists."
+    ],
+    "landmarksPtBr": [
+      "Ative os altares de Ritual em Freythorn para invocar o Rei nas Brumas."
+    ],
+    "bossTipEn": "King in the Mists: Watch purple debuff (keep moving or freeze) for +30 permanent Spirit.",
+    "bossTipPtBr": "Rei nas Brumas: Continue se movendo na maldição roxa; garante +30 Espírito permanente."
+  },
+  "G1_15": {
+    "areaId": "G1_15",
+    "landmarksEn": [
+      "Find Candlemass Shrine inside the early manor wing before descending to Count Geonor."
+    ],
+    "landmarksPtBr": [
+      "Encontre o santuário de Candlemass na ala inicial antes de descer para Conde Geonor."
+    ],
+    "bossTipEn": "Count Geonor: Cold slams & mist wolf charges — equip Sapphire Charm / Cold Res.",
+    "bossTipPtBr": "Conde Geonor: Dano pesado de Gelo e investidas de névoa — equipe Res Gelo."
+  },
+  "G2_2": {
+    "areaId": "G2_2",
+    "landmarksEn": [
+      "Look for golden Seal markings leading to Balbala's Prison Door."
+    ],
+    "landmarksPtBr": [
+      "Siga os selos dourados nas colunas para achar a prisão da Balbala."
+    ],
+    "bossTipEn": "Balbala: Avoid poison pools & follow invisible teleport glints to unlock Trial of the Sekhemas.",
+    "bossTipPtBr": "Balbala: Evite poças de veneno; derrota desbloqueia a Provação das Sekhemas."
+  },
+  "G2_12": {
+    "areaId": "G2_12",
+    "landmarksEn": [
+      "Linear caravan gauntlet straight forward to the Vanguard deck."
+    ],
+    "landmarksPtBr": [
+      "Corredor linear pelas carroças até o convés final do Dreadnought."
+    ],
+    "bossTipEn": "Jamanra: Heavy Lightning & Physical attacks; shelter behind Asala during sandstorm phase.",
+    "bossTipPtBr": "Jamanra: Dano massivo de Raio e Físico; proteja-se atrás de Asala na tempestade."
+  },
+  "G3_7": {
+    "areaId": "G3_7",
+    "landmarksEn": [
+      "Check outer swamp cliffs for flames marking Ignagduk's ritual camp."
+    ],
+    "landmarksPtBr": [
+      "Contorne os limites do pântano buscando as chamas do acampamento da Ignagduk."
+    ],
+    "bossTipEn": "Ignagduk: Fire breath & meteor spears — grants +30 permanent Spirit.",
+    "bossTipPtBr": "Ignagduk: Fogo intenso — concede +30 Espírito permanente."
+  },
+  "G3_9": {
+    "areaId": "G3_9",
+    "landmarksEn": [
+      "Follow the golden molten canal downhill to unlock the Reforging Bench."
+    ],
+    "landmarksPtBr": [
+      "Siga o canal de ouro derretido para desbloquear a Bancada de Reforja."
+    ],
+    "bossTipEn": "Mektul: DPS check before lava fills the hallway — drop DPS cooldowns early.",
+    "bossTipPtBr": "Mektul: Corrida contra a lava avançando pelo corredor."
+  },
+  "G3_17": {
+    "areaId": "G3_17",
+    "landmarksEn": [
+      "Follow outer square perimeter until the central chamber bridge opens to Doryani."
+    ],
+    "landmarksPtBr": [
+      "Circunde as bordas até abrir a ponte central para o laboratório de Doryani."
+    ],
+    "bossTipEn": "Doryani: Rotating tri-elemental lasers — keep Fire/Cold/Lightning balanced.",
+    "bossTipPtBr": "Doryani: Lasers rotativos de Fogo/Gelo/Raio — equilibre as resistências elementais."
+  },
+  "G4_4_2": {
+    "areaId": "G4_4_2",
+    "landmarksEn": [
+      "Locate Tawhoa, Tasalio, and Ngamahu altars to choose +5% Ele Res or +5 Attributes each."
+    ],
+    "landmarksPtBr": [
+      "Encontre os 3 altares (Tawhoa, Tasalio, Ngamahu) para pegar +5% Res ou +5 Atributos."
+    ]
+  },
+  "G4_11_2": {
+    "areaId": "G4_11_2",
+    "landmarksEn": [
+      "Linear ascent into the volcanic arena."
+    ],
+    "landmarksPtBr": [
+      "Subida linear até a arena do chefe final do Ato 4."
+    ],
+    "bossTipEn": "Tavakai: High Physical + Fire chieftain slams — keep life/anti-bleed flasks ready.",
+    "bossTipPtBr": "Tavakai: Golpes pesados Físico/Fogo — prepare frascos de vida e sangramento."
+  },
+  "P2_6": {
+    "areaId": "P2_6",
+    "landmarksEn": [
+      "Click the Seven Pillars monument to pick a permanent buff before Qimah Reservoir."
+    ],
+    "landmarksPtBr": [
+      "Clique no monumento dos Sete Pilares para escolher um bônus permanente."
+    ]
+  },
+  "P3_2": {
+    "areaId": "P3_2",
+    "landmarksEn": [
+      "Clear village clearing to face Lythara for your final +40 Spirit skull."
+    ],
+    "landmarksPtBr": [
+      "Encontre a clareira da vila para enfrentar Lythara (+40 Espírito)."
+    ],
+    "bossTipEn": "Lythara: Lightning spear bursts — grants +40 permanent Spirit (100 campaign Spirit total).",
+    "bossTipPtBr": "Lythara: Lanças de Raio — concede +40 Espírito permanente (total 100 na campanha)."
+  }
+}

@@ -7,6 +7,11 @@ import {
 import { useState } from "react";
 import { useHudI18n } from "../i18n/hud_i18n_provider.js";
 import { localizeRouteStepTitle } from "../i18n/route_step_title_localizer.js";
+import {
+  Poe2PermanentBonusBadges,
+  resolveChecklistCompleteLabel,
+  resolveChecklistHeaderTitle,
+} from "./poe2_permanent_bonus_badges.js";
 
 interface ActiveChecklistWidgetProps {
   snapshot: HudSessionSnapshot;
@@ -142,7 +147,7 @@ export function selectChecklistWindow(snapshot: HudSessionSnapshot): ChecklistWi
 }
 
 export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveChecklistWidgetProps) {
-  const { locale, msg } = useHudI18n();
+  const { locale, msg, appMsg } = useHudI18n();
   const [showCompleted, setShowCompleted] = useState(false);
   const {
     currentActSteps,
@@ -160,7 +165,7 @@ export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveCh
     <div className="flex flex-col h-full gap-2.5">
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-hud-muted">
-          {msg.widgets.actStepsTitle(snapshot.currentAct)}
+          {resolveChecklistHeaderTitle(snapshot, locale, msg, appMsg)}
         </h2>
         <div className="flex items-center gap-3 text-xs">
           {(doneCount > 0 || earlierPendingCount > 0) && (
@@ -183,6 +188,8 @@ export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveCh
           </span>
         </div>
       </div>
+
+      {snapshot.gameId === "poe2" && <Poe2PermanentBonusBadges snapshot={snapshot} />}
 
       {!showCompleted && activeGroup && !allActDone && (
         <div
@@ -275,7 +282,7 @@ export function ActiveChecklistWidget({ snapshot, onToggleCheckpoint }: ActiveCh
 
         {allActDone && !showCompleted && (
           <p className="text-sm text-hud-ok py-4 font-medium">
-            {msg.widgets.allActStepsComplete(snapshot.currentAct)}
+            {resolveChecklistCompleteLabel(snapshot, locale, msg, appMsg)}
           </p>
         )}
       </div>

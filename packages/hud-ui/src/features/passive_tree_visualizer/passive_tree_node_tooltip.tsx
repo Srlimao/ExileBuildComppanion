@@ -1,18 +1,23 @@
 import type { PassiveTreeBracketDiff } from "@exile-hud/core";
 import { computeShortestPathToNode, resolveMasteryEffectStats } from "@exile-hud/core";
-import { poe1GameAdapter } from "@exile-hud/game-data";
+import { getGameAdapter, type SupportedGameId } from "@exile-hud/game-data";
 import { Minus, Plus, X } from "lucide-react";
 import { memo, useMemo } from "react";
 import { useHudI18n } from "../i18n/hud_i18n_provider.js";
 import { useHudTheme } from "../theme/hud_theme_provider.js";
-import type { BuiltPoe1TreeGeometry } from "./passive_tree_geometry_builder.js";
+import type { BuiltTreeGeometry } from "./passive_tree_geometry_builder.js";
+import type { WeaponSetOverlayFilter } from "./passive_tree_spatial_index.js";
+import { PassiveTreeWeaponSetLegend } from "./passive_tree_weapon_set_legend.js";
 
 interface PassiveTreeCanvasOverlaysProps {
-  geometry: BuiltPoe1TreeGeometry;
+  gameId?: SupportedGameId;
+  geometry: BuiltTreeGeometry;
   diff: PassiveTreeBracketDiff;
   allocatedIds: ReadonlySet<string>;
   characterClass: string;
   selectedNodeId: string | null;
+  weaponSetFilter: WeaponSetOverlayFilter;
+  onChangeWeaponSetFilter: (next: WeaponSetOverlayFilter) => void;
   onSelectNode: (id: string | null) => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
@@ -20,22 +25,35 @@ interface PassiveTreeCanvasOverlaysProps {
 
 /** Legend, zoom controls, and read-only node inspector tooltip overlaid on the passive tree canvas. */
 export const PassiveTreeCanvasOverlays = memo(function PassiveTreeCanvasOverlays({
+  gameId,
   geometry,
   diff,
   allocatedIds,
   characterClass,
   selectedNodeId,
+  weaponSetFilter,
+  onChangeWeaponSetFilter,
   onSelectNode,
   onZoomIn,
   onZoomOut,
 }: PassiveTreeCanvasOverlaysProps) {
-  const { msg } = useHudI18n();
+  const { msg, appMsg } = useHudI18n();
   const { treePalette } = useHudTheme();
+  const adapter = getGameAdapter(gameId);
   const specMasteries = diff.selectedSpec?.masteries ?? {};
+  const ws1List = diff.selectedSpec?.weaponSet1NodeIds ?? [];
+  const ws2List = diff.selectedSpec?.weaponSet2NodeIds ?? [];
   const inspectedNode = selectedNodeId ? geometry.nodes[selectedNodeId] ?? null : null;
+  const inspectedWsNum = inspectedNode
+    ? ws1List.includes(inspectedNode.id)
+      ? 1
+      : ws2List.includes(inspectedNode.id)
+        ? 2
+        : null
+    : null;
   const inspectedAllocated = inspectedNode ? allocatedIds.has(inspectedNode.id) : false;
   const inspectedMasteryStats = inspectedNode?.isMastery
-    ? resolveMasteryEffectStats(inspectedNode.id, specMasteries[inspectedNode.id], poe1GameAdapter)
+    ? resolveMasteryEffectStats(inspectedNode.id, specMasteries[inspectedNode.id], adapter)
     : null;
   const inspectedPath = useMemo(
     () =>
@@ -45,10 +63,10 @@ export const PassiveTreeCanvasOverlays = memo(function PassiveTreeCanvasOverlays
             targetSet: diff.targetSet,
             allocatedIds,
             characterClass,
-            adapter: poe1GameAdapter,
+            adapter,
           })
         : [],
-    [inspectedNode, inspectedAllocated, diff.targetSet, allocatedIds, characterClass],
+    [inspectedNode, inspectedAllocated, diff.targetSet, allocatedIds, characterClass, adapter],
   );
 
   return (
@@ -77,6 +95,12 @@ export const PassiveTreeCanvasOverlays = memo(function PassiveTreeCanvasOverlays
           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: treePalette.masteryActive }} />
           {msg.tree.legendMastery}
         </span>
+        <PassiveTreeWeaponSetLegend
+          weaponSet1Count={ws1List.length}
+          weaponSet2Count={ws2List.length}
+          filter={weaponSetFilter}
+          onChangeFilter={onChangeWeaponSetFilter}
+        />
       </div>
 
       <div
@@ -123,6 +147,25 @@ export const PassiveTreeCanvasOverlays = memo(function PassiveTreeCanvasOverlays
                         ? msg.tree.nodeKinds.jewel
                         : msg.tree.nodeKinds.passive}
               </div>
+              {inspectedWsNum && (
+                <span
+                  className="mt-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold"
+                  style={{
+                    backgroundColor:
+                      inspectedWsNum === 1 ? "rgba(239, 68, 68, 0.16)" : "rgba(34, 197, 94, 0.16)",
+                    color: inspectedWsNum === 1 ? treePalette.weaponSet1 : treePalette.weaponSet2,
+                  }}
+                >
+                  <span
+                    className="h-1.5 w-1.5 rounded-full"
+                    style={{
+                      backgroundColor:
+                        inspectedWsNum === 1 ? treePalette.weaponSet1 : treePalette.weaponSet2,
+                    }}
+                  />
+                  {appMsg.poe2.weaponSetBadge(inspectedWsNum)}
+                </span>
+              )}
             </div>
             <button
               type="button"

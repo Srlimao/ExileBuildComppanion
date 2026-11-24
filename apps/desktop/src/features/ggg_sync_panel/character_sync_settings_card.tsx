@@ -1,6 +1,6 @@
-import type { CharacterSyncStatus } from "@exile-hud/core";
+import type { CharacterSyncStatus, SupportedGameId } from "@exile-hud/core";
 import { localizeConnectionOrSyncMessage, useHudI18n } from "@exile-hud/hud-ui";
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import { AlertTriangle, Info, RefreshCw } from "lucide-react";
 import {
   ALL_LEAGUES_VALUE,
   detectLeagueRulesetBadges,
@@ -9,6 +9,7 @@ import {
 import { useAccountCharacterRoster } from "./use_account_character_roster.js";
 
 interface CharacterSyncSettingsCardProps {
+  gameId?: SupportedGameId;
   accountName: string;
   selectedLeague: string;
   characterName: string;
@@ -30,6 +31,7 @@ const STATUS_STYLE: Record<CharacterSyncStatus, string> = {
 
 /** Public-profile GGG character roster and manual sync card inside the Connect tab. */
 export function CharacterSyncSettingsCard({
+  gameId = "poe1",
   accountName,
   selectedLeague,
   characterName,
@@ -51,6 +53,28 @@ export function CharacterSyncSettingsCard({
     onChangeLeague,
     onSelectCharacter,
   });
+
+  if (gameId === "poe2") {
+    return (
+      <section className="rounded-2xl bg-hud-surface border border-hud-hairline p-4 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-xs font-semibold text-hud-text truncate">
+            {appMsg.desktop.gggSyncTitle}
+          </h2>
+          <span className="text-[10px] font-mono text-hud-muted shrink-0">
+            {appMsg.poe2.gameShortLabels.poe2}
+          </span>
+        </div>
+        <div className="border-l-2 border-hud-accent pl-3 py-1 space-y-1">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-hud-text">
+            <Info className="h-3.5 w-3.5 text-hud-accent shrink-0" />
+            <span>{appMsg.poe2.oauthPendingTitle}</span>
+          </div>
+          <p className="text-[11px] text-hud-muted leading-relaxed">{appMsg.poe2.oauthPendingBody}</p>
+        </div>
+      </section>
+    );
+  }
 
   const activeEntry = roster.characters.find((c) => c.name === characterName) ?? null;
   const activeLeagueName = activeEntry?.league || roster.effectiveLeague;

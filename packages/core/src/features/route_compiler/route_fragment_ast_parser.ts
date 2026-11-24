@@ -214,7 +214,9 @@ function parseLineFragments(line: string, adapter: GameAdapter, state: TrackerSt
 
 export function parsePreprocessedRouteLines(lines: string[], adapter: GameAdapter): ParsedRouteStep[] {
   const areas = adapter.getAreas();
-  const state: TrackerState = { currentAreaId: "1_1_1", lastTownAreaId: "1_1_town", portalAreaId: null };
+  const startId = adapter.getDefaultStartAreaId();
+  const lastTown = areas[startId]?.parent_town_area_id ?? (adapter.gameId === "poe2" ? "G1_town" : "1_1_town");
+  const state: TrackerState = { currentAreaId: startId, lastTownAreaId: lastTown, portalAreaId: null };
   const steps: ParsedRouteStep[] = [];
   let sectionName = "Act 1";
   let sectionAct = 1;
@@ -224,8 +226,13 @@ export function parsePreprocessedRouteLines(lines: string[], adapter: GameAdapte
     const sectionMatch = /^#section\s+(.+)$/.exec(line);
     if (sectionMatch?.[1]) {
       sectionName = sectionMatch[1].trim();
-      const actNumMatch = /(\d+)/.exec(sectionName);
-      if (actNumMatch?.[1]) sectionAct = Number.parseInt(actNumMatch[1], 10);
+      const interludeMatch = /^Interlude\s+(\d+)/i.exec(sectionName);
+      if (interludeMatch?.[1]) {
+        sectionAct = 4 + Number.parseInt(interludeMatch[1], 10);
+      } else {
+        const actNumMatch = /(\d+)/.exec(sectionName);
+        if (actNumMatch?.[1]) sectionAct = Number.parseInt(actNumMatch[1], 10);
+      }
       continue;
     }
 

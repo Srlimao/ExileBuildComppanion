@@ -1,5 +1,6 @@
 export * from "./features/protocol/session_room_wire_protocol.js";
 export * from "./features/pob_import/pob_code_zlib_xml_decoder.js";
+export * from "./features/pob_import/pob2_xml_extensions.js";
 export * from "./features/pob_import/pob_xml_skill_and_tree_extractor.js";
 export * from "./features/pob_import/pob_endgame_fallback_validator.js";
 export * from "./features/pob_import/pob_xml_item_set_extractor.js";
@@ -8,6 +9,7 @@ export * from "./features/pob_import/pob_build_set_filter.js";
 export * from "./features/route_compiler/route_dsl_preprocessor.js";
 export * from "./features/route_compiler/route_fragment_ast_parser.js";
 export * from "./features/route_compiler/gem_quest_and_vendor_assigner.js";
+export * from "./features/route_compiler/poe2_uncut_gem_planner.js";
 export * from "./features/checkpoint_graph/area_dominator_resolver.js";
 export * from "./features/checkpoint_graph/campaign_quest_group_assigner.js";
 export * from "./features/checkpoint_graph/campaign_quest_group_evaluator.js";
@@ -15,6 +17,7 @@ export * from "./features/checkpoint_graph/checkpoint_directed_graph_builder.js"
 export * from "./features/checkpoint_graph/checkpoint_progression_evaluator.js";
 export * from "./features/checkpoint_graph/zone_context_disambiguator.js";
 export * from "./features/checkpoint_graph/checkpoint_progression_reducer.js";
+export * from "./features/checkpoint_graph/poe2_progression_reconciler.js";
 export * from "./features/checkpoint_graph/campaign_progress_persistence.js";
 export * from "./features/checkpoint_graph/initial_session_snapshot_factory.js";
 export * from "./features/checkpoint_graph/lab_and_passives_reconciler.js";
@@ -25,6 +28,7 @@ export * from "./features/character_telemetry_diff/passive_tree_bracket_differ.j
 export * from "./features/character_telemetry_diff/gear_and_flask_hygiene_auditor.js";
 export * from "./features/character_telemetry_diff/bench_craft_suggestion_advisor.js";
 export * from "./features/vendor_regex/vendor_search_regex_builder.js";
+export * from "./features/vendor_regex/poe2_vendor_regex_builder.js";
 export * from "./features/lab_compass/poelab_daily_json_tracker.js";
 export * from "./features/lab_compass/ascendancy_progression_planner.js";
 export * from "./features/lab_compass/ascendancy_phase_partitioner.js";

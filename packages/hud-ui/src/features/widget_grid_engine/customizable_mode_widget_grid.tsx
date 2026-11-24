@@ -1,4 +1,4 @@
-import type { DeviceFormFactor, HudContextMode, WidgetGridItemLayout, WidgetId } from "@exile-hud/core";
+import type { DeviceFormFactor, HudContextMode, SupportedGameId, WidgetGridItemLayout, WidgetId } from "@exile-hud/core";
 import { ArrowDown, ArrowUp, Maximize2, Plus, Trash2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { HudErrorBoundary } from "../hud_shell/hud_error_boundary.js";
@@ -10,6 +10,7 @@ export type WidgetGridMode = HudContextMode | "TREE_COMPACT";
 export type WidgetGridFormFactor = DeviceFormFactor | "pc-overlay";
 
 interface CustomizableModeWidgetGridProps {
+  gameId?: SupportedGameId;
   mode: WidgetGridMode;
   formFactor: WidgetGridFormFactor;
   items: WidgetGridItemLayout[];
@@ -33,6 +34,7 @@ function getSpanClasses(item: WidgetGridItemLayout, formFactor: WidgetGridFormFa
 }
 
 export function CustomizableModeWidgetGrid({
+  gameId = "poe1",
   mode,
   formFactor,
   items,
@@ -46,7 +48,7 @@ export function CustomizableModeWidgetGrid({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [draggedId, setDraggedId] = useState<WidgetId | null>(null);
 
-  const catalog = getLocalizedWidgetCatalog(locale);
+  const catalog = getLocalizedWidgetCatalog(locale, gameId);
   const modeLabel = mode === "TREE_COMPACT" ? msg.modes.TREE : msg.modes[mode];
   const sorted = [...items].sort((a, b) => a.order - b.order);
 
@@ -205,6 +207,7 @@ export function CustomizableModeWidgetGrid({
 
       <AddWidgetDrawer
         open={drawerOpen}
+        gameId={gameId}
         mode={mode}
         formFactor={formFactor}
         activeItems={sorted}

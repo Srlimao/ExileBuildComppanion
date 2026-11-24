@@ -8,10 +8,10 @@ const MINION_SKILL_REGEX =
   /\b(summon|raise|raging spirit|absolution|dominating blow|animate|herald of agony|herald of purity|carrion golem|stone golem|chaos golem|flame golem|ice golem|lightning golem|holy relic|blightwell|mirror arrow|blink arrow)\b/i;
 
 const BOW_SKILL_REGEX =
-  /\b(arrow|shot|toxic rain|caustic arrow|rain of arrows|ballista|scourge arrow|kinetic blast|power siphon|barrage|elemental hit of the spectrum|artillery ballista|shrapnel ballista|siege ballista|snipe|ensnaring arrow)\b/i;
+  /\b(arrow|shot|toxic rain|caustic arrow|rain of arrows|ballista|scourge arrow|kinetic blast|power siphon|barrage|elemental hit of the spectrum|artillery ballista|shrapnel ballista|siege ballista|snipe|ensnaring arrow|lightning arrow|gas arrow|magnetic salvo|galvanic shards|explosive shot|rapid shot|high velocity rounds|plasma blast)\b/i;
 
 const MELEE_SKILL_REGEX =
-  /\b(strike|slam|sunder|boneshatter|cleave|sweep|cyclone|lacerate|bladestorm|reave|splitting steel|shattering steel|lancing steel|spectral throw|spectral helix|venom gyre|cobra lash|shield crush|volcanic fissure|earthshatter|rage vortex|flicker|double strike|dual strike|frost blades|lightning strike|molten strike|smite|perforate|tectonic slam|ice crash|infernal blow|earthquake|ground slam|heavy strike|glacial hammer|viper strike|pestilent strike|blight)\b/i;
+  /\b(strike|slam|sunder|boneshatter|cleave|sweep|cyclone|lacerate|bladestorm|reave|splitting steel|shattering steel|lancing steel|spectral throw|spectral helix|venom gyre|cobra lash|shield crush|volcanic fissure|earthshatter|rage vortex|flicker|double strike|dual strike|frost blades|lightning strike|molten strike|smite|perforate|tectonic slam|ice crash|infernal blow|earthquake|ground slam|heavy strike|glacial hammer|viper strike|pestilent strike|blight|ice strike|tempest flurry|tempest bell|falling thunder|rolling slam|perfect strike|stampede|hammer of the gods|whirling slash|rake)\b/i;
 
 const SPELL_SKILL_REGEX =
   /\b(fireball|rolling magma|magma orb|arc|spark|freezing pulse|ice nova|frostbolt|firestorm|flame wall|righteous fire|ethereal knives|blade vortex|bladefall|blade blast|storm brand|armageddon brand|penance brand|wintertide brand|hexblast|bane|essence drain|contagion|soulrend|detonate dead|volatile dead|cremation|incinerate|scorching ray|flameblast|ball lightning|shock nova|orb of storms|crackling lance|cold snap|vortex|creeping frost|winter orb|eye of winter|forbidden rite|reap|exsanguinate|seismic trap|explosive trap|fire trap|lightning trap|icicle mine|pyroclast mine|stormblast mine|hexblast mine|holy flame totem|freezing pulse totem|shockwave totem|concoction|poisonous concoction|explosive concoction)\b/i;
@@ -68,18 +68,50 @@ function classifyBySkillNames(linkGroups: TargetLinkGroupSummary[]): TwinkArchet
 
 function classifyByAscendancyOrClass(characterClass: string, ascendancyName: string): TwinkArchetypeId {
   const asc = ascendancyName.trim().toLowerCase();
-  if (asc === "necromancer") return "minion";
-  if (asc === "deadeye") return "bow";
-  if (asc === "berserker" || asc === "juggernaut" || asc === "slayer" || asc === "gladiator" || asc === "champion") {
+  if (asc === "necromancer" || asc === "infernalist" || asc === "lich") return "minion";
+  if (
+    asc === "deadeye" ||
+    asc === "pathfinder" ||
+    asc === "witchhunter" ||
+    asc === "gemling legionnaire" ||
+    asc === "tactician" ||
+    asc === "amazon"
+  ) {
+    return "bow";
+  }
+  if (
+    asc === "berserker" ||
+    asc === "juggernaut" ||
+    asc === "slayer" ||
+    asc === "gladiator" ||
+    asc === "champion" ||
+    asc === "titan" ||
+    asc === "warbringer" ||
+    asc === "smith of kitava" ||
+    asc === "invoker" ||
+    asc === "acolyte of chayula" ||
+    asc === "ritualist"
+  ) {
     return "melee";
   }
-  if (asc === "elementalist" || asc === "occultist" || asc === "hierophant" || asc === "inquisitor") {
+  if (
+    asc === "elementalist" ||
+    asc === "occultist" ||
+    asc === "hierophant" ||
+    asc === "inquisitor" ||
+    asc === "stormweaver" ||
+    asc === "chronomancer" ||
+    asc === "blood mage" ||
+    asc === "oracle"
+  ) {
     return "spell";
   }
 
   const cls = characterClass.trim().toLowerCase();
-  if (cls === "marauder" || cls === "duelist") return "melee";
-  if (cls === "ranger") return "bow";
+  if (cls === "marauder" || cls === "duelist" || cls === "warrior" || cls === "monk" || cls === "huntress") {
+    return "melee";
+  }
+  if (cls === "ranger" || cls === "mercenary") return "bow";
   return "spell";
 }
 

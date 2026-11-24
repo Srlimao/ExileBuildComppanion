@@ -1,21 +1,29 @@
 import type { PassiveTreeBracketDiff } from "@exile-hud/core";
+import type { SupportedGameId } from "@exile-hud/game-data";
 import type React from "react";
 import { memo, useEffect, useRef } from "react";
 import { useHudTheme } from "../theme/hud_theme_provider.js";
 import { paintPassiveTreeFrame, resolveAdaptiveCanvasDpr } from "./passive_tree_canvas_painter.js";
-import type { BuiltPoe1TreeGeometry } from "./passive_tree_geometry_builder.js";
+import type { BuiltTreeGeometry } from "./passive_tree_geometry_builder.js";
 import { PassiveTreeCanvasOverlays } from "./passive_tree_node_tooltip.js";
-import type { SpatialTreeIndex, TreeHighlightLookup } from "./passive_tree_spatial_index.js";
+import type {
+  SpatialTreeIndex,
+  TreeHighlightLookup,
+  WeaponSetOverlayFilter,
+} from "./passive_tree_spatial_index.js";
 import type { CameraFrameListener, ViewportCamera } from "./use_pan_zoom_viewport.js";
 
 interface PassiveTreeCanvasProps {
-  geometry: BuiltPoe1TreeGeometry;
+  gameId?: SupportedGameId;
+  geometry: BuiltTreeGeometry;
   spatialIndex: SpatialTreeIndex;
   highlightLookup: TreeHighlightLookup;
   diff: PassiveTreeBracketDiff;
   allocatedIds: ReadonlySet<string>;
   characterClass: string;
   selectedNodeId: string | null;
+  weaponSetFilter: WeaponSetOverlayFilter;
+  onChangeWeaponSetFilter: (next: WeaponSetOverlayFilter) => void;
   containerRef: React.RefObject<HTMLDivElement | null>;
   getCamera: () => ViewportCamera;
   subscribeCamera: (listener: CameraFrameListener) => () => void;
@@ -30,6 +38,7 @@ interface PassiveTreeCanvasProps {
 
 /** Hardware-friendly 2D Canvas passive tree renderer driven by imperative rAF viewport updates. */
 export const PassiveTreeCanvas = memo(function PassiveTreeCanvas({
+  gameId,
   geometry,
   spatialIndex,
   highlightLookup,
@@ -37,6 +46,8 @@ export const PassiveTreeCanvas = memo(function PassiveTreeCanvas({
   allocatedIds,
   characterClass,
   selectedNodeId,
+  weaponSetFilter,
+  onChangeWeaponSetFilter,
   containerRef,
   getCamera,
   subscribeCamera,
@@ -134,11 +145,14 @@ export const PassiveTreeCanvas = memo(function PassiveTreeCanvas({
       <canvas ref={canvasRef} className="w-full h-full block touch-none" />
 
       <PassiveTreeCanvasOverlays
+        gameId={gameId}
         geometry={geometry}
         diff={diff}
         allocatedIds={allocatedIds}
         characterClass={characterClass}
         selectedNodeId={selectedNodeId}
+        weaponSetFilter={weaponSetFilter}
+        onChangeWeaponSetFilter={onChangeWeaponSetFilter}
         onSelectNode={onSelectNode}
         onZoomIn={onZoomIn}
         onZoomOut={onZoomOut}

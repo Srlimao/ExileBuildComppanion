@@ -1,0 +1,262 @@
+[
+  {
+    "id": "poe2_a1_beira",
+    "act": 1,
+    "areaId": "G1_2",
+    "bossOrQuestName": "Beira of the Rotten Pack",
+    "rewardLabelEn": "+10% Cold Resistance",
+    "rewardLabelPtBr": "+10% Resistência a Gelo",
+    "bonusType": "resistance",
+    "valueSummary": "+10% Cold Res"
+  },
+  {
+    "id": "poe2_a1_crowbell",
+    "act": 1,
+    "areaId": "G1_11",
+    "bossOrQuestName": "The Crowbell",
+    "rewardLabelEn": "+2 Weapon Set Passive Points",
+    "rewardLabelPtBr": "+2 Pontos Passivos de Conjunto de Armas",
+    "bonusType": "weapon_set_points",
+    "valueSummary": "+2 Pts"
+  },
+  {
+    "id": "poe2_a1_king_mists",
+    "act": 1,
+    "areaId": "G1_12",
+    "bossOrQuestName": "The King in the Mists",
+    "rewardLabelEn": "+30 Spirit (Skull of the King)",
+    "rewardLabelPtBr": "+30 de Espírito (Crânio do Rei)",
+    "bonusType": "spirit",
+    "valueSummary": "+30 Spirit"
+  },
+  {
+    "id": "poe2_a1_unas_lute",
+    "act": 1,
+    "areaId": "G1_13_1",
+    "bossOrQuestName": "Una's Lute",
+    "rewardLabelEn": "+2 Weapon Set Passive Points",
+    "rewardLabelPtBr": "+2 Pontos Passivos de Conjunto de Armas",
+    "bonusType": "weapon_set_points",
+    "valueSummary": "+2 Pts"
+  },
+  {
+    "id": "poe2_a1_candlemass",
+    "act": 1,
+    "areaId": "G1_15",
+    "bossOrQuestName": "Candlemass, the Living Rite",
+    "rewardLabelEn": "+20 Maximum Life",
+    "rewardLabelPtBr": "+20 de Vida Máxima",
+    "bonusType": "life",
+    "valueSummary": "+20 Life"
+  },
+  {
+    "id": "poe2_a2_kabala",
+    "act": 2,
+    "areaId": "G2_4_1",
+    "bossOrQuestName": "Kabala, Constrictor Queen",
+    "rewardLabelEn": "+2 Weapon Set Passive Points",
+    "rewardLabelPtBr": "+2 Pontos Passivos de Conjunto de Armas",
+    "bonusType": "weapon_set_points",
+    "valueSummary": "+2 Pts"
+  },
+  {
+    "id": "poe2_a2_medallion",
+    "act": 2,
+    "areaId": "G2_6",
+    "bossOrQuestName": "Valley Relic Altar (Medallion)",
+    "rewardLabelEn": "+1 Charm Slot & 30% Charm Buff",
+    "rewardLabelPtBr": "+1 Espaço de Talismã e Bônus de 30%",
+    "bonusType": "charm",
+    "valueSummary": "+1 Charm"
+  },
+  {
+    "id": "poe2_a2_final_letter",
+    "act": 2,
+    "areaId": "G2_8",
+    "bossOrQuestName": "The Final Letter",
+    "rewardLabelEn": "+2 Weapon Set Passive Points",
+    "rewardLabelPtBr": "+2 Pontos Passivos de Conjunto de Armas",
+    "bonusType": "weapon_set_points",
+    "valueSummary": "+2 Pts"
+  },
+  {
+    "id": "poe2_a2_sisters",
+    "act": 2,
+    "areaId": "G2_9_2",
+    "bossOrQuestName": "Sisters of Garukhan Shrine",
+    "rewardLabelEn": "+10% Lightning Resistance",
+    "rewardLabelPtBr": "+10% Resistência a Raio",
+    "bonusType": "resistance",
+    "valueSummary": "+10% Light Res"
+  },
+  {
+    "id": "poe2_a3_silverfist",
+    "act": 3,
+    "areaId": "G3_3",
+    "bossOrQuestName": "Mighty Silverfist",
+    "rewardLabelEn": "+2 Weapon Set Passive Points",
+    "rewardLabelPtBr": "+2 Pontos Passivos de Conjunto de Armas",
+    "bonusType": "weapon_set_points",
+    "valueSummary": "+2 Pts"
+  },
+  {
+    "id": "poe2_a3_ignagduk",
+    "act": 3,
+    "areaId": "G3_7",
+    "bossOrQuestName": "Ignagduk, the Bog Witch",
+    "rewardLabelEn": "+30 Spirit (Gembloom Skull)",
+    "rewardLabelPtBr": "+30 de Espírito (Crânio Flor-Gema)",
+    "bonusType": "spirit",
+    "valueSummary": "+30 Spirit"
+  },
+  {
+    "id": "poe2_a3_venom_draught",
+    "act": 3,
+    "areaId": "G3_4",
+    "bossOrQuestName": "Servi Venom Draught",
+    "rewardLabelEn": "Choice: 25% Stun / 30% Ailment / 25% Mana Regen",
+    "rewardLabelPtBr": "Escolha: 25% Atordoamento / 30% Afecções / 25% Mana",
+    "bonusType": "choice",
+    "valueSummary": "Vial Choice"
+  },
+  {
+    "id": "poe2_a3_blackjaw",
+    "act": 3,
+    "areaId": "G3_6_1",
+    "bossOrQuestName": "Blackjaw, the Remnant",
+    "rewardLabelEn": "+10% Fire Resistance",
+    "rewardLabelPtBr": "+10% Resistência a Fogo",
+    "bonusType": "resistance",
+    "valueSummary": "+10% Fire Res"
+  },
+  {
+    "id": "poe2_a3_blood_sacrifice",
+    "act": 3,
+    "areaId": "G3_16",
+    "bossOrQuestName": "Sacrificial Heart Altar",
+    "rewardLabelEn": "+2 Weapon Set Passive Points",
+    "rewardLabelPtBr": "+2 Pontos Passivos de Conjunto de Armas",
+    "bonusType": "weapon_set_points",
+    "valueSummary": "+2 Pts"
+  },
+  {
+    "id": "poe2_a4_blind_beast",
+    "act": 4,
+    "areaId": "G4_1_1",
+    "bossOrQuestName": "The Blind Beast",
+    "rewardLabelEn": "+2 Weapon Set Passive Points",
+    "rewardLabelPtBr": "+2 Pontos Passivos de Conjunto de Armas",
+    "bonusType": "weapon_set_points",
+    "valueSummary": "+2 Pts"
+  },
+  {
+    "id": "poe2_a4_silent_hall",
+    "act": 4,
+    "areaId": "G4_4_1",
+    "bossOrQuestName": "Eye of Hinekora Silent Hall",
+    "rewardLabelEn": "5% increased Maximum Mana",
+    "rewardLabelPtBr": "+5% Mana Máxima",
+    "bonusType": "choice",
+    "valueSummary": "+5% Mana"
+  },
+  {
+    "id": "poe2_a4_halls_dead",
+    "act": 4,
+    "areaId": "G4_4_2",
+    "bossOrQuestName": "Halls of the Dead (3 Goddess Tests)",
+    "rewardLabelEn": "3x Choice: +5% Fire/Cold/Light Res OR +5 Str/Dex/Int",
+    "rewardLabelPtBr": "3x Escolha: +5% Res Fogo/Gelo/Raio OU +5 For/Des/Int",
+    "bonusType": "resistance",
+    "valueSummary": "+5%x3 Res/Attr"
+  },
+  {
+    "id": "poe2_a4_hinekora",
+    "act": 4,
+    "areaId": "G4_4_3",
+    "bossOrQuestName": "Hinekora (Trial of the Ancestors)",
+    "rewardLabelEn": "+2 Weapon Set Passive Points",
+    "rewardLabelPtBr": "+2 Pontos Passivos de Conjunto de Armas",
+    "bonusType": "weapon_set_points",
+    "valueSummary": "+2 Pts"
+  },
+  {
+    "id": "poe2_a4_goddess_justice",
+    "act": 4,
+    "areaId": "G4_5_1",
+    "bossOrQuestName": "Goddess of Justice Shrine",
+    "rewardLabelEn": "Choice: 30% Life OR Mana Flask Recovery",
+    "rewardLabelPtBr": "Escolha: 30% Recuperação Frasco de Vida OU Mana",
+    "bonusType": "choice",
+    "valueSummary": "Flask Choice"
+  },
+  {
+    "id": "poe2_int1_oswin",
+    "act": 5,
+    "areaId": "P1_5",
+    "bossOrQuestName": "Oswin, the Dread Warden",
+    "rewardLabelEn": "+2 Weapon Set Passive Points",
+    "rewardLabelPtBr": "+2 Pontos Passivos de Conjunto de Armas",
+    "bonusType": "weapon_set_points",
+    "valueSummary": "+2 Pts"
+  },
+  {
+    "id": "poe2_int2_clearing",
+    "act": 6,
+    "areaId": "P2_Town",
+    "bossOrQuestName": "Clearing The Way",
+    "rewardLabelEn": "+2 Weapon Set Passive Points",
+    "rewardLabelPtBr": "+2 Pontos Passivos de Conjunto de Armas",
+    "bonusType": "weapon_set_points",
+    "valueSummary": "+2 Pts"
+  },
+  {
+    "id": "poe2_int2_molten",
+    "act": 6,
+    "areaId": "P2_1",
+    "bossOrQuestName": "Molten Shrine",
+    "rewardLabelEn": "5% increased Maximum Life",
+    "rewardLabelPtBr": "+5% Vida Máxima",
+    "bonusType": "life",
+    "valueSummary": "+5% Life"
+  },
+  {
+    "id": "poe2_int2_seven_pillars",
+    "act": 6,
+    "areaId": "P2_6",
+    "bossOrQuestName": "Seven Pillars",
+    "rewardLabelEn": "Choice: +5% All Ele Res, 3% MS, 15% Defences, 12% CDR",
+    "rewardLabelPtBr": "Escolha: +5% Todas Res, 3% Vel. Mov, 15% Defesas, 12% CDR",
+    "bonusType": "resistance",
+    "valueSummary": "Pillar Buff"
+  },
+  {
+    "id": "poe2_int3_lythara",
+    "act": 7,
+    "areaId": "P3_2",
+    "bossOrQuestName": "Lythara, the Wayward Spear",
+    "rewardLabelEn": "+40 Spirit (Skull of Lythara)",
+    "rewardLabelPtBr": "+40 de Espírito (Crânio de Lythara)",
+    "bonusType": "spirit",
+    "valueSummary": "+40 Spirit"
+  },
+  {
+    "id": "poe2_int3_yeti",
+    "act": 7,
+    "areaId": "P3_4",
+    "bossOrQuestName": "Abominable Yeti",
+    "rewardLabelEn": "+2 Weapon Set Passive Points",
+    "rewardLabelPtBr": "+2 Pontos Passivos de Conjunto de Armas",
+    "bonusType": "weapon_set_points",
+    "valueSummary": "+2 Pts"
+  },
+  {
+    "id": "poe2_epilogue_oriath",
+    "act": 7,
+    "areaId": "G4_town",
+    "bossOrQuestName": "Siege of Oriath",
+    "rewardLabelEn": "+2 Weapon Set Passive Points",
+    "rewardLabelPtBr": "+2 Pontos Passivos de Conjunto de Armas",
+    "bonusType": "weapon_set_points",
+    "valueSummary": "+2 Pts"
+  }
+]

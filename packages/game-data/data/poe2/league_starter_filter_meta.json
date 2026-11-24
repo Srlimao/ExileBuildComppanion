@@ -1,0 +1,23 @@
+{
+  "version": "0.10.4a",
+  "leagueName": "PoE 2 Early Access",
+  "releaseTitle": "NeverSink's PoE2 Filter - version 0.10.4a - Clean up and preparations",
+  "sourceRepo": "https://github.com/NeverSinkDev/NeverSink-Filter-for-PoE2",
+  "defaultPresetId": "regular",
+  "presets": [
+    {
+      "id": "regular",
+      "strictnessCode": "1-REGULAR",
+      "targetFileName": "ExileHUD_PoE2_LeagueStart_Regular.filter",
+      "lineCount": 5312,
+      "byteSize": 252988
+    },
+    {
+      "id": "semi_strict",
+      "strictnessCode": "2-SEMI-STRICT",
+      "targetFileName": "ExileHUD_PoE2_LeagueStart_SemiStrict.filter",
+      "lineCount": 5312,
+      "byteSize": 253035
+    }
+  ]
+}

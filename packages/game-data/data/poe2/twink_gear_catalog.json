@@ -1,0 +1,257 @@
+[
+  {
+    "id": "poe2-enfolding-dawn",
+    "itemName": "Enfolding Dawn",
+    "baseType": "Pilgrim Vestments",
+    "slot": "Body Armour",
+    "levelReq": 1,
+    "archetypes": ["universal", "minion", "spell"],
+    "iconPath": "",
+    "summaryEn": "+100 Spirit from Lv 1 + All Ele Res — best all-around leveling Spirit chest",
+    "summaryPtBr": "+100 de Espírito desde o Nv 1 + Res Elementais — melhor peitoral de leveling",
+    "keyMods": [
+      "+100 to Spirit",
+      "+(5-15)% to all Elemental Resistances",
+      "+15 to Intelligence & Mana Regeneration"
+    ]
+  },
+  {
+    "id": "poe2-goldrim",
+    "itemName": "Goldrim",
+    "baseType": "Felt Cap",
+    "slot": "Helmet",
+    "levelReq": 1,
+    "archetypes": ["universal"],
+    "iconPath": "",
+    "summaryEn": "Massive all Elemental Resistances from Lv 1 through Act 4",
+    "summaryPtBr": "Muita Resistência Elemental total desde o Nv 1 até o Ato 4",
+    "keyMods": [
+      "+(25-35)% to all Elemental Resistances",
+      "+(30-50) to Evasion Rating"
+    ]
+  },
+  {
+    "id": "poe2-wanderlust",
+    "itemName": "Wanderlust",
+    "baseType": "Wrapped Sandals",
+    "slot": "Boots",
+    "levelReq": 1,
+    "archetypes": ["universal"],
+    "iconPath": "",
+    "summaryEn": "+20% Movement Speed & Cannot be Frozen from Lv 1",
+    "summaryPtBr": "+20% Movement Speed e Imunidade a Freeze desde o Nv 1",
+    "keyMods": [
+      "20% increased Movement Speed",
+      "Cannot be Frozen",
+      "+20 to Energy Shield"
+    ]
+  },
+  {
+    "id": "poe2-luminous-pace",
+    "itemName": "Luminous Pace",
+    "baseType": "Straw Sandals",
+    "slot": "Boots",
+    "levelReq": 1,
+    "archetypes": ["universal"],
+    "iconPath": "",
+    "summaryEn": "Early Spirit & Movement Speed boots for smooth Act 1–3 clear",
+    "summaryPtBr": "Botas iniciais de Movement Speed para farm rápido nos Atos 1–3",
+    "keyMods": [
+      "10–20% increased Movement Speed",
+      "Gain Elusive / Light Radius boost"
+    ]
+  },
+  {
+    "id": "poe2-ghostwrithe",
+    "itemName": "Ghostwrithe",
+    "baseType": "Tattered Robe",
+    "slot": "Body Armour",
+    "levelReq": 1,
+    "archetypes": ["spell", "minion"],
+    "preferredClasses": ["Witch", "Sorceress", "Monk"],
+    "iconPath": "",
+    "summaryEn": "25%–50% of Max Life converted to massive Energy Shield + Chaos Res",
+    "summaryPtBr": "Converte parte da Vida em Energy Shield gigante + Res Caos",
+    "keyMods": [
+      "+100 to maximum Energy Shield",
+      "+(29-37)% to Chaos Resistance",
+      "25% of Maximum Life Converted to Energy Shield"
+    ]
+  },
+  {
+    "id": "poe2-lifesprig",
+    "itemName": "Lifesprig",
+    "baseType": "Attuned Wand",
+    "slot": "Weapon",
+    "levelReq": 1,
+    "archetypes": ["spell"],
+    "preferredClasses": ["Sorceress", "Witch"],
+    "iconPath": "",
+    "summaryEn": "+(1–3) to Level of all Spell Skills & Cast Speed from Lv 1",
+    "summaryPtBr": "+(1–3) Nível em todas as Spell Skills e Cast Speed desde o Nv 1",
+    "keyMods": [
+      "+(1-3) to Level of all Spell Skills",
+      "10% increased Cast Speed",
+      "Life on Spell Cast"
+    ]
+  },
+  {
+    "id": "poe2-pillar-caged-god",
+    "itemName": "Pillar of the Caged God",
+    "baseType": "Long Quarterstaff",
+    "slot": "Weapon",
+    "levelReq": 1,
+    "archetypes": ["melee"],
+    "preferredClasses": ["Monk", "Warrior", "Mercenary"],
+    "iconPath": "",
+    "summaryEn": "Scales flat/percentage Melee damage, Attack Speed, and AoE off Attributes",
+    "summaryPtBr": "Escala Dano, Velocidade de Ataque e Área por Atributos (For/Des/Int)",
+    "keyMods": [
+      "10% increased Weapon Damage per 5 Strength",
+      "1% increased Attack Speed per 5 Dexterity",
+      "2% increased Area of Effect per 5 Intelligence"
+    ]
+  },
+  {
+    "id": "poe2-widowhail",
+    "itemName": "Widowhail",
+    "baseType": "Crude Bow",
+    "slot": "Weapon",
+    "levelReq": 1,
+    "archetypes": ["bow"],
+    "preferredClasses": ["Ranger", "Mercenary"],
+    "iconPath": "",
+    "summaryEn": "+150–250% Quiver Bonus Effect — carries bow builds through all 4 Acts",
+    "summaryPtBr": "+150–250% Efeito de Bônus de Aljava — carrega arcos até o Endgame",
+    "keyMods": [
+      "(150-250)% increased Bonuses gained from Equipped Quiver"
+    ]
+  },
+  {
+    "id": "poe2-quill-rain",
+    "itemName": "Quill Rain",
+    "baseType": "Shortbow",
+    "slot": "Weapon",
+    "levelReq": 5,
+    "archetypes": ["bow"],
+    "preferredClasses": ["Ranger"],
+    "iconPath": "",
+    "summaryEn": "100% increased Attack Speed + +10 to Dexterity for rapid poison/lightning arrow",
+    "summaryPtBr": "+100% Attack Speed para builds rápidas de arco desde o Nv 5",
+    "keyMods": [
+      "100% increased Attack Speed",
+      "Adds Physical/Attack speed smoothness"
+    ]
+  },
+  {
+    "id": "poe2-hrimnors-hymn",
+    "itemName": "Hrimnor's Hymn",
+    "baseType": "Oak Greathammer",
+    "slot": "Weapon",
+    "levelReq": 1,
+    "archetypes": ["melee"],
+    "preferredClasses": ["Warrior"],
+    "iconPath": "",
+    "summaryEn": "Slam skills trigger an Aftershock for effortless Act 1–3 Warrior slams",
+    "summaryPtBr": "Slams ativam Aftershock garantindo limpeza rápida nos Atos 1–3",
+    "keyMods": [
+      "Slam Skills trigger Aftershocks",
+      "Increased Physical Damage & Life Leech"
+    ]
+  },
+  {
+    "id": "poe2-oaksworn",
+    "itemName": "Oaksworn",
+    "baseType": "Sigil Crest Shield",
+    "slot": "Offhand",
+    "levelReq": 16,
+    "archetypes": ["universal", "minion"],
+    "iconPath": "",
+    "summaryEn": "+50 Spirit + +20% Chaos Resistance shield from Lv 16",
+    "summaryPtBr": "Escudo com +50 Espírito e +20% Resistência a Caos no Nv 16",
+    "keyMods": [
+      "+50 to Spirit",
+      "+20% to Chaos Resistance",
+      "Block Chance & Life"
+    ]
+  },
+  {
+    "id": "poe2-lochtonial-caress",
+    "itemName": "Lochtonial Caress",
+    "baseType": "Tempered Mitts",
+    "slot": "Gloves",
+    "levelReq": 1,
+    "archetypes": ["melee", "bow", "spell"],
+    "iconPath": "",
+    "summaryEn": "10–15% Skill Speed & shared Charges on kill for fast leveling",
+    "summaryPtBr": "10–15% Skill Speed e Cargas compartilhadas ao matar inimigos",
+    "keyMods": [
+      "(10-15)% increased Skill Speed",
+      "+(15-25) to Armour",
+      "Share Charges with Allies / on Kill"
+    ]
+  },
+  {
+    "id": "poe2-doedres-tenure",
+    "itemName": "Doedre's Tenure",
+    "baseType": "Stitched Gloves",
+    "slot": "Gloves",
+    "levelReq": 1,
+    "archetypes": ["spell"],
+    "iconPath": "",
+    "summaryEn": "+100% Spell Damage early-game burst gloves",
+    "summaryPtBr": "+100% Spell Damage para explosão de dano mágica inicial",
+    "keyMods": [
+      "100% increased Spell Damage",
+      "+10 to Intelligence",
+      "15% reduced Cast Speed"
+    ]
+  },
+  {
+    "id": "poe2-meginords-girdle",
+    "itemName": "Meginord's Girdle",
+    "baseType": "Rawhide Belt",
+    "slot": "Belt",
+    "levelReq": 1,
+    "archetypes": ["melee", "universal"],
+    "iconPath": "",
+    "summaryEn": "+40–50 Strength, +100–150 Life, +10–15% Cold Res leveling belt",
+    "summaryPtBr": "+40–50 Força, Vida alta e Res Gelo desde cedo",
+    "keyMods": [
+      "+(40-50) to Strength",
+      "+100 to maximum Life",
+      "+(10-15)% to Cold Resistance"
+    ]
+  },
+  {
+    "id": "poe2-carnage-heart",
+    "itemName": "Carnage Heart",
+    "baseType": "Amber Amulet",
+    "slot": "Amulet",
+    "levelReq": 16,
+    "archetypes": ["melee", "bow", "universal"],
+    "iconPath": "",
+    "summaryEn": "Massive +All Attributes + +All Ele Res + Life Leech amulet",
+    "summaryPtBr": "Grande bônus de Todos os Atributos, Res Elementais e Leech",
+    "keyMods": [
+      "+(15-25) to all Attributes",
+      "+(10-20)% to all Elemental Resistances",
+      "25% increased Life Leech"
+    ]
+  },
+  {
+    "id": "poe2-thiefs-torment",
+    "itemName": "Thief's Torment",
+    "baseType": "Emerald Ring",
+    "slot": "Ring",
+    "levelReq": 26,
+    "archetypes": ["bow", "melee"],
+    "iconPath": "",
+    "summaryEn": "Solves Life/Mana sustain completely on fast-hitting attacks",
+    "summaryPtBr": "Resolve 100% da recuperação de Vida e Mana por acerto em ataques",
+    "keyMods": [
+      "Gain Life & Mana per Enemy Hit with Attacks",
+      "+(15-25)% to all Elemental Resistances"
+    ]
+  }
+]

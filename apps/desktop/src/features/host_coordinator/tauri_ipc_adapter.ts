@@ -1,4 +1,4 @@
-import type { SavedCampaignProgress } from "@exile-hud/core";
+import type { SavedCampaignProgress, SupportedGameId } from "@exile-hud/core";
 
 export interface ClientLogDetectionResult {
   detectedPath: string | null;
@@ -41,14 +41,36 @@ async function callInvoke<T>(command: string, args?: Record<string, unknown>): P
   return invoke<T>(command, args);
 }
 
-export async function detectClientLogPath(): Promise<ClientLogDetectionResult> {
+export async function detectClientLogPath(
+  gameId?: SupportedGameId,
+): Promise<ClientLogDetectionResult> {
   if (!isTauriRuntime()) {
     return {
-      detectedPath: "C:\\Program Files (x86)\\Grinding Gear Games\\Path of Exile\\logs\\Client.txt",
+      detectedPath:
+        gameId === "poe2"
+          ? "C:\\Program Files (x86)\\Grinding Gear Games\\Path of Exile 2\\logs\\Client.txt"
+          : "C:\\Program Files (x86)\\Grinding Gear Games\\Path of Exile\\logs\\Client.txt",
       checkedCandidates: [],
     };
   }
-  return callInvoke<ClientLogDetectionResult>("detect_client_log_path");
+  return callInvoke<ClientLogDetectionResult>("detect_client_log_path", {
+    ...(gameId ? { gameId } : {}),
+  });
+}
+
+export async function setActiveGameModeIpc(
+  gameId: SupportedGameId,
+  logPath?: string | null,
+  manual?: boolean,
+): Promise<ClientLogDetectionResult> {
+  if (!isTauriRuntime()) {
+    return detectClientLogPath(gameId);
+  }
+  return callInvoke<ClientLogDetectionResult>("set_active_game_mode", {
+    gameId,
+    logPath: logPath ?? null,
+    manual: manual ?? Boolean(logPath?.trim()),
+  });
 }
 
 export async function setClientLogPath(path: string, manual = false): Promise<boolean> {
@@ -61,9 +83,9 @@ export async function readBootstrapLogLines(): Promise<string[]> {
   return callInvoke<string[]>("read_bootstrap_log_lines");
 }
 
-export async function checkPoeRunning(): Promise<boolean> {
+export async function checkPoeRunning(gameId?: SupportedGameId): Promise<boolean> {
   if (!isTauriRuntime()) return false;
-  return callInvoke<boolean>("check_poe_running");
+  return callInvoke<boolean>("check_poe_running", { ...(gameId ? { gameId } : {}) });
 }
 
 export async function writeVendorRegexClipboard(regex: string): Promise<void> {

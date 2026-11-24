@@ -6,6 +6,10 @@ import type {
   GameAdapter,
   IzaroMechanicGuide,
   LabTrialMeta,
+  LeagueStarterFilterMetadata,
+  Poe2PermanentBonusReward,
+  Poe2RuneSocketSuggestion,
+  Poe2ZoneLandmarkHint,
   TwinkCatalogItem,
 } from "./game_adapter_contract.js";
 import {
@@ -20,6 +24,7 @@ import {
   poe1DefaultRoutes,
   poe1Gems,
   poe1KillWaypoints,
+  poe1LeagueStarterFilterMeta,
   poe1PassiveTreeGraphMeta,
   poe1PassiveTreeNodes,
   poe1Quests,
@@ -121,6 +126,10 @@ export class Poe1CampaignGameAdapter implements GameAdapter {
     return poe1VaalGemLookup;
   }
 
+  getGemIdAliases(): Record<string, string> {
+    return {};
+  }
+
   getDefaultRouteFiles() {
     return poe1DefaultRoutes;
   }
@@ -211,6 +220,34 @@ export class Poe1CampaignGameAdapter implements GameAdapter {
 
   getBossElementalWarnings(act: number): BossElementalWarning[] {
     return BOSS_WARNINGS.filter((w) => w.act === act);
+  }
+
+  getCampaignStageCount(): number {
+    return 10;
+  }
+
+  getActDisplayLabel(act: number, locale: "en" | "pt-BR" = "en"): string {
+    return locale === "pt-BR" ? `Ato ${act}` : `Act ${act}`;
+  }
+
+  getDefaultStartAreaId(): string {
+    return "1_1_1";
+  }
+
+  getPermanentCampaignBonuses(): readonly Poe2PermanentBonusReward[] {
+    return [];
+  }
+
+  getZoneLandmarkHints(): Poe2ZoneLandmarkHint | null {
+    return null;
+  }
+
+  getRuneSocketHints(): readonly Poe2RuneSocketSuggestion[] {
+    return [];
+  }
+
+  getLeagueStarterFilterMeta(): LeagueStarterFilterMetadata {
+    return poe1LeagueStarterFilterMeta;
   }
 }
 

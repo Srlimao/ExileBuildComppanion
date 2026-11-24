@@ -1,6 +1,7 @@
 import type { GameAdapter, GemDefinition } from "@exile-hud/game-data";
 import type { ValidatedPobBuild } from "../pob_import/pob_endgame_fallback_validator.js";
 import type { CurrencyTally, GemAcquisitionStep } from "../protocol/session_room_wire_protocol.js";
+import { assignPoe2UncutGems } from "./poe2_uncut_gem_planner.js";
 import type { ParsedRouteStep } from "./route_fragment_ast_parser.js";
 
 export function getGemVendorCurrencyCost(
@@ -18,6 +19,9 @@ export function assignGemsToCampaignRoute(
   routeSteps: ParsedRouteStep[],
   adapter: GameAdapter,
 ): GemAcquisitionStep[] {
+  if (adapter.gameId === "poe2") {
+    return assignPoe2UncutGems(build, adapter);
+  }
   const quests = adapter.getQuests();
   const gems = adapter.getGems();
   const charStart = adapter.getCharacters()[build.characterClass];

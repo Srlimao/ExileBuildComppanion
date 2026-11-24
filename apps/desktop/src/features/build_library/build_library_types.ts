@@ -3,6 +3,7 @@ import {
   type HudSessionSnapshot,
   type PobSetSelection,
   type SavedCampaignProgress,
+  type SupportedGameId,
 } from "@exile-hud/core";
 
 export interface BuildProgressSummary {
@@ -19,6 +20,7 @@ export interface BuildProgressSummary {
 
 export interface SavedBuildFileRecord {
   schemaVersion: number;
+  gameId?: SupportedGameId;
   id: string;
   name: string;
   notes: string;
@@ -40,6 +42,7 @@ export interface SavedBuildFileRecord {
 export interface BuildLibraryEntrySummary {
   relativePath: string;
   folderPath: string;
+  gameId?: SupportedGameId;
   id: string;
   name: string;
   notes: string;

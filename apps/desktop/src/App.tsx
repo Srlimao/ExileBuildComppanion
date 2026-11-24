@@ -43,6 +43,8 @@ export function App() {
   return (
     <div className="h-screen flex flex-col bg-hud-bg text-hud-text overflow-hidden transition-colors">
       <DesktopControlHeader
+        activeGameId={ctl.activeGameId}
+        onSelectGame={(nextGame) => void ctl.switchGameMode(nextGame)}
         tab={tab}
         onSelectTab={setTab}
         snapshot={ctl.snapshot}
@@ -60,6 +62,7 @@ export function App() {
       <main className="flex-1 min-h-0 overflow-y-auto px-4 py-3.5">
         {tab === "builds" && (
           <BuildLibraryManagerView
+            activeGameId={ctl.activeGameId}
             listing={ctl.buildLibrary.listing}
             snapshot={ctl.snapshot}
             currentFolder={ctl.buildLibrary.currentFolder}
@@ -98,6 +101,7 @@ export function App() {
 
         {tab === "connect" && (
           <ConnectTabView
+            gameId={ctl.activeGameId}
             roomId={ctl.roomId}
             pin={ctl.pin}
             relayUrl={ctl.relayUrl}
@@ -137,7 +141,7 @@ export function App() {
               onCopyRegexNow={ctl.copyRegexNow}
             />
 
-            <LeagueStarterFilterCard />
+            <LeagueStarterFilterCard gameId={ctl.activeGameId} />
 
             <CampaignSimulatorDrawer
               poeRunning={ctl.snapshot?.poeRunning ?? false}

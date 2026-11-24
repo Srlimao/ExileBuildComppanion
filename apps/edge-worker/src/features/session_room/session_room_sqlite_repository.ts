@@ -2,10 +2,12 @@ import {
   buildVendorSearchRegex,
   computeNextTownCurrencyBudget,
   resetSnapshotProgress,
+  resolveSnapshotGameId,
   type DeviceFormFactor,
   type HudContextMode,
   type HudSessionSnapshot,
   type ModeWidgetGrids,
+  type SupportedGameId,
   type ViewerToRoomMessage,
   type WidgetGridItemLayout,
 } from "@exile-hud/core";
@@ -23,6 +25,31 @@ export interface RegisterRoomInput {
   hostSecret: string;
   pin: string;
   snapshot: HudSessionSnapshot;
+}
+
+const VALID_MODES = new Set<HudContextMode>(["FIELD", "TOWN", "LAB", "TREE", "STANDBY"]);
+
+export function encodeLayoutModeKey(mode: HudContextMode, gameId: SupportedGameId = "poe1"): string {
+  return gameId === "poe2" ? `poe2:${mode}` : mode;
+}
+
+export function decodeLayoutModeKey(
+  raw: string,
+): { gameId: SupportedGameId; mode: HudContextMode } | null {
+  if (raw.startsWith("poe2:")) {
+    const mode = raw.slice("poe2:".length) as HudContextMode;
+    return VALID_MODES.has(mode) ? { gameId: "poe2", mode } : null;
+  }
+  const mode = raw as HudContextMode;
+  return VALID_MODES.has(mode) ? { gameId: "poe1", mode } : null;
+}
+
+function createEmptyModeGrids(): ModeWidgetGrids {
+  return {
+    "tablet-landscape": {},
+    "tablet-portrait": {},
+    phone: {},
+  };
 }
 
 export function containsForbiddenSecret(raw: string): boolean {
@@ -169,33 +196,44 @@ export class SessionRoomSqliteRepository {
         gemSteps: nextGems,
         linkGroups: snapshot.linkGroups,
         currentAct: snapshot.highestUnlockedAct,
+        gameId: resolveSnapshotGameId(snapshot),
       }),
     };
     this.saveSnapshot(updated);
     return updated;
   }
 
-  getLayouts(): ModeWidgetGrids {
-    const grids: ModeWidgetGrids = {
-      "tablet-landscape": {},
-      "tablet-portrait": {},
-      phone: {},
+  getAllLayoutsByGame(): Record<SupportedGameId, ModeWidgetGrids> {
+    const byGame: Record<SupportedGameId, ModeWidgetGrids> = {
+      poe1: createEmptyModeGrids(),
+      poe2: createEmptyModeGrids(),
     };
     const rows = this.sql.exec("SELECT device_form_factor, mode, items_json FROM room_layouts").toArray();
     for (const row of rows) {
       const ff = String(row.device_form_factor) as DeviceFormFactor;
-      const mode = String(row.mode) as HudContextMode;
-      if (!(ff in grids)) continue;
+      const decoded = decodeLayoutModeKey(String(row.mode));
+      if (!decoded || !(ff in byGame[decoded.gameId])) continue;
       try {
-        grids[ff][mode] = JSON.parse(String(row.items_json)) as WidgetGridItemLayout[];
+        byGame[decoded.gameId][ff][decoded.mode] = JSON.parse(
+          String(row.items_json),
+        ) as WidgetGridItemLayout[];
       } catch {
         // Ignore corrupted layout record
       }
     }
-    return grids;
+    return byGame;
   }
 
-  saveLayout(formFactor: DeviceFormFactor, mode: HudContextMode, items: WidgetGridItemLayout[]): void {
+  getLayouts(gameId: SupportedGameId = "poe1"): ModeWidgetGrids {
+    return this.getAllLayoutsByGame()[gameId];
+  }
+
+  saveLayout(
+    formFactor: DeviceFormFactor,
+    mode: HudContextMode,
+    items: WidgetGridItemLayout[],
+    gameId: SupportedGameId = "poe1",
+  ): void {
     const now = Date.now();
     this.sql.exec(
       `INSERT INTO room_layouts (device_form_factor, mode, items_json, updated_at)
@@ -204,7 +242,7 @@ export class SessionRoomSqliteRepository {
          items_json = excluded.items_json,
          updated_at = excluded.updated_at`,
       formFactor,
-      mode,
+      encodeLayoutModeKey(mode, gameId),
       JSON.stringify(items),
       now,
     );

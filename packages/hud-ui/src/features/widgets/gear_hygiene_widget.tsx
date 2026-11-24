@@ -26,11 +26,13 @@ function selectDefaultItemSet(itemSets: TargetItemSetSummary[], characterLevel: 
 
 /** Displays gear/flask hygiene alerts alongside imported PoB Item Sets and target slots. */
 export function GearHygieneWidget({ snapshot }: { snapshot: HudSessionSnapshot }) {
-  const { locale, msg } = useHudI18n();
+  const { locale, msg, appMsg } = useHudI18n();
+  const isPoe2 = snapshot.gameId === "poe2";
   const issues = snapshot.gearHygiene;
   const craftSuggestions = (snapshot.benchCraftSuggestions ?? []).filter(
     (s) => !(s.id === "bench_boots_ms" && issues.some((i) => i.id === "boots_0ms")),
   );
+  const topRunes = isPoe2 ? (snapshot.runeSuggestions ?? []).slice(0, 2) : [];
   const itemSets = snapshot.itemSets ?? [];
   const defaultSet = selectDefaultItemSet(itemSets, snapshot.characterLevel);
   const [selectedSetId, setSelectedSetId] = useState<string | null>(defaultSet?.id ?? null);
@@ -78,7 +80,20 @@ export function GearHygieneWidget({ snapshot }: { snapshot: HudSessionSnapshot }
           </div>
         ))}
 
-        {issues.length === 0 && craftSuggestions.length === 0 && (
+        {issues.length === 0 && craftSuggestions.length === 0 && topRunes.length > 0 && (
+          <div className="space-y-1">
+            {topRunes.map((rune) => (
+              <div key={rune.id} className="text-xs flex items-baseline justify-between gap-2">
+                <span className="text-hud-text/90">
+                  <span className="text-hud-accent font-medium">{appMsg.poe2.runeSlotPrefix}:</span> {rune.runeName} ({rune.slotHint})
+                </span>
+                <span className="shrink-0 font-mono text-hud-quest">{rune.effectLabel}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {issues.length === 0 && craftSuggestions.length === 0 && topRunes.length === 0 && (
           <p className="text-xs text-hud-ok">{msg.widgets.gearLooksGood}</p>
         )}
       </div>

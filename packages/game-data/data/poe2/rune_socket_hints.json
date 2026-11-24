@@ -1,0 +1,51 @@
+[
+  {
+    "id": "rune_desert_fire",
+    "category": "fire_res",
+    "runeName": "Desert Rune",
+    "slotHint": "Armour / Boots / Helm",
+    "effectLabel": "+12% Fire Resistance"
+  },
+  {
+    "id": "rune_glacial_cold",
+    "category": "cold_res",
+    "runeName": "Glacial Rune",
+    "slotHint": "Armour / Boots / Helm",
+    "effectLabel": "+12% Cold Resistance"
+  },
+  {
+    "id": "rune_storm_lightning",
+    "category": "lightning_res",
+    "runeName": "Storm Rune",
+    "slotHint": "Armour / Boots / Helm",
+    "effectLabel": "+12% Lightning Resistance"
+  },
+  {
+    "id": "soul_core_tacati_chaos",
+    "category": "chaos_res",
+    "runeName": "Soul Core of Tacati",
+    "slotHint": "Armour (Chaos Trial)",
+    "effectLabel": "+7% Chaos Resistance"
+  },
+  {
+    "id": "rune_body_life",
+    "category": "life",
+    "runeName": "Body Rune",
+    "slotHint": "Body Armour / Shield",
+    "effectLabel": "+25 Maximum Life"
+  },
+  {
+    "id": "rune_iron_phys",
+    "category": "damage",
+    "runeName": "Iron Rune",
+    "slotHint": "Martial Weapon",
+    "effectLabel": "20% increased Physical Damage"
+  },
+  {
+    "id": "soul_core_jiquani",
+    "category": "movement_speed",
+    "runeName": "Lesser Rabbit Talisman / Soul Core of Quipolatl",
+    "slotHint": "Boots / Attack Speed",
+    "effectLabel": "5% Attack Speed or Movement utility"
+  }
+]

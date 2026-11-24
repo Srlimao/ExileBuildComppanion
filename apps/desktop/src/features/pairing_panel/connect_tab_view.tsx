@@ -1,4 +1,4 @@
-import type { CharacterSyncStatus, ViewerPresenceEntry } from "@exile-hud/core";
+import type { CharacterSyncStatus, SupportedGameId, ViewerPresenceEntry } from "@exile-hud/core";
 import { useHudI18n } from "@exile-hud/hud-ui";
 import { useState } from "react";
 import { CharacterSyncSettingsCard } from "../ggg_sync_panel/character_sync_settings_card.js";
@@ -7,6 +7,7 @@ import { QrRoomPairingCard } from "./qr_room_pairing_card.js";
 type ConnectSubTab = "qr" | "ggg";
 
 interface ConnectTabViewProps {
+  gameId: SupportedGameId;
   roomId: string;
   pin: string;
   relayUrl: string;
@@ -95,6 +96,7 @@ export function ConnectTabView(props: ConnectTabViewProps) {
         />
       ) : (
         <CharacterSyncSettingsCard
+          gameId={props.gameId}
           accountName={props.accountName}
           selectedLeague={props.selectedLeague}
           characterName={props.characterName}

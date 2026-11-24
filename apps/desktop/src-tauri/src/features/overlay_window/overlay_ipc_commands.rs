@@ -57,7 +57,7 @@ fn apply_overlay_dock_preset_blocking(
     }
 
     let state = app.state::<OverlaySharedState>();
-    let poe_pid = resolve_overlay_poe_pid(&state, true);
+    let poe_pid = resolve_overlay_poe_pid(app, &state, true);
     let monitor = resolve_target_monitor_rect(app, poe_pid);
 
     let updated = {

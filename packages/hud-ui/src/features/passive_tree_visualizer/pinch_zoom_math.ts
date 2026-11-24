@@ -110,7 +110,7 @@ export function computeSinglePanCamera(
 }
 
 export const MIN_VIEW_WIDTH = 650;
-export const MAX_VIEW_WIDTH = 30000;
+export const MAX_VIEW_WIDTH = 52000;
 
 export function clampViewWidth(w: number): number {
   return Math.max(MIN_VIEW_WIDTH, Math.min(MAX_VIEW_WIDTH, w));

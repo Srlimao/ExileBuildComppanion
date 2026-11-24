@@ -1,4 +1,4 @@
-import type { HudSessionSnapshot } from "@exile-hud/core";
+import type { HudSessionSnapshot, SupportedGameId } from "@exile-hud/core";
 import { ExileRelayBrandIcon, ThemeSelectorPopover, useHudI18n } from "@exile-hud/hud-ui";
 import { Eye, EyeOff } from "lucide-react";
 import { QuickQrPairPopover } from "../pairing_panel/quick_qr_pair_popover.js";
@@ -6,6 +6,8 @@ import { QuickQrPairPopover } from "../pairing_panel/quick_qr_pair_popover.js";
 export type DesktopTabKey = "builds" | "overlay" | "connect" | "game";
 
 interface DesktopControlHeaderProps {
+  activeGameId: SupportedGameId;
+  onSelectGame: (gameId: SupportedGameId) => void;
   tab: DesktopTabKey;
   onSelectTab: (tab: DesktopTabKey) => void;
   snapshot: HudSessionSnapshot | null;
@@ -21,9 +23,12 @@ interface DesktopControlHeaderProps {
 }
 
 const TAB_KEYS: readonly DesktopTabKey[] = ["builds", "overlay", "connect", "game"];
+const GAME_KEYS: readonly SupportedGameId[] = ["poe1", "poe2"];
 
-/** Compact 2-row tray-companion header with live area status, Quick-QR popover, and 4-segment nav. */
+/** Compact 2-row tray-companion header with PoE 1/2 switcher, live status, Quick-QR, and nav. */
 export function DesktopControlHeader({
+  activeGameId,
+  onSelectGame,
   tab,
   onSelectTab,
   snapshot,
@@ -65,6 +70,33 @@ export function DesktopControlHeader({
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
+          <div
+            role="group"
+            aria-label={appMsg.poe2.gameSwitchAria}
+            className="inline-flex items-center p-0.5 rounded-lg bg-hud-bg border border-hud-hairline"
+          >
+            {GAME_KEYS.map((id) => {
+              const selected = activeGameId === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  data-testid={`game-mode-${id}`}
+                  aria-pressed={selected}
+                  title={appMsg.poe2.gameFullLabels[id]}
+                  onClick={() => onSelectGame(id)}
+                  className={`px-1.5 py-0.5 rounded-md text-[10px] font-semibold cursor-pointer transition-colors ${
+                    selected
+                      ? "bg-hud-accent text-hud-accent-fg shadow-sm"
+                      : "text-hud-muted hover:text-hud-text"
+                  }`}
+                >
+                  {appMsg.poe2.gameShortLabels[id]}
+                </button>
+              );
+            })}
+          </div>
+
           <button
             type="button"
             onClick={onToggleOverlay}

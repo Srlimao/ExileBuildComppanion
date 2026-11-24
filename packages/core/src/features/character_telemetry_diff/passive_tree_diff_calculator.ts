@@ -14,6 +14,8 @@ function toSpecSummaries(specs: ExtractedTreeSpec[]): PassiveTreeSpecSummary[] {
       minLevel: spec.minLevel,
       nodeIds: spec.nodeIds,
       masteries: spec.masteries,
+      ...(spec.weaponSet1NodeIds ? { weaponSet1NodeIds: spec.weaponSet1NodeIds } : {}),
+      ...(spec.weaponSet2NodeIds ? { weaponSet2NodeIds: spec.weaponSet2NodeIds } : {}),
     })),
   );
 }

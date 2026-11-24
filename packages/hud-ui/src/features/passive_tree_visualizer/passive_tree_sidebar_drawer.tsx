@@ -1,11 +1,12 @@
 import type { PassiveTreeBracketDiff } from "@exile-hud/core";
 import { resolveMasteryEffectStats } from "@exile-hud/core";
-import { poe1GameAdapter, type PassiveTreeNodeMetadata } from "@exile-hud/game-data";
+import { getGameAdapter, type PassiveTreeNodeMetadata, type SupportedGameId } from "@exile-hud/game-data";
 import { RefreshCw } from "lucide-react";
 import { memo, useMemo } from "react";
 import { useHudI18n } from "../i18n/hud_i18n_provider.js";
 
 interface PassiveTreeSidebarDrawerProps {
+  gameId?: SupportedGameId;
   diff: PassiveTreeBracketDiff;
   nodes: Record<string, PassiveTreeNodeMetadata>;
   allocatedIds: ReadonlySet<string>;
@@ -14,6 +15,7 @@ interface PassiveTreeSidebarDrawerProps {
 }
 
 export const PassiveTreeSidebarDrawer = memo(function PassiveTreeSidebarDrawer({
+  gameId,
   diff,
   nodes,
   allocatedIds,
@@ -21,16 +23,17 @@ export const PassiveTreeSidebarDrawer = memo(function PassiveTreeSidebarDrawer({
   onTriggerManualSync,
 }: PassiveTreeSidebarDrawerProps) {
   const { msg } = useHudI18n();
+  const adapter = getGameAdapter(gameId);
   const masteryEntries = useMemo(
     () =>
       Object.entries(diff.selectedSpec?.masteries ?? {}).map(([nodeId, effectId]) => ({
         nodeId,
         effectId,
         meta: nodes[nodeId],
-        stats: resolveMasteryEffectStats(nodeId, effectId, poe1GameAdapter),
+        stats: resolveMasteryEffectStats(nodeId, effectId, adapter),
         done: allocatedIds.has(nodeId),
       })),
-    [diff.selectedSpec?.masteries, nodes, allocatedIds],
+    [diff.selectedSpec?.masteries, nodes, allocatedIds, adapter],
   );
 
   const respecIds = useMemo(

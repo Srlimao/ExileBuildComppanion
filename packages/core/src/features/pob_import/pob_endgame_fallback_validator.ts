@@ -85,7 +85,8 @@ export function validateAndEnrichPobBuild(extracted: ExtractedPobBuild, adapter:
   }
 
   const requiredIds = new Set(extracted.uniqueRequiredGems.map((g) => g.id));
-  const requiresAct3Library = checkNeedsLibraryForClass(requiredIds, extracted.characterClass, adapter);
+  const requiresAct3Library =
+    adapter.gameId === "poe2" ? false : checkNeedsLibraryForClass(requiredIds, extracted.characterClass, adapter);
 
   return {
     ...extracted,

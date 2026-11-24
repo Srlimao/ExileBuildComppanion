@@ -1,9 +1,10 @@
 import { parsePoelabDailyJson, type HudSessionSnapshot } from "@exile-hud/core";
-import { poe1GameAdapter } from "@exile-hud/game-data";
+import { getGameAdapter } from "@exile-hud/game-data";
 import { Upload } from "lucide-react";
 import { useState, type ChangeEvent } from "react";
 import { useHudI18n } from "../i18n/hud_i18n_provider.js";
 import { localizeIzaroGuide } from "../i18n/telemetry_advisor_localizer.js";
+import { Poe2AscendancyTrialsPanel } from "./poe2_ascendancy_trials_panel.js";
 
 interface LabCompassWidgetProps {
   snapshot: HudSessionSnapshot;
@@ -15,8 +16,12 @@ export function LabCompassWidget({ snapshot, onImportPoelabJson }: LabCompassWid
   const [showPaste, setShowPaste] = useState(false);
   const [pasteText, setPasteText] = useState("");
   const [importError, setImportError] = useState<string | null>(null);
-  const izaroGuides = poe1GameAdapter.getIzaroMechanics().map((g) => localizeIzaroGuide(g, locale));
-  const trials = poe1GameAdapter.getLabTrials();
+  if (snapshot.gameId === "poe2") {
+    return <Poe2AscendancyTrialsPanel snapshot={snapshot} />;
+  }
+  const adapter = getGameAdapter(snapshot.gameId);
+  const izaroGuides = adapter.getIzaroMechanics().map((g) => localizeIzaroGuide(g, locale));
+  const trials = adapter.getLabTrials();
 
   const tryImport = (rawText: string): boolean => {
     try {

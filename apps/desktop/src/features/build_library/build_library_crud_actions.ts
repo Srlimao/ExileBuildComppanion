@@ -1,3 +1,4 @@
+import type { SupportedGameId } from "@exile-hud/core";
 import { flushPendingProgressSave } from "../host_coordinator/campaign_progress_persistence_client.js";
 import {
   createBuildFolderIpc,
@@ -12,6 +13,7 @@ import { createNewBuildId, type BuildLibraryEntrySummary } from "./build_library
 export async function duplicateBuildEntry(
   entry: BuildLibraryEntrySummary,
   copyLabel: string,
+  gameId: SupportedGameId = "poe1",
 ): Promise<void> {
   await duplicateBuildIpc({
     sourcePath: entry.relativePath,
@@ -19,35 +21,40 @@ export async function duplicateBuildEntry(
     newName: `${entry.name} (${copyLabel})`,
     copyProgress: false,
     newId: createNewBuildId(),
+    gameId,
   });
 }
 
 export async function moveBuildEntry(
   relativePath: string,
   targetFolder: string,
+  gameId: SupportedGameId = "poe1",
 ): Promise<string> {
   const namePart = relativePath.split("/").pop()?.replace(/\.json$/i, "") ?? "Build";
   const moved = await renameOrMoveBuildIpc({
     fromPath: relativePath,
     targetFolder,
     newName: namePart,
+    gameId,
   });
   return moved.relativePath;
 }
 
 export async function deleteBuildEntry(params: {
   relativePath: string;
+  gameId?: SupportedGameId;
   activeBuildPath: string | null;
   clearActiveBuildRef: () => void;
   ensureValidActive: (nextActive: string | null) => Promise<void>;
   refreshListing: () => Promise<unknown>;
 }): Promise<void> {
+  const gameId = params.gameId ?? "poe1";
   const wasActive = params.relativePath === params.activeBuildPath;
   if (wasActive) {
     await flushPendingProgressSave();
     params.clearActiveBuildRef();
   }
-  const nextActive = await deleteBuildIpc(params.relativePath);
+  const nextActive = await deleteBuildIpc(params.relativePath, gameId);
   if (wasActive) {
     await params.ensureValidActive(nextActive);
   } else {
@@ -55,17 +62,22 @@ export async function deleteBuildEntry(params: {
   }
 }
 
-export async function createFolderEntry(parentFolder: string, folderName: string): Promise<void> {
-  await createBuildFolderIpc(parentFolder, folderName);
+export async function createFolderEntry(
+  parentFolder: string,
+  folderName: string,
+  gameId: SupportedGameId = "poe1",
+): Promise<void> {
+  await createBuildFolderIpc(parentFolder, folderName, gameId);
 }
 
 export async function renameFolderEntry(params: {
   oldFolder: string;
   newName: string;
+  gameId?: SupportedGameId;
   currentFolder: string;
   setCurrentFolder: (folder: string) => void;
 }): Promise<void> {
-  const nextPath = await renameBuildFolderIpc(params.oldFolder, params.newName);
+  const nextPath = await renameBuildFolderIpc(params.oldFolder, params.newName, params.gameId ?? "poe1");
   if (params.currentFolder === params.oldFolder) {
     params.setCurrentFolder(nextPath);
   } else if (params.currentFolder.startsWith(`${params.oldFolder}/`)) {
@@ -78,6 +90,7 @@ export async function renameFolderEntry(params: {
 export async function deleteFolderEntry(params: {
   folderPath: string;
   recursive: boolean;
+  gameId?: SupportedGameId;
   activeBuildPath: string | null;
   currentFolder: string;
   clearActiveBuildRef: () => void;
@@ -85,6 +98,7 @@ export async function deleteFolderEntry(params: {
   ensureValidActive: (nextActive: string | null) => Promise<void>;
   refreshListing: () => Promise<unknown>;
 }): Promise<void> {
+  const gameId = params.gameId ?? "poe1";
   const activeInside =
     params.activeBuildPath?.toLowerCase().startsWith(`${params.folderPath.toLowerCase()}/`) ??
     false;
@@ -92,7 +106,7 @@ export async function deleteFolderEntry(params: {
     await flushPendingProgressSave();
     params.clearActiveBuildRef();
   }
-  const nextActive = await deleteBuildFolderIpc(params.folderPath, params.recursive);
+  const nextActive = await deleteBuildFolderIpc(params.folderPath, params.recursive, gameId);
   if (
     params.currentFolder === params.folderPath ||
     params.currentFolder.startsWith(`${params.folderPath}/`)

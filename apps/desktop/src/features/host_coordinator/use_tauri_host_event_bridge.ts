@@ -1,5 +1,5 @@
 import { reduceTelemetrySession, type HudSessionSnapshot } from "@exile-hud/core";
-import { poe1GameAdapter } from "@exile-hud/game-data";
+import { getGameAdapter } from "@exile-hud/game-data";
 import { useEffect, type MutableRefObject } from "react";
 import { subscribeTauriListeners, writeVendorRegexClipboard } from "./tauri_ipc_adapter.js";
 
@@ -29,7 +29,7 @@ export function useTauriHostEventBridge({
         const cur = snapshotRef.current;
         if (cur) {
           pushPatch(
-            reduceTelemetrySession(cur, { type: "process_state", running }, poe1GameAdapter),
+            reduceTelemetrySession(cur, { type: "process_state", running }, getGameAdapter(cur.gameId)),
             "poe_process",
           );
         }
@@ -45,7 +45,7 @@ export function useTauriHostEventBridge({
         const cur = snapshotRef.current;
         if (cur) {
           pushPatch(
-            reduceTelemetrySession(cur, { type: "in_game_tree_state", open }, poe1GameAdapter),
+            reduceTelemetrySession(cur, { type: "in_game_tree_state", open }, getGameAdapter(cur.gameId)),
             "poe_tree_hotkey",
           );
         }

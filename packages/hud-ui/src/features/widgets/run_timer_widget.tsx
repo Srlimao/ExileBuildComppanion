@@ -1,9 +1,11 @@
 import type { HudSessionSnapshot } from "@exile-hud/core";
+import { getGameAdapter } from "@exile-hud/game-data";
 import { useHudI18n } from "../i18n/hud_i18n_provider.js";
 import { formatRunTimerClock, useLiveRunElapsedMs } from "./run_timer_clock_tracker.js";
 
 export function RunTimerWidget({ snapshot }: { snapshot: HudSessionSnapshot }) {
-  const { msg } = useHudI18n();
+  const { locale, msg } = useHudI18n();
+  const adapter = getGameAdapter(snapshot.gameId);
   const displayMs = useLiveRunElapsedMs(snapshot);
   const isLive = snapshot.runTimerRunning && snapshot.poeRunning;
   const completedCount = snapshot.checkpoints.filter((c) => c.completed).length;
@@ -24,14 +26,15 @@ export function RunTimerWidget({ snapshot }: { snapshot: HudSessionSnapshot }) {
           {formatRunTimerClock(displayMs)}
         </div>
         <div className="text-xs text-hud-muted mt-1">
-          {msg.widgets.actWord} {snapshot.currentAct} · {msg.widgets.checkpointsLabel} {completedCount}/{snapshot.checkpoints.length}
+          {adapter.getActDisplayLabel(snapshot.currentAct, locale)} · {msg.widgets.checkpointsLabel} {completedCount}/
+          {snapshot.checkpoints.length}
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-3 pt-1">
         {[1, 2, 3].map((act) => (
           <div key={act}>
-            <div className="text-[11px] text-hud-muted">{msg.standby.actLabel(act)}</div>
+            <div className="text-[11px] text-hud-muted">{adapter.getActDisplayLabel(act, locale)}</div>
             <div className="text-xs font-mono tabular-nums text-hud-text">
               {snapshot.actSplitsMs[`act_${act}`] ? formatRunTimerClock(snapshot.actSplitsMs[`act_${act}`]!) : "--:--"}
             </div>

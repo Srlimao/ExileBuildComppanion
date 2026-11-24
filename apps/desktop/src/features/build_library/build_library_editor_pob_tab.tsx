@@ -1,9 +1,10 @@
-import type { PobBuildPreview, PobSetSelection } from "@exile-hud/core";
+import type { PobBuildPreview, PobSetSelection, SupportedGameId } from "@exile-hud/core";
 import { useHudI18n } from "@exile-hud/hud-ui";
-import { RefreshCw } from "lucide-react";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 import { PobSetSelectorSection } from "../pob_profile_panel/pob_set_selector_section.js";
 
 interface BuildLibraryEditorPobTabProps {
+  activeGameId?: SupportedGameId;
   name: string;
   folderPath: string;
   allFolders: readonly string[];
@@ -22,6 +23,7 @@ interface BuildLibraryEditorPobTabProps {
 
 /** First tab of the streamlined build editor: name, folder, PoB source, and set selection. */
 export function BuildLibraryEditorPobTab({
+  activeGameId,
   name,
   folderPath,
   allFolders,
@@ -38,6 +40,10 @@ export function BuildLibraryEditorPobTab({
   onChangeSelection,
 }: BuildLibraryEditorPobTabProps) {
   const { appMsg } = useHudI18n();
+
+  const hasGameMismatch = Boolean(
+    activeGameId && preview?.detectedGameId && preview.detectedGameId !== activeGameId,
+  );
 
   return (
     <div className="space-y-3">
@@ -115,6 +121,18 @@ export function BuildLibraryEditorPobTab({
           </button>
         </div>
       </div>
+
+      {hasGameMismatch && activeGameId && preview?.detectedGameId && (
+        <div className="flex items-start gap-2 rounded-lg border-l-2 border-hud-warn bg-hud-warn/10 px-2.5 py-2 text-[11px] text-hud-warn">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+          <span>
+            {appMsg.poe2.pobMismatchNotice(
+              appMsg.poe2.gameShortLabels[preview.detectedGameId],
+              appMsg.poe2.gameShortLabels[activeGameId],
+            )}
+          </span>
+        </div>
+      )}
 
       {preview && selection && (
         <div className="rounded-xl bg-hud-surface border border-hud-hairline p-3">
