@@ -203,4 +203,46 @@ describe("poe2_build_file_import", () => {
     expect(body.baseType).toBe("Armour (Str Base)");
     expect(body.mods).toEqual(["1. Increased Health", "2. Increased Resistances", "3. Increased Armour"]);
   });
+
+  it("differentiates shared Flask1, Charm1, and offset Trinket1 slots via slot_x coordinates", async () => {
+    const allieStyle = JSON.stringify({
+      name: "Allie Oracle",
+      inventory_slots: [
+        { inventory_id: "Flask1", slot_x: 0, slot_y: 0, additional_text: "Greater Life Flask" },
+        { inventory_id: "Flask1", slot_x: 1, slot_y: 0, additional_text: "Greater Mana Flask" },
+        { inventory_id: "Charm1", slot_x: 0, slot_y: 0, additional_text: "Stone Charm" },
+        { inventory_id: "Charm1", slot_x: 1, slot_y: 0, additional_text: "Sapphire Charm" },
+        { inventory_id: "Charm1", slot_x: 2, slot_y: 0, additional_text: "Antidote Charm" },
+      ],
+    });
+    const allieExtracted = extractDecodedBuild(await resolveAndDecodePobInput(allieStyle), poe2GameAdapter);
+    const allieSlots = allieExtracted.itemSets[0]?.slots ?? [];
+    expect(allieSlots.map((s) => [s.slotName, s.baseType])).toEqual([
+      ["Flask 1", "Greater Life Flask"],
+      ["Flask 2", "Greater Mana Flask"],
+      ["Charm 1", "Stone Charm"],
+      ["Charm 2", "Sapphire Charm"],
+      ["Charm 3", "Antidote Charm"],
+    ]);
+
+    const varashtaStyle = JSON.stringify({
+      name: "Varashta Minion",
+      inventory_slots: [
+        { inventory_id: "Trinket1", slot_x: 2, slot_y: 0, additional_text: "Staunching Charm" },
+        { inventory_id: "Flask1", slot_x: 1, slot_y: 0, additional_text: "Giant Mana Flask" },
+        { inventory_id: "Flask1", slot_x: 0, slot_y: 0, additional_text: "Grand Life Flask" },
+        { inventory_id: "Trinket1", slot_x: 3, slot_y: 0, additional_text: "Thawing Charm" },
+        { inventory_id: "Trinket1", slot_x: 4, slot_y: 0, additional_text: "Antidote Charm" },
+      ],
+    });
+    const varashtaExtracted = extractDecodedBuild(await resolveAndDecodePobInput(varashtaStyle), poe2GameAdapter);
+    const varashtaSlots = varashtaExtracted.itemSets[0]?.slots ?? [];
+    expect(varashtaSlots.map((s) => [s.slotName, s.baseType])).toEqual([
+      ["Charm 1", "Staunching Charm"],
+      ["Flask 2", "Giant Mana Flask"],
+      ["Flask 1", "Grand Life Flask"],
+      ["Charm 2", "Thawing Charm"],
+      ["Charm 3", "Antidote Charm"],
+    ]);
+  });
 });

@@ -11,6 +11,7 @@
     "build": "pnpm --filter @exile-hud/core build && pnpm --filter @exile-hud/pwa build",
     "prepare": "pnpm run build",
     "deploy": "pnpm run build && wrangler deploy",
+    "deploy:all": "pnpm run deploy && git push origin main",
     "build:all": "pnpm --filter @exile-hud/core build && pnpm --filter @exile-hud/pwa build && pnpm --filter @exile-hud/desktop build",
     "test": "pnpm --filter @exile-hud/core test && pnpm --filter @exile-hud/edge-worker test && pnpm --filter @exile-hud/pwa test && pnpm --filter @exile-hud/desktop test",
     "dev:edge": "pnpm run build && wrangler dev",

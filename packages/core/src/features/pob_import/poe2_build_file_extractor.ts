@@ -133,7 +133,7 @@ function extractSlotTitleAndMods(slot: NormalizedBuildInventorySlot): { itemName
     !/^stat\s*priority:?$/i.test(first!) &&
     !/^\d+\./.test(first!) &&
     first!.length <= 48 &&
-    (rawLines.length > 1 || /^any\s+/i.test(first!));
+    (rawLines.length > 1 || /^(?:any\s+|.*\b(?:flask|charm)\b)/i.test(first!));
   if (isHeader && first) {
     return { itemName: first, baseType: first, mods: rawLines.slice(1).filter((line) => !/^stat\s*priority:?$/i.test(line)) };
   }

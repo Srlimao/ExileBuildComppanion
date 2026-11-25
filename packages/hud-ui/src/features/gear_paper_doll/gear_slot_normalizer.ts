@@ -74,15 +74,22 @@ const CORE_SLOT_PATTERNS: ReadonlyArray<[RegExp, CoreGearSlotKey]> = [
 ];
 
 const INDEXED_OFFICIAL_SLOT_REGEX =
-  /^(?:helm1|bodyarmour1|gloves1|boots1|belt1|amulet1|offhand[12]|lifeflask1|manaflask1|beltcharm[1-3])$/i;
+  /^(?:helm1|bodyarmour1|gloves1|boots1|belt1|amulet1|offhand[12]|lifeflask1|manaflask1|beltcharm[1-3]|trinket[1-3]?)$/i;
+
+function pickOpenSlot(
+  candidates: readonly PaperDollSlotKey[],
+  primarySlots: Partial<Record<PaperDollSlotKey, TargetItemSlotSummary>>,
+): PaperDollSlotKey | null {
+  return candidates.find((k) => !primarySlots[k]) ?? null;
+}
 
 function resolveNamedSlot(
-  rawSlotName: string,
+  slot: TargetItemSlotSummary,
   gameId: SupportedGameId,
   primarySlots: Partial<Record<PaperDollSlotKey, TargetItemSlotSummary>>,
   hasOfficialIndexedIds: boolean,
 ): { kind: "primary"; key: PaperDollSlotKey } | { kind: "swap"; key: "weapon1" | "weapon2" } | { kind: "extra" } {
-  const name = rawSlotName.trim();
+  const name = slot.slotName.trim();
   if (!name || /abyssal|jewel|ring\s*3/i.test(name)) return { kind: "extra" };
   if (/^weapon\s*1\s*swap$/i.test(name)) return { kind: "swap", key: "weapon1" };
   if (/^(?:weapon\s*2\s*swap|off\s*hand\s*2|offhand\s*2)$/i.test(name)) return { kind: "swap", key: "weapon2" };
@@ -93,19 +100,36 @@ function resolveNamedSlot(
   }
 
   const flaskMatch = /^flask\s*([1-5])$/i.exec(name);
-  if (flaskMatch?.[1]) {
-    return { kind: "primary", key: `flask${flaskMatch[1]}` as ConsumableSlotKey };
-  }
-  if (/^life\s*flask\s*1?$/i.test(name)) return { kind: "primary", key: "flask1" };
-  if (/^mana\s*flask\s*1?$/i.test(name)) {
-    if (gameId === "poe2") return { kind: "primary", key: "flask2" };
-    const open = (["flask5", "flask4", "flask3", "flask2", "flask1"] as const).find((k) => !primarySlots[k]);
-    return { kind: "primary", key: open ?? "flask5" };
+  const isLifeFlask = /^life\s*flask\s*1?$/i.test(name);
+  const isManaFlask = /^mana\s*flask\s*1?$/i.test(name);
+  if (flaskMatch || isLifeFlask || isManaFlask) {
+    const contentText = `${slot.itemName} ${slot.baseType} ${slot.mods.join(" ")}`;
+    const pool: readonly ConsumableSlotKey[] =
+      gameId === "poe2" ? ["flask1", "flask2"] : ["flask1", "flask2", "flask3", "flask4", "flask5"];
+    if (gameId === "poe2") {
+      if ((isManaFlask || /\bmana\s+flask\b/i.test(contentText)) && !primarySlots.flask2) {
+        return { kind: "primary", key: "flask2" };
+      }
+      if ((isLifeFlask || /\blife\s+flask\b/i.test(contentText)) && !primarySlots.flask1) {
+        return { kind: "primary", key: "flask1" };
+      }
+    }
+    const preferred: ConsumableSlotKey = isLifeFlask
+      ? "flask1"
+      : isManaFlask
+        ? "flask5"
+        : (`flask${flaskMatch![1]}` as ConsumableSlotKey);
+    const chosen = !primarySlots[preferred] ? preferred : pickOpenSlot(pool, primarySlots);
+    return chosen ? { kind: "primary", key: chosen } : { kind: "extra" };
   }
 
-  const charmMatch = /^(?:belt\s*)?charm\s*([1-3])$/i.exec(name);
-  if (charmMatch?.[1]) {
-    return { kind: "primary", key: `charm${charmMatch[1]}` as ConsumableSlotKey };
+  const charmMatch = /^(?:belt\s*)?(?:charm|trinket)\s*([1-3])?$/i.exec(name);
+  if (charmMatch) {
+    const preferred = (`charm${charmMatch[1] ?? "1"}`) as ConsumableSlotKey;
+    const chosen = !primarySlots[preferred]
+      ? preferred
+      : pickOpenSlot(["charm1", "charm2", "charm3"], primarySlots);
+    return chosen ? { kind: "primary", key: chosen } : { kind: "extra" };
   }
 
   return { kind: "extra" };
@@ -192,7 +216,7 @@ export function normalizeItemSetToPaperDoll(params: {
   );
 
   for (const slot of itemSlots) {
-    const resolved = resolveNamedSlot(slot.slotName, params.gameId, primarySlots, hasOfficialIndexedIds);
+    const resolved = resolveNamedSlot(slot, params.gameId, primarySlots, hasOfficialIndexedIds);
     if (resolved.kind === "primary" && !primarySlots[resolved.key]) {
       primarySlots[resolved.key] = slot;
     } else if (resolved.kind === "swap" && !weaponSwapSlots[resolved.key]) {
@@ -229,7 +253,7 @@ export function normalizeItemSetToPaperDoll(params: {
 /** Classifies a PoE 1/2 flask slot into a visual liquid color category. */
 export function classifyFlaskVisualKind(slot: TargetItemSlotSummary | null | undefined): FlaskVisualKind {
   if (!slot) return "utility";
-  const text = `${slot.slotName} ${slot.baseType} ${slot.itemName}`.toLowerCase();
+  const text = `${slot.slotName} ${slot.baseType} ${slot.itemName} ${slot.mods.join(" ")}`.toLowerCase();
   if (text.includes("hybrid")) return "hybrid";
   if (text.includes("life")) return "life";
   if (text.includes("mana")) return "mana";

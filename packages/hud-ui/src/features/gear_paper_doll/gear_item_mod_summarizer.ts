@@ -119,32 +119,42 @@ export function summarizeGearSlotLabel(slot: TargetItemSlotSummary): GearSlotDis
     };
   }
 
-  const baseName = slot.baseType.trim() || slot.itemName.trim();
-  const isConsumable = /flask|charm/i.test(`${slot.slotName} ${baseName}`);
+  const rawBase = slot.baseType.trim() || slot.itemName.trim();
+  const isGenericContainer = /^(?:flask\s*\d*|charm\s*\d*|trinket\s*\d*)$/i.test(rawBase);
+  const firstCleanMod = slot.mods.find((m) => m.trim().length > 0)?.trim() ?? "";
+  const promotedBase =
+    isGenericContainer && firstCleanMod.length > 0 && firstCleanMod.length <= 36 && /\b(?:flask|charm)\b/i.test(firstCleanMod)
+      ? firstCleanMod
+      : rawBase;
+  const isConsumable = /flask|charm|trinket/i.test(`${slot.slotName} ${promotedBase}`);
 
   if (isConsumable) {
     const tags = collectModTags(slot.mods, FLASK_OR_CHARM_TAGS, 3);
     const joined = buildJoinedTagSummary(tags);
     if (joined) {
-      return { primaryLabel: baseName, secondaryLabel: joined, isUnique: false };
+      return { primaryLabel: promotedBase, secondaryLabel: joined, isUnique: false };
     }
   } else {
     const specialSkill = extractSpecialSkillSummary(slot.mods);
     if (specialSkill) {
-      return { primaryLabel: baseName, secondaryLabel: specialSkill, isUnique: false };
+      return { primaryLabel: promotedBase, secondaryLabel: specialSkill, isUnique: false };
     }
     const tags = collectModTags(slot.mods, GEAR_MOD_TAGS, 4);
     const joined = buildJoinedTagSummary(tags);
     if (joined) {
-      return { primaryLabel: baseName, secondaryLabel: joined, isUnique: false };
+      return { primaryLabel: promotedBase, secondaryLabel: joined, isUnique: false };
     }
   }
 
   const fallbackMod = slot.mods.find(
-    (m) => m.trim().length > 0 && !/^[-_=]{3,}$/.test(m.trim()) && !/^stat\s*priority:?$/i.test(m.trim()),
+    (m) =>
+      m.trim().length > 0 &&
+      m.trim() !== promotedBase &&
+      !/^[-_=]{3,}$/.test(m.trim()) &&
+      !/^stat\s*priority:?$/i.test(m.trim()),
   );
   return {
-    primaryLabel: baseName,
+    primaryLabel: promotedBase,
     secondaryLabel: fallbackMod ? truncateLabel(fallbackMod, 22) : null,
     isUnique: false,
   };

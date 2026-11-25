@@ -248,4 +248,28 @@ describe("gear_paper_doll_widget", () => {
     expect(summarizeGearSlotLabel(model.primarySlots.amulet!).secondaryLabel).toBe("+LVL+RES+ATTR");
     expect(summarizeGearSlotLabel(model.primarySlots.gloves!).secondaryLabel).toBe("ASPD+LIFE+DMG");
   });
+
+  it("places duplicate Flask 1 and Trinket1 slots into PoE 2 Flask & Charm tray instead of Jewels", () => {
+    const legacySavedSet = {
+      id: "saved_dup",
+      title: "Varashta Saved",
+      minLevel: 1,
+      slots: [
+        makeSlot({ slotName: "Flask 1", itemName: "Flask 1", baseType: "Flask 1", mods: ["Giant Mana Flask"] }),
+        makeSlot({ slotName: "Flask 1", itemName: "Flask 1", baseType: "Flask 1", mods: ["Grand Life Flask"] }),
+        makeSlot({ slotName: "Trinket1", itemName: "Trinket1", baseType: "Trinket1", mods: ["Staunching Charm"] }),
+        makeSlot({ slotName: "Trinket1", itemName: "Trinket1", baseType: "Trinket1", mods: ["Thawing Charm"] }),
+        makeSlot({ slotName: "Trinket1", itemName: "Trinket1", baseType: "Trinket1", mods: ["Antidote Charm"] }),
+      ],
+    };
+    const model = normalizeItemSetToPaperDoll({ itemSet: legacySavedSet, gameId: "poe2", hygiene: [], crafts: [], runes: [] });
+    expect(model.extras).toEqual([]);
+    expect(model.primarySlots.flask1?.mods[0]).toBe("Grand Life Flask");
+    expect(model.primarySlots.flask2?.mods[0]).toBe("Giant Mana Flask");
+    expect(model.primarySlots.charm1?.mods[0]).toBe("Staunching Charm");
+    expect(model.primarySlots.charm2?.mods[0]).toBe("Thawing Charm");
+    expect(model.primarySlots.charm3?.mods[0]).toBe("Antidote Charm");
+    expect(summarizeGearSlotLabel(model.primarySlots.flask1!).primaryLabel).toBe("Grand Life Flask");
+    expect(summarizeGearSlotLabel(model.primarySlots.charm1!).primaryLabel).toBe("Staunching Charm");
+  });
 });

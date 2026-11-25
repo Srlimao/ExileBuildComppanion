@@ -92,7 +92,7 @@ cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml   # Required whenev
 - **Node ad-hoc scripts importing `@exile-hud/game-data`:** `packages/game-data` has no `dist/` build output, so raw `node -e` importing TS files will fail with `ERR_MODULE_NOT_FOUND`. Run checks through Vitest (`pnpm --filter @exile-hud/core test`) or read the `.json` files directly.
 - **Desktop preview command:** `apps/desktop/package.json` defines `dev`, `build`, and `tauri` (no `preview` script). To preview its built frontend directly, run `pnpm --filter @exile-hud/desktop exec vite preview --host 127.0.0.1 --port 4174 --strictPort`.
 - **PWA Service Worker cache during local/prod UI checks:** `@exile-hud/pwa` ships a Workbox Service Worker (`dist/sw.js`). When testing freshly built PWA bundles locally (`vite preview`) or in production (`?demo=1`), unregister existing service workers via `navigator.serviceWorker.getRegistrations()` before reloading so stale cached assets do not mask changes.
-- **GitHub & Remote Safety:** Never push to GitHub, create tags/releases, or deploy without explicit user request and confirmation.
+- **Git Local Commits & Remote Safety:** After finishing and verifying any planned feature or fix, always create a local git commit without asking. Never push to origin/GitHub, create tags/releases, or deploy without explicit user request and confirmation.
 - **Windows concurrent same-file edits:** Do not issue parallel `edit_file` calls targeting the same file path on Windows (can fail with `"user-mapped section open"`); edit distinct files in parallel or apply multiple edits to one file sequentially.
 
 ---
