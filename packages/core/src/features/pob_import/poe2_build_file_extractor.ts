@@ -3,6 +3,7 @@ import { resolveGemWithAliases } from "./pob2_xml_extensions.js";
 import {
   formatPoe2BuildMetadataNotes,
   normalizePoe2BuildDocument,
+  type NormalizedBuildInventorySlot,
   type NormalizedBuildSkill,
 } from "./poe2_build_file_schema.js";
 import { computeBuildLevelBreakpoints, formatBuildBracketTitle } from "./poe2_build_level_brackets.js";
@@ -116,6 +117,29 @@ function buildWarningText(label: string, missing: ReadonlySet<string>): string |
   return `Skipped ${missing.size} unrecognized ${label} ID(s): ${sample}${suffix}.`;
 }
 
+function extractSlotTitleAndMods(slot: NormalizedBuildInventorySlot): { itemName: string; baseType: string; mods: string[] } {
+  const rawLines = (slot.note ?? "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !/^[-_=]{3,}$/.test(line));
+  const mods = rawLines.filter((line) => !/^stat\s*priority:?$/i.test(line));
+  if (slot.uniqueName) {
+    return { itemName: slot.uniqueName, baseType: slot.baseType || slot.slotLabel, mods };
+  }
+  const first = rawLines[0];
+  const isHeader =
+    Boolean(first) &&
+    !slot.baseType &&
+    !/^stat\s*priority:?$/i.test(first!) &&
+    !/^\d+\./.test(first!) &&
+    first!.length <= 48 &&
+    (rawLines.length > 1 || /^any\s+/i.test(first!));
+  if (isHeader && first) {
+    return { itemName: first, baseType: first, mods: rawLines.slice(1).filter((line) => !/^stat\s*priority:?$/i.test(line)) };
+  }
+  return { itemName: slot.baseType || slot.slotLabel, baseType: slot.baseType || slot.slotLabel, mods };
+}
+
 /** Extracts an `ExtractedPobBuild` with synthesized brackets, Weapon Sets, Item Sets & notes from PoE 2 `.build` JSON. */
 export function extractPoe2BuildFromJson(
   rawJson: Record<string, any>,
@@ -216,16 +240,19 @@ export function extractPoe2BuildFromJson(
 
     const slots: ExtractedItemSlotEntry[] = doc.inventorySlots
       .filter((slot) => slot.minLevel <= startLv && slot.maxLevel >= startLv)
-      .map((slot, slotIdx) => ({
-        slotName: slot.slotLabel,
-        itemId: `slot_${idx}_${slotIdx}`,
-        itemName: slot.uniqueName || slot.slotLabel,
-        baseType: slot.baseType || slot.slotLabel,
-        rarity: slot.uniqueName ? "unique" : "rare",
-        sockets: "",
-        levelReq: slot.minLevel,
-        mods: slot.note ? slot.note.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [],
-      }));
+      .map((slot, slotIdx) => {
+        const parsedSlot = extractSlotTitleAndMods(slot);
+        return {
+          slotName: slot.slotLabel,
+          itemId: `slot_${idx}_${slotIdx}`,
+          itemName: parsedSlot.itemName,
+          baseType: parsedSlot.baseType,
+          rarity: slot.uniqueName ? "unique" : "rare",
+          sockets: "",
+          levelReq: slot.minLevel,
+          mods: parsedSlot.mods,
+        };
+      });
     if (slots.length > 0) itemSets.push({ id, title, minLevel: startLv, slots });
   }
 

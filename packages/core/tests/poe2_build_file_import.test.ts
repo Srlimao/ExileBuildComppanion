@@ -168,4 +168,39 @@ describe("poe2_build_file_import", () => {
     const iceStrikeGroup = snap.linkGroups.find((g) => g.title === "Ice Strike");
     expect(iceStrikeGroup?.note ?? snap.linkGroups.length).toBeTruthy();
   });
+
+  it("normalizes official GGG indexed PoE 2 inventory_id keys (Helm1, BodyArmour1, Offhand1/2, Weapon2) and Stat Priority notes", async () => {
+    const gggBuildJson = JSON.stringify({
+      name: "Titan Warrior",
+      ascendancy: "Warrior1",
+      passives: ["melee17"],
+      inventory_slots: [
+        { inventory_id: "Weapon1", additional_text: "<silver>{Any Two Handed Mace}\n\n<grey>{Stat Priority\n-------------------\n1. Prioritize highest physical dps}" },
+        { inventory_id: "Offhand1", additional_text: "<red>{Tower Shield}\n\n<grey>{Stat Priority\n1. Increased Armour}" },
+        { inventory_id: "Weapon2", additional_text: "<blue>{Weapon Swap Staff}\n\n<grey>{Stat Priority\n1. Level of all spell skills}" },
+        { inventory_id: "Offhand2", additional_text: "<blue>{Crystal Focus}\n\n<grey>{Stat Priority\n1. Energy Shield}" },
+        { inventory_id: "BodyArmour1", additional_text: "<red>{Armour (Str Base)}\n\n<grey>{Stat Priority\n-------------------\n1. Increased Health\n2. Increased Resistances\n3. Increased Armour}" },
+        { inventory_id: "Boots1", additional_text: "<red>{Armour (Str Base)}\n\n<grey>{Stat Priority\n1. Increased Movement Speed\n2. Increased Health}" },
+        { inventory_id: "Helm1", additional_text: "<red>{Armour (Str Base)}\n\n<grey>{Stat Priority\n1. Increased Health\n2. Increased Resistances}" },
+        { inventory_id: "Gloves1", additional_text: "<red>{Armour (Str Base)}\n\n<grey>{Stat Priority\n1. Increased Attack Speed\n2. Flat damage to attacks}" },
+        { inventory_id: "Belt1", additional_text: "<silver>{Any Belt}\n\n<grey>{Stat Priority\n1. Increased Health\n2. Increased Resistances}" },
+        { inventory_id: "Amulet1", additional_text: "<silver>{Any Amulet}\n\n<grey>{Stat Priority\n1. Level of all melee skills\n2. Increased Resistances\n3. Increased Intelligence}" },
+        { inventory_id: "LifeFlask1", additional_text: "Instant Life Flask" },
+        { inventory_id: "ManaFlask1", additional_text: "Mana Flask" },
+        { inventory_id: "BeltCharm1", unique_name: "Thawing Charm", additional_text: "Freeze Immunity" },
+      ],
+    });
+
+    const decoded = await resolveAndDecodePobInput(gggBuildJson);
+    const extracted = extractDecodedBuild(decoded, poe2GameAdapter);
+    const slots = extracted.itemSets[0]?.slots ?? [];
+
+    expect(slots.map((s) => s.slotName)).toEqual([
+      "Weapon 1", "Weapon 2", "Weapon 1 Swap", "Weapon 2 Swap", "Body Armour",
+      "Boots", "Helmet", "Gloves", "Belt", "Amulet", "Life Flask", "Mana Flask", "Charm 1",
+    ]);
+    const body = slots.find((s) => s.slotName === "Body Armour")!;
+    expect(body.baseType).toBe("Armour (Str Base)");
+    expect(body.mods).toEqual(["1. Increased Health", "2. Increased Resistances", "3. Increased Armour"]);
+  });
 });

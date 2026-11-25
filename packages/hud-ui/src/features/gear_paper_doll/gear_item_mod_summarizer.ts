@@ -35,23 +35,23 @@ const FLASK_OR_CHARM_TAGS: ReadonlyArray<[RegExp, string]> = [
 
 const GEAR_MOD_TAGS: ReadonlyArray<[RegExp, string]> = [
   // Tier 1: Build-critical affixes
-  [/\+\d+\s+to Level of .* (?:Skill|Spell|Minion|Fire|Cold|Lightning|Chaos|Physical|Melee|Projectile|Bow)\b/i, "+LVL"],
-  [/to Spirit\b/i, "SPIRIT"],
-  [/increased Movement Speed\b/i, "MS"],
+  [/\+\d+\s+to Level of .* (?:Skill|Spell|Minion|Fire|Cold|Lightning|Chaos|Physical|Melee|Projectile|Bow)\b|\bLevel of (?:all )?.*(?:Skills?|Gems?)\b/i, "+LVL"],
+  [/to Spirit\b|\bSpirit\b/i, "SPIRIT"],
+  [/Movement Speed\b/i, "MS"],
   [/Chance to Suppress Spell Damage\b/i, "SUPPRESS"],
   [/Critical (?:Strike|Hit)\b/i, "CRIT"],
-  [/increased Attack Speed\b/i, "ASPD"],
-  [/increased Cast Speed\b/i, "CSPD"],
-  [/to Chaos Resistance\b/i, "CHAOS"],
+  [/Attack Speed\b/i, "ASPD"],
+  [/Cast Speed\b/i, "CSPD"],
+  [/to Chaos Resistance\b|\bChaos Resistance\b/i, "CHAOS"],
   // Tier 2: Core defense & offense stats
-  [/to maximum Life\b/i, "LIFE"],
-  [/to maximum Energy Shield\b|increased Energy Shield\b/i, "ES"],
+  [/\b(?:maximum|increased|max)\s+(?:Life|Health)\b/i, "LIFE"],
+  [/Energy Shield\b/i, "ES"],
   [/Resistance(?:s)?\b/i, "RES"],
-  [/increased .* Damage\b|Adds \d+ to \d+ .* Damage\b/i, "DMG"],
-  [/to Armour\b|increased Armour\b/i, "ARM"],
-  [/to Evasion\b|increased Evasion\b/i, "EVA"],
+  [/increased .* Damage\b|Adds \d+ to \d+ .* Damage\b|\bFlat\s+damage\b|\b(?:physical|elemental|spell)\s+dps\b/i, "DMG"],
+  [/Armour\b/i, "ARM"],
+  [/Evasion\b/i, "EVA"],
   [/Chance to Block\b/i, "BLOCK"],
-  [/to (?:Strength|Dexterity|Intelligence|all Attributes)\b/i, "ATTR"],
+  [/\b(?:Strength|Dexterity|Intelligence|all Attributes)\b/i, "ATTR"],
   [/to maximum Mana\b|Mana Regeneration\b/i, "MANA"],
   [/Regenerate .* Life/i, "REGEN"],
   [/Leeched as/i, "LEECH"],
@@ -140,7 +140,9 @@ export function summarizeGearSlotLabel(slot: TargetItemSlotSummary): GearSlotDis
     }
   }
 
-  const fallbackMod = slot.mods.find((m) => m.trim().length > 0);
+  const fallbackMod = slot.mods.find(
+    (m) => m.trim().length > 0 && !/^[-_=]{3,}$/.test(m.trim()) && !/^stat\s*priority:?$/i.test(m.trim()),
+  );
   return {
     primaryLabel: baseName,
     secondaryLabel: fallbackMod ? truncateLabel(fallbackMod, 22) : null,

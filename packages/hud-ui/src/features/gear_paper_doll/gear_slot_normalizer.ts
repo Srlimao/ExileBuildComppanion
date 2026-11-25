@@ -62,26 +62,31 @@ export interface NormalizedPaperDollModel {
 
 const CORE_SLOT_PATTERNS: ReadonlyArray<[RegExp, CoreGearSlotKey]> = [
   [/^(?:weapon\s*1|main\s*hand|weapon)$/i, "weapon1"],
-  [/^(?:weapon\s*2|off\s*hand|offhand|shield)$/i, "weapon2"],
-  [/^(?:helmet|helm)$/i, "helmet"],
-  [/^(?:body\s*armour|bodyarmour|body)$/i, "body"],
-  [/^amulet$/i, "amulet"],
+  [/^(?:off\s*hand\s*1?|offhand\s*1?|weapon\s*2|shield)$/i, "weapon2"],
+  [/^(?:helmet|helm)\s*1?$/i, "helmet"],
+  [/^(?:body\s*armour|bodyarmour|body)\s*1?$/i, "body"],
+  [/^amulet\s*1?$/i, "amulet"],
   [/^(?:ring\s*1|ring|left\s*ring)$/i, "ring1"],
   [/^(?:ring\s*2|right\s*ring)$/i, "ring2"],
-  [/^gloves$/i, "gloves"],
-  [/^belt$/i, "belt"],
-  [/^boots$/i, "boots"],
+  [/^gloves\s*1?$/i, "gloves"],
+  [/^belt\s*1?$/i, "belt"],
+  [/^boots\s*1?$/i, "boots"],
 ];
+
+const INDEXED_OFFICIAL_SLOT_REGEX =
+  /^(?:helm1|bodyarmour1|gloves1|boots1|belt1|amulet1|offhand[12]|lifeflask1|manaflask1|beltcharm[1-3])$/i;
 
 function resolveNamedSlot(
   rawSlotName: string,
   gameId: SupportedGameId,
   primarySlots: Partial<Record<PaperDollSlotKey, TargetItemSlotSummary>>,
+  hasOfficialIndexedIds: boolean,
 ): { kind: "primary"; key: PaperDollSlotKey } | { kind: "swap"; key: "weapon1" | "weapon2" } | { kind: "extra" } {
   const name = rawSlotName.trim();
   if (!name || /abyssal|jewel|ring\s*3/i.test(name)) return { kind: "extra" };
   if (/^weapon\s*1\s*swap$/i.test(name)) return { kind: "swap", key: "weapon1" };
-  if (/^weapon\s*2\s*swap$/i.test(name)) return { kind: "swap", key: "weapon2" };
+  if (/^(?:weapon\s*2\s*swap|off\s*hand\s*2|offhand\s*2)$/i.test(name)) return { kind: "swap", key: "weapon2" };
+  if (hasOfficialIndexedIds && /^weapon2$/i.test(name)) return { kind: "swap", key: "weapon1" };
 
   for (const [pattern, key] of CORE_SLOT_PATTERNS) {
     if (pattern.test(name)) return { kind: "primary", key };
@@ -91,14 +96,14 @@ function resolveNamedSlot(
   if (flaskMatch?.[1]) {
     return { kind: "primary", key: `flask${flaskMatch[1]}` as ConsumableSlotKey };
   }
-  if (/^life\s*flask$/i.test(name)) return { kind: "primary", key: "flask1" };
-  if (/^mana\s*flask$/i.test(name)) {
+  if (/^life\s*flask\s*1?$/i.test(name)) return { kind: "primary", key: "flask1" };
+  if (/^mana\s*flask\s*1?$/i.test(name)) {
     if (gameId === "poe2") return { kind: "primary", key: "flask2" };
     const open = (["flask5", "flask4", "flask3", "flask2", "flask1"] as const).find((k) => !primarySlots[k]);
     return { kind: "primary", key: open ?? "flask5" };
   }
 
-  const charmMatch = /^charm\s*([1-3])$/i.exec(name);
+  const charmMatch = /^(?:belt\s*)?charm\s*([1-3])$/i.exec(name);
   if (charmMatch?.[1]) {
     return { kind: "primary", key: `charm${charmMatch[1]}` as ConsumableSlotKey };
   }
@@ -181,8 +186,13 @@ export function normalizeItemSetToPaperDoll(params: {
   const weaponSwapSlots: { weapon1?: TargetItemSlotSummary; weapon2?: TargetItemSlotSummary } = {};
   const extras: Array<{ key: string; slot: TargetItemSlotSummary }> = [];
 
-  for (const slot of params.itemSet?.slots ?? []) {
-    const resolved = resolveNamedSlot(slot.slotName, params.gameId, primarySlots);
+  const itemSlots = params.itemSet?.slots ?? [];
+  const hasOfficialIndexedIds = itemSlots.some((s) =>
+    INDEXED_OFFICIAL_SLOT_REGEX.test(s.slotName.trim().toLowerCase().replace(/\s+/g, "")),
+  );
+
+  for (const slot of itemSlots) {
+    const resolved = resolveNamedSlot(slot.slotName, params.gameId, primarySlots, hasOfficialIndexedIds);
     if (resolved.kind === "primary" && !primarySlots[resolved.key]) {
       primarySlots[resolved.key] = slot;
     } else if (resolved.kind === "swap" && !weaponSwapSlots[resolved.key]) {

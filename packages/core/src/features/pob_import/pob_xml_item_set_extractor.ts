@@ -19,7 +19,7 @@ export interface ExtractedItemSet {
 }
 
 const META_PREFIX_REGEX =
-  /^(?:Unique ID:|Item Level:|Quality:|Sockets:|LevelReq:|Implicits:|Selected Variant:|Has Alt Variant|Variant:|Crafted:|Prefix:|Suffix:|Armour:|Evasion:|Energy Shield:|Ward:|Radius:|Limited to:|Requires |Note:|League:|Catalyst|Talisman|Foil|Shaper|Elder|Crusader|Hunter|Redeemer|Warlord|Fractured|Synthesised|Corrupted|Mirrored|Split|Unidentified|[-]{3,})/;
+  /^(?:Unique ID:|Item Level:|Item Class:|Quality:|Sockets:|LevelReq:|Implicits:|Spirit:|Charm Slots:|Selected Variant:|Has Alt Variant|Variant:|Crafted:|Prefix:|Suffix:|Armour:|Evasion:|Energy Shield:|Ward:|Radius:|Limited to:|Requires |Note:|League:|Catalyst|Talisman|Foil|Shaper|Elder|Crusader|Hunter|Redeemer|Warlord|Fractured|Synthesised|Corrupted|Mirrored|Split|Unidentified|[-]{3,})/;
 
 function normalizeRarity(value: string): ExtractedItemSlotEntry["rarity"] {
   const lower = value.trim().toLowerCase();

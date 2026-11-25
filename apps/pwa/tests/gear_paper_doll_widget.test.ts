@@ -211,4 +211,41 @@ describe("gear_paper_doll_widget", () => {
     expect(poe2Markup).toContain("Greater Life Flask");
     expect(poe2Markup).toContain("Colossal Mana Flask");
   });
+
+  it("normalizes raw GGG PoE 2 indexed slots (Helm1, BodyArmour1, Offhand1/2, Weapon2) & Stat Priority summaries", () => {
+    const rawIndexedSet = {
+      id: "ggg_raw",
+      title: "Titan Warrior",
+      minLevel: 1,
+      slots: [
+        makeSlot({ slotName: "Weapon1", itemName: "Any Two Handed Mace", baseType: "Any Two Handed Mace", mods: ["1. Prioritize highest physical dps"] }),
+        makeSlot({ slotName: "Offhand1", itemName: "Tower Shield", baseType: "Tower Shield", mods: ["1. Increased Armour"] }),
+        makeSlot({ slotName: "Weapon2", itemName: "Weapon Swap Staff", baseType: "Weapon Swap Staff", mods: ["1. Level of all spell skills"] }),
+        makeSlot({ slotName: "Offhand2", itemName: "Crystal Focus", baseType: "Crystal Focus", mods: ["1. Energy Shield"] }),
+        makeSlot({ slotName: "BodyArmour1", itemName: "Armour (Str Base)", baseType: "Armour (Str Base)", mods: ["1. Increased Health", "2. Increased Resistances", "3. Increased Armour"] }),
+        makeSlot({ slotName: "Helm1", itemName: "Armour (Str Base)", baseType: "Armour (Str Base)", mods: ["1. Increased Health", "2. Increased Resistances"] }),
+        makeSlot({ slotName: "Gloves1", itemName: "Armour (Str Base)", baseType: "Armour (Str Base)", mods: ["1. Increased Attack Speed", "2. Flat damage to attacks", "3. Increased Life"] }),
+        makeSlot({ slotName: "Boots1", itemName: "Armour (Str Base)", baseType: "Armour (Str Base)", mods: ["1. Increased Movement Speed", "2. Increased Health"] }),
+        makeSlot({ slotName: "Belt1", itemName: "Any Belt", baseType: "Any Belt", mods: ["1. Increased Health", "2. Increased Resistances"] }),
+        makeSlot({ slotName: "Amulet1", itemName: "Any Amulet", baseType: "Any Amulet", mods: ["1. Level of all melee skills", "2. Increased Resistances", "3. Increased Intelligence"] }),
+        makeSlot({ slotName: "LifeFlask1", itemName: "Life Flask", baseType: "Life Flask", mods: ["Recovers Life"] }),
+        makeSlot({ slotName: "ManaFlask1", itemName: "Mana Flask", baseType: "Mana Flask", mods: ["Recovers Mana"] }),
+        makeSlot({ slotName: "BeltCharm1", itemName: "Thawing Charm", baseType: "Thawing Charm", rarity: "magic", mods: ["Freeze Immunity"] }),
+      ],
+    };
+
+    const model = normalizeItemSetToPaperDoll({ itemSet: rawIndexedSet, gameId: "poe2", hygiene: [], crafts: [], runes: [] });
+    expect(model.extras).toEqual([]);
+    expect(model.primarySlots.helmet?.baseType).toBe("Armour (Str Base)");
+    expect(model.primarySlots.body?.baseType).toBe("Armour (Str Base)");
+    expect(model.primarySlots.weapon2?.baseType).toBe("Tower Shield");
+    expect(model.weaponSwapSlots.weapon1?.baseType).toBe("Weapon Swap Staff");
+    expect(model.weaponSwapSlots.weapon2?.baseType).toBe("Crystal Focus");
+    expect(model.primarySlots.flask1?.baseType).toBe("Life Flask");
+    expect(model.primarySlots.flask2?.baseType).toBe("Mana Flask");
+    expect(model.primarySlots.charm1?.itemName).toBe("Thawing Charm");
+    expect(summarizeGearSlotLabel(model.primarySlots.body!).secondaryLabel).toBe("LIFE+RES+ARM");
+    expect(summarizeGearSlotLabel(model.primarySlots.amulet!).secondaryLabel).toBe("+LVL+RES+ATTR");
+    expect(summarizeGearSlotLabel(model.primarySlots.gloves!).secondaryLabel).toBe("ASPD+LIFE+DMG");
+  });
 });
