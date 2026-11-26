@@ -187,7 +187,11 @@ export {
   SkillLinkGroupCard,
   type PartitionedLinkGroup,
 } from "./features/widgets/skill_link_group_card.js";
-export { SocketLinksWidget } from "./features/widgets/socket_links_widget.js";
+export {
+  resolveSocketLinksDisplay,
+  SocketLinksWidget,
+  type ResolvedSocketLinksDisplay,
+} from "./features/widgets/socket_links_widget.js";
 export { TwinkGearWidget } from "./features/widgets/twink_gear_widget.js";
 export { VendorShoppingWidget } from "./features/widgets/vendor_shopping_widget.js";
 export { ZoneLayoutWidget } from "./features/widgets/zone_layout_widget.js";

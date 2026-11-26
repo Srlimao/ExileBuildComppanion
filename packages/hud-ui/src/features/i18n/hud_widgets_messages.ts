@@ -44,6 +44,8 @@ export interface HudWidgetsMessages {
   allActGemsAcquired: string;
   noPendingGems: string;
   linksTitle: string;
+  skillSetsLabel: string;
+  noSkillGroupsInSet: string;
   groupsCount: (count: number) => string;
   missingAura: string;
   fullTree: string;
@@ -117,6 +119,8 @@ const PT_BR_WIDGETS: HudWidgetsMessages = {
   allActGemsAcquired: "Todas as gemas do Ato adquiridas",
   noPendingGems: "Nenhuma gema pendente neste Ato ou build carregada.",
   linksTitle: "Links",
+  skillSetsLabel: "Sets de Skills",
+  noSkillGroupsInSet: "Nenhum grupo de skills neste set.",
   groupsCount: (count) => `${count} grupos`,
   missingAura: "Aura Ausente",
   fullTree: "Árvore Completa",
@@ -190,6 +194,8 @@ const EN_WIDGETS: HudWidgetsMessages = {
   allActGemsAcquired: "All Act gems acquired",
   noPendingGems: "No pending Act gems or build gems loaded.",
   linksTitle: "Links",
+  skillSetsLabel: "Skill Sets",
+  noSkillGroupsInSet: "No skill groups in this set.",
   groupsCount: (count) => `${count} groups`,
   missingAura: "Missing Aura",
   fullTree: "Full Tree",

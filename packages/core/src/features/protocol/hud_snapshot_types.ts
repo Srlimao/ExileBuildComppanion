@@ -86,6 +86,13 @@ export interface TargetLinkGroupSummary {
   missingAuraWarning: boolean;
 }
 
+export interface TargetSkillSetSummary {
+  id: string;
+  title: string;
+  minLevel: number;
+  groups: TargetLinkGroupSummary[];
+}
+
 export interface TargetItemSlotSummary {
   slotName: string;
   itemId: string;
@@ -209,6 +216,7 @@ export interface HudSessionSnapshot {
   gemSteps: GemAcquisitionStep[];
   nextTownCurrencyBudget: CurrencyTally;
   linkGroups: TargetLinkGroupSummary[];
+  skillSets?: TargetSkillSetSummary[];
   itemSets?: TargetItemSetSummary[];
   equippedItemNames?: string[];
   resistances: ResistanceTelemetry;

@@ -12,13 +12,14 @@ import {
   parsePreprocessedRouteLines,
   preprocessRouteConditionals,
   reduceTelemetrySession,
+  selectActiveSkillSet,
   type HudSessionSnapshot,
 } from "@exile-hud/core";
 
 const DEMO_XML = `<PathOfBuilding>
   <Build className="Witch" ascendClassName="Elementalist" bandit="Alira" level="42" buildName="League Start RF Elementalist"/>
   <Skills>
-    <SkillSet title="Act 1 (Lv 1-12)">
+    <SkillSet id="1" title="Act 1 (Lv 1-12)">
       <Skill enabled="true" label="Starter Clear">
         <Gem enabled="true" nameSpec="Rolling Magma" gemId="Metadata/Items/Gems/SkillGemMagmaOrb"/>
         <Gem enabled="true" nameSpec="Elemental Proliferation Support" gemId="Metadata/Items/Gems/SupportGemElementalProliferation"/>
@@ -26,6 +27,18 @@ const DEMO_XML = `<PathOfBuilding>
       </Skill>
       <Skill enabled="true" label="Auras">
         <Gem enabled="true" nameSpec="Purity of Elements" gemId="Metadata/Items/Gems/SkillGemPurityOfElements"/>
+      </Skill>
+    </SkillSet>
+    <SkillSet id="2" title="Act 3 Transition (Lv 24)">
+      <Skill enabled="true" label="Main RF">
+        <Gem enabled="true" nameSpec="Righteous Fire" gemId="Metadata/Items/Gems/SkillGemRighteousFire"/>
+        <Gem enabled="true" nameSpec="Elemental Focus Support" gemId="Metadata/Items/Gems/SupportGemElementalFocus"/>
+        <Gem enabled="true" nameSpec="Burning Damage Support" gemId="Metadata/Items/Gems/SupportGemBurningDamage"/>
+      </Skill>
+      <Skill enabled="true" label="Fire Trap &amp; Auras">
+        <Gem enabled="true" nameSpec="Fire Trap" gemId="Metadata/Items/Gems/SkillGemFireTrap"/>
+        <Gem enabled="true" nameSpec="Purity of Elements" gemId="Metadata/Items/Gems/SkillGemPurityOfElements"/>
+        <Gem enabled="true" nameSpec="Determination" gemId="Metadata/Items/Gems/SkillGemDetermination"/>
       </Skill>
     </SkillSet>
   </Skills>
@@ -165,8 +178,11 @@ export function createInteractiveDemoSnapshot(): HudSessionSnapshot {
     adapter: poe1GameAdapter,
   });
 
+  const activeSkillSet = selectActiveSkillSet(snap.skillSets ?? [], 30);
+
   return {
     ...snap,
+    linkGroups: activeSkillSet?.groups ?? snap.linkGroups,
     passiveTree,
     characterLevel: 30,
     equippedItemNames: ["goldrim"],

@@ -3,6 +3,7 @@ import type {
   GemAcquiredLocation,
   GemAcquisitionStep,
   TargetLinkGroupSummary,
+  TargetSkillSetSummary,
 } from "../protocol/session_room_wire_protocol.js";
 import type { GggItemModRecord } from "./equipped_resistance_estimator.js";
 
@@ -120,13 +121,45 @@ function collectOwnedGems(items: GggItemModRecord[]): {
   return { ownedGemsByName, unlinkedSupportNames };
 }
 
-export function selectActiveSkillSet(skillSets: ExtractedSkillSet[], characterLevel: number): ExtractedSkillSet | null {
+export function resolveGemSocketColor(attribute: string): "R" | "G" | "B" | "W" {
+  if (attribute === "strength") return "R";
+  if (attribute === "dexterity") return "G";
+  if (attribute === "intelligence") return "B";
+  return "W";
+}
+
+export function selectActiveSkillSet<T extends { minLevel: number }>(
+  skillSets: readonly T[],
+  characterLevel: number,
+): T | null {
   if (skillSets.length === 0) return null;
   let active = skillSets[0]!;
   for (const set of skillSets) {
     if (set.minLevel <= characterLevel) active = set;
   }
   return active;
+}
+
+export function buildInitialTargetSkillSets(skillSets: ExtractedSkillSet[]): TargetSkillSetSummary[] {
+  return skillSets.map((set, idx) => ({
+    id: set.id || `skillset_${idx + 1}`,
+    title: set.title,
+    minLevel: set.minLevel,
+    groups: set.groups.map((g) => ({
+      title: g.title,
+      minLevel: set.minLevel,
+      ...(g.note ? { note: g.note } : {}),
+      gems: g.gems.map((gm) => ({
+        gemId: gm.gemId,
+        name: gm.name,
+        color: resolveGemSocketColor(gm.attribute),
+        isSupport: gm.isSupport,
+        verifiedSocketed: false,
+        unlinkedWarning: false,
+      })),
+      missingAuraWarning: false,
+    })),
+  }));
 }
 
 function formatMissingAuraWarning(gemName: string, reserveLocation?: "backpack" | "weapon_swap"): string {
@@ -147,10 +180,11 @@ export function verifySocketsAndGems(params: {
 }): {
   updatedGemSteps: GemAcquisitionStep[];
   linkGroups: TargetLinkGroupSummary[];
+  skillSets: TargetSkillSetSummary[];
   unlinkedWarnings: string[];
   missingAuraWarnings: string[];
 } {
-  const { items, skillSets, gemSteps, characterLevel } = params;
+  const { items, skillSets: rawSkillSets, gemSteps, characterLevel } = params;
   const { ownedGemsByName, unlinkedSupportNames } = collectOwnedGems(items);
 
   const updatedGemSteps = gemSteps.map((step) => {
@@ -162,49 +196,67 @@ export function verifySocketsAndGems(params: {
     };
   });
 
-  const activeSet = selectActiveSkillSet(skillSets, characterLevel);
+  const activeSet = selectActiveSkillSet(rawSkillSets, characterLevel);
   const unlinkedWarnings: string[] = [];
   const missingAuraWarnings: string[] = [];
 
-  const linkGroups: TargetLinkGroupSummary[] = (activeSet?.groups ?? []).map((group) => {
-    const isAuraGroup = /aura|reservation|herald|banner/i.test(group.title);
-    let missingInAuraGroup = false;
+  const verifiedSkillSets: TargetSkillSetSummary[] = rawSkillSets.map((set, idx) => {
+    const isActiveSet = activeSet === set;
+    const groups: TargetLinkGroupSummary[] = set.groups.map((group) => {
+      const isAuraGroup = /aura|reservation|herald|banner/i.test(group.title);
+      let missingInAuraGroup = false;
 
-    const gems = group.gems.map((g) => {
-      const lower = g.name.toLowerCase();
-      const loc = ownedGemsByName.get(lower);
-      const verifiedSocketed = loc === "equipped";
-      const reserveLocation = loc === "backpack" || loc === "weapon_swap" ? loc : undefined;
-      const unlinkedWarning = verifiedSocketed && unlinkedSupportNames.has(lower);
-      if (unlinkedWarning) {
-        unlinkedWarnings.push(`Support gem "${g.name}" is in an unlinked socket without an active skill.`);
-      }
-      if (isAuraGroup && !verifiedSocketed && !g.isSupport && characterLevel >= g.requiredLevel) {
-        missingInAuraGroup = true;
-        missingAuraWarnings.push(formatMissingAuraWarning(g.name, reserveLocation));
-      }
+      const gems = group.gems.map((g) => {
+        const lower = g.name.toLowerCase();
+        const loc = ownedGemsByName.get(lower);
+        const verifiedSocketed = loc === "equipped";
+        const reserveLocation = loc === "backpack" || loc === "weapon_swap" ? loc : undefined;
+        const unlinkedWarning = verifiedSocketed && unlinkedSupportNames.has(lower);
+        if (isActiveSet && unlinkedWarning) {
+          unlinkedWarnings.push(`Support gem "${g.name}" is in an unlinked socket without an active skill.`);
+        }
+        if (isAuraGroup && !verifiedSocketed && !g.isSupport && characterLevel >= g.requiredLevel) {
+          missingInAuraGroup = true;
+          if (isActiveSet) {
+            missingAuraWarnings.push(formatMissingAuraWarning(g.name, reserveLocation));
+          }
+        }
+        return {
+          gemId: g.gemId,
+          name: g.name,
+          color: resolveGemSocketColor(g.attribute),
+          isSupport: g.isSupport,
+          verifiedSocketed,
+          ...(reserveLocation ? { reserveLocation } : {}),
+          unlinkedWarning,
+        };
+      });
+
       return {
-        gemId: g.gemId,
-        name: g.name,
-        color: (g.attribute === "strength" ? "R" : g.attribute === "dexterity" ? "G" : g.attribute === "intelligence" ? "B" : "W") as
-          | "R"
-          | "G"
-          | "B"
-          | "W",
-        isSupport: g.isSupport,
-        verifiedSocketed,
-        ...(reserveLocation ? { reserveLocation } : {}),
-        unlinkedWarning,
+        title: group.title,
+        minLevel: set.minLevel,
+        ...(group.note ? { note: group.note } : {}),
+        gems,
+        missingAuraWarning: missingInAuraGroup,
       };
     });
 
     return {
-      title: group.title,
-      minLevel: activeSet?.minLevel ?? 1,
-      gems,
-      missingAuraWarning: missingInAuraGroup,
+      id: set.id || `skillset_${idx + 1}`,
+      title: set.title,
+      minLevel: set.minLevel,
+      groups,
     };
   });
 
-  return { updatedGemSteps, linkGroups, unlinkedWarnings, missingAuraWarnings };
+  const activeIndex = activeSet ? rawSkillSets.indexOf(activeSet) : -1;
+  const linkGroups = activeIndex >= 0 ? (verifiedSkillSets[activeIndex]?.groups ?? []) : [];
+
+  return {
+    updatedGemSteps,
+    linkGroups,
+    skillSets: verifiedSkillSets,
+    unlinkedWarnings,
+    missingAuraWarnings,
+  };
 }

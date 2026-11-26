@@ -127,6 +127,7 @@ export function applyGggCharacterResponseToSnapshot(
       snapshot.highestUnlockedAct,
     ),
     linkGroups: gemVerification.linkGroups,
+    skillSets: gemVerification.skillSets,
     itemSets: markEquippedItemSets(build.itemSets, items),
     equippedItemNames: extractEquippedItemNames([...items, ...passiveItems]),
     resistances,

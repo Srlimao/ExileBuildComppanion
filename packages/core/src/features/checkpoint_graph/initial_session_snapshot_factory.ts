@@ -2,6 +2,7 @@ import type { GameAdapter } from "@exile-hud/game-data";
 import type { ValidatedPobBuild } from "../pob_import/pob_endgame_fallback_validator.js";
 import type { HudSessionSnapshot } from "../protocol/session_room_wire_protocol.js";
 import { computePassiveTreeDiff } from "../character_telemetry_diff/passive_tree_diff_calculator.js";
+import { buildInitialTargetSkillSets } from "../character_telemetry_diff/socket_link_and_gem_verifier.js";
 import { computeNextTownCurrencyBudget } from "../route_compiler/gem_quest_and_vendor_assigner.js";
 import { buildVendorSearchRegex } from "../vendor_regex/vendor_search_regex_builder.js";
 import { reconcilePoe2SnapshotTelemetry } from "./poe2_progression_reconciler.js";
@@ -24,27 +25,8 @@ export function buildInitialSessionSnapshot(params: {
     adapter,
   });
 
-  const linkGroups =
-    build.skillSets[0]?.groups.map((g) => ({
-      title: g.title,
-      minLevel: build.skillSets[0]?.minLevel ?? 1,
-      ...(g.note ? { note: g.note } : {}),
-      gems: g.gems.map((gm) => ({
-        gemId: gm.gemId,
-        name: gm.name,
-        color: (gm.attribute === "strength"
-          ? "R"
-          : gm.attribute === "dexterity"
-            ? "G"
-            : gm.attribute === "intelligence"
-              ? "B"
-              : "W") as "R" | "G" | "B" | "W",
-        isSupport: gm.isSupport,
-        verifiedSocketed: false,
-        unlinkedWarning: false,
-      })),
-      missingAuraWarning: false,
-    })) ?? [];
+  const skillSets = buildInitialTargetSkillSets(build.skillSets);
+  const linkGroups = skillSets[0]?.groups ?? [];
 
   const startAreaId = adapter.getDefaultStartAreaId();
   const startArea = adapter.resolveAreaById(startAreaId);
@@ -89,6 +71,7 @@ export function buildInitialSessionSnapshot(params: {
     gemSteps,
     nextTownCurrencyBudget: computeNextTownCurrencyBudget(gemSteps, 1),
     linkGroups,
+    skillSets,
     itemSets: build.itemSets,
     resistances: {
       source: "ACT_TARGET_FALLBACK",

@@ -134,6 +134,7 @@ export function syncBuildSetsForLevel(
         };
       }),
       linkGroups: verified.linkGroups,
+      skillSets: verified.skillSets,
     };
   }
 

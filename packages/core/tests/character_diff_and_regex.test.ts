@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { poe1GameAdapter } from "@exile-hud/game-data";
 import {
   auditGearAndFlaskHygiene,
+  buildInitialTargetSkillSets,
   buildVendorSearchRegex,
   computePassiveTreeDiff,
   estimateEquippedResistances,
@@ -235,5 +236,40 @@ describe("Character Telemetry Diffs, Vendor Regex & Lab Tracker", () => {
       "2026/11/14 18:15:19 535003593 cffb06be [INFO Client 38840] : You have received a Passive Skill Point.",
     );
     expect(passiveLog).toEqual({ type: "skill_points_received", count: 1 });
+  });
+
+  it("verifies all skillSets with live socket state while limiting warnings to the level-active set", () => {
+    const sets = [
+      {
+        id: "set_lv1",
+        title: "Act 1",
+        minLevel: 1,
+        groups: [{ title: "Starter", slotLabel: "Weapon", note: "Keep 3B", gems: [{ gemId: "fb", name: "Fireball", isSupport: false, requiredLevel: 1, attribute: "intelligence" }] }],
+      },
+      {
+        id: "set_lv24",
+        title: "Act 3",
+        minLevel: 24,
+        groups: [
+          { title: "Main", slotLabel: "Weapon", gems: [{ gemId: "fb", name: "Fireball", isSupport: false, requiredLevel: 1, attribute: "intelligence" }, { gemId: "comb", name: "Combustion Support", isSupport: true, requiredLevel: 8, attribute: "intelligence" }] },
+          { title: "Auras", slotLabel: "Helm", gems: [{ gemId: "det", name: "Determination", isSupport: false, requiredLevel: 24, attribute: "strength" }] },
+        ],
+      },
+    ];
+    const initial = buildInitialTargetSkillSets(sets);
+    expect(initial.map((s) => s.id)).toEqual(["set_lv1", "set_lv24"]);
+    expect(initial[0]?.groups[0]?.note).toBe("Keep 3B");
+
+    const lowLevel = verifySocketsAndGems({ items: SAMPLE_GGG_ITEMS, skillSets: sets, gemSteps: [], characterLevel: 10 });
+    expect(lowLevel.skillSets).toHaveLength(2);
+    expect(lowLevel.skillSets[0]?.groups[0]?.gems[0]?.verifiedSocketed).toBe(true);
+    expect(lowLevel.skillSets[1]?.groups[0]?.gems[1]?.unlinkedWarning).toBe(true);
+    expect(lowLevel.unlinkedWarnings).toHaveLength(0);
+    expect(lowLevel.missingAuraWarnings).toHaveLength(0);
+
+    const highLevel = verifySocketsAndGems({ items: SAMPLE_GGG_ITEMS, skillSets: sets, gemSteps: [], characterLevel: 26 });
+    expect(highLevel.linkGroups).toEqual(highLevel.skillSets[1]?.groups);
+    expect(highLevel.unlinkedWarnings).toHaveLength(1);
+    expect(highLevel.missingAuraWarnings).toHaveLength(1);
   });
 });

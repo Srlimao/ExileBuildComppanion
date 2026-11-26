@@ -1,5 +1,15 @@
-import { createEmptyCampaignProgress, type HudSessionSnapshot, type TargetLinkGroupSummary } from "@exile-hud/core";
-import { HudI18nProvider, partitionLinkGroupGems, SocketLinksWidget } from "@exile-hud/hud-ui";
+import {
+  createEmptyCampaignProgress,
+  type HudSessionSnapshot,
+  type TargetLinkGroupSummary,
+  type TargetSkillSetSummary,
+} from "@exile-hud/core";
+import {
+  HudI18nProvider,
+  partitionLinkGroupGems,
+  resolveSocketLinksDisplay,
+  SocketLinksWidget,
+} from "@exile-hud/hud-ui";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -7,6 +17,8 @@ import { describe, expect, it } from "vitest";
 function makeBaseSnapshot(
   gameId: "poe1" | "poe2",
   linkGroups: TargetLinkGroupSummary[],
+  skillSets?: TargetSkillSetSummary[],
+  characterLevel = 32,
 ): HudSessionSnapshot {
   return {
     version: 1,
@@ -17,7 +29,7 @@ function makeBaseSnapshot(
     characterClass: "Witch",
     ascendancyName: "Elementalist",
     characterName: "Tester",
-    characterLevel: 32,
+    characterLevel,
     isEndgameOnlyFallback: false,
     fallbackNotice: null,
     leagueStart: true,
@@ -45,6 +57,7 @@ function makeBaseSnapshot(
     gemSteps: [],
     nextTownCurrencyBudget: { wisdom: 0, transmutation: 0, alteration: 0, chance: 0, alchemy: 0 },
     linkGroups,
+    ...(skillSets ? { skillSets } : {}),
     resistances: {
       source: "ACT_TARGET_FALLBACK",
       kitavaPenalty: 0,
@@ -163,5 +176,84 @@ describe("socket_links_unified_widget", () => {
     );
     expect(poe2Html).toContain("Ice Strike");
     expect(poe2Html).toContain("Martial Tempo");
+  });
+
+  it("resolves PoE 1 skill sets by level or manual override and ignores skillSets in PoE 2", () => {
+    const set1: TargetSkillSetSummary = {
+      id: "set_1",
+      title: "Act 1 Starter",
+      minLevel: 1,
+      groups: [
+        {
+          title: "Starter",
+          minLevel: 1,
+          missingAuraWarning: false,
+          gems: [{ gemId: "rm", name: "Rolling Magma", color: "B", isSupport: false, verifiedSocketed: false, unlinkedWarning: false }],
+        },
+      ],
+    };
+    const set2: TargetSkillSetSummary = {
+      id: "set_2",
+      title: "Act 3 Transition (Lv 24)",
+      minLevel: 24,
+      groups: [
+        {
+          title: "Main RF",
+          minLevel: 24,
+          missingAuraWarning: false,
+          gems: [{ gemId: "rf", name: "Righteous Fire", color: "B", isSupport: false, verifiedSocketed: true, unlinkedWarning: false }],
+        },
+        {
+          title: "Auras",
+          minLevel: 24,
+          missingAuraWarning: false,
+          gems: [{ gemId: "det", name: "Determination", color: "R", isSupport: false, verifiedSocketed: false, unlinkedWarning: false }],
+        },
+      ],
+    };
+
+    const poe1Snap = makeBaseSnapshot("poe1", set2.groups, [set1, set2], 30);
+    const autoResolved = resolveSocketLinksDisplay(poe1Snap, null);
+    expect(autoResolved.activeSkillSet?.id).toBe("set_2");
+    expect(autoResolved.displayedGroups.map((g) => g.title)).toEqual(["Main RF", "Auras"]);
+
+    const manualResolved = resolveSocketLinksDisplay(poe1Snap, "set_1");
+    expect(manualResolved.activeSkillSet?.id).toBe("set_1");
+    expect(manualResolved.displayedGroups.map((g) => g.title)).toEqual(["Starter"]);
+
+    const fallbackResolved = resolveSocketLinksDisplay(poe1Snap, "missing_set");
+    expect(fallbackResolved.activeSkillSet?.id).toBe("set_2");
+
+    const poe1Html = renderToStaticMarkup(
+      createElement(HudI18nProvider, null, createElement(SocketLinksWidget, { snapshot: poe1Snap })),
+    );
+    expect(poe1Html).toContain("Act 1 Starter · Lv 1+");
+    expect(poe1Html).toContain("Act 3 Transition (Lv 24)");
+    expect(poe1Html).not.toContain("Act 3 Transition (Lv 24) · Lv 24+");
+    expect(poe1Html).toContain('aria-pressed="true"');
+    expect(poe1Html).toContain("Righteous Fire");
+
+    const poe2Snap = makeBaseSnapshot(
+      "poe2",
+      [
+        {
+          title: "Main Clear",
+          minLevel: 1,
+          missingAuraWarning: false,
+          gems: [{ gemId: "is", name: "Ice Strike", color: "G", isSupport: false, verifiedSocketed: false, unlinkedWarning: false }],
+        },
+      ],
+      [set1, set2],
+      30,
+    );
+    const poe2Resolved = resolveSocketLinksDisplay(poe2Snap, "set_1");
+    expect(poe2Resolved.skillSets).toEqual([]);
+    expect(poe2Resolved.displayedGroups.map((g) => g.title)).toEqual(["Main Clear"]);
+
+    const poe2Html = renderToStaticMarkup(
+      createElement(HudI18nProvider, null, createElement(SocketLinksWidget, { snapshot: poe2Snap })),
+    );
+    expect(poe2Html).not.toContain("Act 1 Starter");
+    expect(poe2Html).toContain("Ice Strike");
   });
 });
